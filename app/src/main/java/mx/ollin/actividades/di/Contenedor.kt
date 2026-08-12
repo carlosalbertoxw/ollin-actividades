@@ -1,0 +1,32 @@
+package mx.ollin.actividades.di
+
+import android.content.Context
+import mx.ollin.actividades.data.db.OllinDatabase
+import mx.ollin.actividades.data.db.Sembrador
+import mx.ollin.actividades.data.prefs.AjustesRepositorio
+import mx.ollin.actividades.data.repo.ActividadesRepositorio
+import mx.ollin.actividades.data.seguridad.ControlBloqueo
+
+/**
+ * Inyeccion de dependencias a mano.
+ *
+ * Con un solo modulo y tres objetos compartidos, Hilt aportaria anotaciones y
+ * tiempo de compilacion sin resolver ningun problema real. Esto se lee de
+ * arriba a abajo y no tiene magia.
+ */
+class Contenedor(contexto: Context) {
+
+    private val app = contexto.applicationContext
+
+    val baseDeDatos: OllinDatabase by lazy { OllinDatabase.obten(app) }
+
+    val repositorio: ActividadesRepositorio by lazy {
+        ActividadesRepositorio(baseDeDatos, app.contentResolver)
+    }
+
+    val ajustes: AjustesRepositorio by lazy { AjustesRepositorio(app) }
+
+    val controlBloqueo: ControlBloqueo by lazy { ControlBloqueo(ajustes) }
+
+    val sembrador: Sembrador by lazy { Sembrador(baseDeDatos.categoriaDao()) }
+}

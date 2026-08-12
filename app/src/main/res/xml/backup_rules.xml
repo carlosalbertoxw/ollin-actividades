@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- La bitacora ya no sale del telefono por respaldo automatico. La base va
+         cifrada con una llave que vive en el Keystore, y el Keystore no se
+         restaura en otro telefono: copiarla solo produciria un archivo ilegible.
+         El respaldo real es la exportacion a .xlsx, que decides tu donde guardar. -->
+    <exclude domain="database" path="ollin_actividades.db" />
+    <exclude domain="database" path="ollin_actividades.db-wal" />
+    <exclude domain="database" path="ollin_actividades.db-shm" />
+    <!-- Envoltura de la llave y huella del PIN: nada de esto sale del telefono. -->
+    <exclude domain="sharedpref" path="ollin_llave.xml" />
+    <exclude domain="file" path="datastore/ollin_actividades_ajustes.preferences_pb" />
+</full-backup-content>

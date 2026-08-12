@@ -1,0 +1,381 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 2,
+    "identityHash": "6f7390bcd939bf9c40a9f3569cf23b6b",
+    "entities": [
+      {
+        "tableName": "categoria",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `nombre` TEXT NOT NULL, `ambito` TEXT NOT NULL, `colorHex` TEXT, `archivada` INTEGER NOT NULL, `orden` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nombre",
+            "columnName": "nombre",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ambito",
+            "columnName": "ambito",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "colorHex",
+            "columnName": "colorHex",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "archivada",
+            "columnName": "archivada",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "orden",
+            "columnName": "orden",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_categoria_nombre",
+            "unique": true,
+            "columnNames": [
+              "nombre"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_categoria_nombre` ON `${TABLE_NAME}` (`nombre`)"
+          },
+          {
+            "name": "index_categoria_ambito",
+            "unique": false,
+            "columnNames": [
+              "ambito"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_categoria_ambito` ON `${TABLE_NAME}` (`ambito`)"
+          }
+        ]
+      },
+      {
+        "tableName": "habito",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `nombre` TEXT NOT NULL, `categoriaId` INTEGER, `frecuencia` TEXT NOT NULL, `metaDiaria` INTEGER NOT NULL, `metaSemanal` INTEGER NOT NULL, `diasSemana` INTEGER NOT NULL, `intervaloDias` INTEGER NOT NULL, `intervaloMeses` INTEGER NOT NULL, `ancla` INTEGER, `minutosSugeridos` INTEGER, `activo` INTEGER NOT NULL, `orden` INTEGER NOT NULL, `notas` TEXT, `creadoEn` INTEGER NOT NULL, FOREIGN KEY(`categoriaId`) REFERENCES `categoria`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nombre",
+            "columnName": "nombre",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "categoriaId",
+            "columnName": "categoriaId",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "frecuencia",
+            "columnName": "frecuencia",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "metaDiaria",
+            "columnName": "metaDiaria",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "metaSemanal",
+            "columnName": "metaSemanal",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "diasSemana",
+            "columnName": "diasSemana",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "intervaloDias",
+            "columnName": "intervaloDias",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "intervaloMeses",
+            "columnName": "intervaloMeses",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ancla",
+            "columnName": "ancla",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "minutosSugeridos",
+            "columnName": "minutosSugeridos",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "activo",
+            "columnName": "activo",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "orden",
+            "columnName": "orden",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "notas",
+            "columnName": "notas",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "creadoEn",
+            "columnName": "creadoEn",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_habito_nombre",
+            "unique": true,
+            "columnNames": [
+              "nombre"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_habito_nombre` ON `${TABLE_NAME}` (`nombre`)"
+          },
+          {
+            "name": "index_habito_activo",
+            "unique": false,
+            "columnNames": [
+              "activo"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_habito_activo` ON `${TABLE_NAME}` (`activo`)"
+          },
+          {
+            "name": "index_habito_categoriaId",
+            "unique": false,
+            "columnNames": [
+              "categoriaId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_habito_categoriaId` ON `${TABLE_NAME}` (`categoriaId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "categoria",
+            "onDelete": "SET NULL",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "categoriaId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "actividad",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `titulo` TEXT NOT NULL, `categoriaId` INTEGER, `estado` TEXT NOT NULL, `inicio` INTEGER NOT NULL, `fin` INTEGER, `dia` INTEGER NOT NULL, `duracionMinutos` INTEGER, `cantidad` REAL, `unidad` TEXT NOT NULL, `habitoId` INTEGER, `notas` TEXT, `creadoEn` INTEGER NOT NULL, `actualizadoEn` INTEGER NOT NULL, FOREIGN KEY(`categoriaId`) REFERENCES `categoria`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL , FOREIGN KEY(`habitoId`) REFERENCES `habito`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "titulo",
+            "columnName": "titulo",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "categoriaId",
+            "columnName": "categoriaId",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "estado",
+            "columnName": "estado",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "inicio",
+            "columnName": "inicio",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fin",
+            "columnName": "fin",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "dia",
+            "columnName": "dia",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "duracionMinutos",
+            "columnName": "duracionMinutos",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "cantidad",
+            "columnName": "cantidad",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "unidad",
+            "columnName": "unidad",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "habitoId",
+            "columnName": "habitoId",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "notas",
+            "columnName": "notas",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "creadoEn",
+            "columnName": "creadoEn",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "actualizadoEn",
+            "columnName": "actualizadoEn",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_actividad_dia",
+            "unique": false,
+            "columnNames": [
+              "dia"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_actividad_dia` ON `${TABLE_NAME}` (`dia`)"
+          },
+          {
+            "name": "index_actividad_inicio",
+            "unique": false,
+            "columnNames": [
+              "inicio"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_actividad_inicio` ON `${TABLE_NAME}` (`inicio`)"
+          },
+          {
+            "name": "index_actividad_estado",
+            "unique": false,
+            "columnNames": [
+              "estado"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_actividad_estado` ON `${TABLE_NAME}` (`estado`)"
+          },
+          {
+            "name": "index_actividad_categoriaId",
+            "unique": false,
+            "columnNames": [
+              "categoriaId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_actividad_categoriaId` ON `${TABLE_NAME}` (`categoriaId`)"
+          },
+          {
+            "name": "index_actividad_habitoId",
+            "unique": false,
+            "columnNames": [
+              "habitoId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_actividad_habitoId` ON `${TABLE_NAME}` (`habitoId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "categoria",
+            "onDelete": "SET NULL",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "categoriaId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "habito",
+            "onDelete": "SET NULL",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "habitoId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '6f7390bcd939bf9c40a9f3569cf23b6b')"
+    ]
+  }
+}
