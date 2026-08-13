@@ -61,9 +61,46 @@ El lector carga el paquete completo en memoria porque `sharedStrings.xml` puede 
 
 `Ajustes → Archivo → Importar` abre el selector de documentos del sistema. Es el único camino: la app no se declara como manejadora de `.xlsx`, así que no aparece en el "Abrir con" de un gestor de archivos.
 
-### Qué hoja se lee
+### Qué pestañas se leen
 
-La primera que traiga, al menos, una columna de **fecha** y otra de **título**. Se prefiere la llamada `Registros`. Admite libros que no salieron de aquí.
+Las cuatro que Ollin sabe reconocer, **cada una si viene en el archivo** y en este orden:
+
+| Pestaña | Qué entra | Qué se ignora |
+|---|---|---|
+| **Categorias** | Nombre, ámbito, color, si está archivada y orden | — |
+| **Habitos** | Nombre, categoría, cadencia, meta diaria, minutos sugeridos, activo y notas | Cumplimientos, racha actual, mejor racha y unidad de racha |
+| **Diccionarios** | Las columnas *Categorias* y *Habitos*, solo para dar de alta lo que falte | Ámbitos, estados y unidades: son enumeraciones fijas de la app |
+| **Registros** | La bitácora | — |
+
+El orden no es casual. `Registros` nombra sus categorías y hábitos por texto y solo puede enlazarlos con los que ya existen; leyendo antes los catálogos, un registro cae en la categoría con su color y su ámbito de verdad en lugar de en una recién inventada como `PERSONAL`. `Diccionarios` va al final y solo rellena: sus columnas son nombres sueltos, sin ámbito ni cadencia, así que cualquier otra hoja sabe más.
+
+Las pestañas se buscan **por nombre**, sin acentos ni mayúsculas —`Categorías` y `categorias` son la misma—. La de `Registros` es la excepción: si no está, se usa la primera hoja que traiga al menos una columna de **fecha** y otra de **título**, para admitir libros que no salieron de aquí.
+
+Un libro que solo trae catálogos es legítimo: sirve para reordenar las categorías o retocar los hábitos desde la computadora. En ese caso la bitácora **no se toca aunque esté marcado "Reemplazar todo"**, porque no hay nada con qué reemplazarla.
+
+### Cómo se emparejan los catálogos
+
+Por nombre normalizado (sin acentos ni mayúsculas). Lo que ya existe se actualiza; lo que no, se crea si está activo "Crear lo que falte".
+
+**El nombre nunca se reescribe.** Es la llave con la que se emparejan las dos listas y además lleva índice único: adoptar la ortografía del archivo podría chocar contra otra fila y tumbar la importación entera. De una categoría que ya existe se actualizan su ámbito, su color, su orden y si está archivada —que es justamente para lo que sirve poder reordenar el catálogo fuera del teléfono—; de un hábito, su categoría, cadencia, meta, minutos sugeridos, si está activo y sus notas.
+
+Los hábitos nuevos que no traen columna de orden lo toman de su posición en la hoja: es el orden que alguien acomodó al editarla.
+
+### La cadencia, de ida y de vuelta
+
+La columna *Cadencia* se escribe en español (`Habito.cadencia()`) y se vuelve a interpretar al importar:
+
+| En la hoja | Frecuencia |
+|---|---|
+| `Todos los dias` | `DIARIA` |
+| `Entre semana`, `Fin de semana`, `Ningun dia`, `L X V` | `DIAS_ELEGIDOS` |
+| `4 dias por semana` | `SEMANAL`, meta 4 |
+| `Cada semana`, `Cada quincena`, `Cada 3 dias` | `CADA_DIAS` con 7, 15 y 3 |
+| `Cada mes`, `Cada trimestre`, `Cada semestre`, `Cada ano`, `Cada 2 meses` | `CADA_MESES` con 1, 3, 6, 12 y 2 |
+
+También se aceptan el nombre crudo de la `Frecuencia` y su etiqueta, para un archivo escrito a mano. Lo que no se entiende deja el hábito con la cadencia que tenía y se reporta como aviso con su número de fila.
+
+Un detalle asumido: `CADA_DIAS` con intervalo 1 y `DIAS_ELEGIDOS` con los siete días marcados se escriben ambos como "Todos los dias" y vuelven como `DIARIA`. Se comportan igual y es la que la pantalla enseña más limpia.
 
 ### Reconocimiento de columnas
 

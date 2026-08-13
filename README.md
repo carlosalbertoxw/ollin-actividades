@@ -48,7 +48,13 @@ Las pruebas unitarias corren en la JVM con Robolectric, sin emulador ni disposit
 JAVA_HOME="$HOME/.jdks/jbr-21.0.11" ./gradlew testDebugUnitTest
 ```
 
-Cubren el cálculo de rachas, las reglas del repositorio, el formateo de tiempo, el candado y el PIN, el catálogo semilla y el viaje de ida y vuelta a Excel. Ahí mismo corren las pruebas de interfaz con Compose UI Test, que recorren las pantallas de principio a fin sin emulador. El reporte HTML queda en `app/build/reports/tests/`.
+Cubren el cálculo de rachas, las reglas del repositorio, el formateo de tiempo, el candado y el PIN, el catálogo semilla y el viaje de ida y vuelta a Excel. El reporte HTML queda en `app/build/reports/tests/`.
+
+Las de interfaz, hechas con Compose UI Test, recorren las pantallas de principio a fin y sí necesitan un teléfono o un emulador conectado:
+
+```bash
+JAVA_HOME="$HOME/.jdks/jbr-21.0.11" ./gradlew connectedDebugAndroidTest
+```
 
 ## Estructura
 

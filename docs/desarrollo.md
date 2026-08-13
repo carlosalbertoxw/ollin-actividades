@@ -48,11 +48,18 @@ sdk.dir=C\:\\Users\\<usuario>\\AppData\\Local\\Android\\Sdk
 - **`room.schemaLocation`** — KSP escribe los esquemas en `app/schemas/`, que sí se versionan: son la referencia contra la que se probarán las migraciones futuras.
 - **`androidx.fragment` fijado a mano** — `biometric` 1.1.0 arrastra `fragment` 1.2.5, anterior a la API de `ActivityResult`: su `FragmentActivity` rechaza los request codes de más de 16 bits que genera `activity` 1.10.1 y cualquier launcher revienta al abrirse.
 - **`release`** con `isMinifyEnabled` e `isShrinkResources`, y firmado con las credenciales de [`keystore.properties`](publicacion.md). Sin ese archivo el APK sale sin firmar en vez de fallar la compilación.
-- **`maxHeapSize = "2g"`** en las pruebas unitarias: las de Compose componen pantallas enteras bajo Robolectric y con el montón por omisión se quedan sin memoria.
 
 ## Pruebas
 
-Todas corren en la JVM, sin emulador. Robolectric para lo que necesita `Context`.
+Hay dos suites y no corren en el mismo sitio.
+
+### Unitarias — en la JVM
+
+```bash
+./gradlew testDebugUnitTest
+```
+
+Sin emulador. Robolectric para lo que necesita `Context`.
 
 | Prueba | Qué cubre |
 |---|---|
@@ -64,25 +71,8 @@ Todas corren en la JVM, sin emulador. Robolectric para lo que necesita `Context`
 | [`BloqueoTest`](../app/src/test/java/mx/ollin/actividades/BloqueoTest.kt) | Preferencias del candado y el minuto de gracia de `ControlBloqueo` |
 | [`AjustesRepositorioTest`](../app/src/test/java/mx/ollin/actividades/AjustesRepositorioTest.kt) | Valores de fábrica, acotado de metas y selección de hojas |
 | [`ExcelRoundTripTest`](../app/src/test/java/mx/ollin/actividades/ExcelRoundTripTest.kt) | Escritor y lector de `.xlsx` |
-| [`ImportadorTest`](../app/src/test/java/mx/ollin/actividades/ImportadorTest.kt) | Exportar e importar deja los datos iguales |
-
-### Pruebas de interfaz (Compose UI Test)
-
-Viven en `app/src/test/java/mx/ollin/actividades/ui/` y también corren en la JVM: Robolectric hospeda la composición, así que entran en `testDebugUnitTest` como cualquier otra.
-
-| Prueba | Qué cubre |
-|---|---|
-| [`NavegacionTest`](../app/src/test/java/mx/ollin/actividades/ui/NavegacionTest.kt) | Que cada pantalla siga siendo alcanzable con el dedo |
-| [`HoyPantallaTest`](../app/src/test/java/mx/ollin/actividades/ui/HoyPantallaTest.kt) | Cronómetro, pendientes y marcado de hábitos, de la pulsación a la base |
-| [`CapturaPantallaTest`](../app/src/test/java/mx/ollin/actividades/ui/CapturaPantallaTest.kt) | Validación del título, alta, edición y borrado |
-| [`HabitosPantallaTest`](../app/src/test/java/mx/ollin/actividades/ui/HabitosPantallaTest.kt) | Alta con cadencia, pausa y reanudación, borrado |
-| [`AjustesYArchivoTest`](../app/src/test/java/mx/ollin/actividades/ui/AjustesYArchivoTest.kt) | Que lo que se toca en Ajustes y Archivo quede escrito en preferencias |
-
-[`BancoDePruebas`](../app/src/test/java/mx/ollin/actividades/ui/BancoDePruebas.kt) es el andamio común. Levanta un `Contenedor` de verdad —mismos ViewModel, mismo repositorio, mismas preferencias— y solo sustituye la base por una en memoria. Tres detalles que costaron encontrarse:
-
-- **`qualifiers = "w411dp-h891dp-xhdpi"`.** Robolectric simula por omisión una pantalla diminuta donde casi todo queda recortado, y un nodo recortado no cuenta como visible.
-- **`tomaElReloj()` en las pantallas con cronómetro.** El latido de un segundo de la pantalla de hoy nunca deja a Compose en reposo: con el reloj automático se queda midiendo texto decenas de miles de veces hasta agotar la memoria.
-- **`espera(...)` en vez de `waitUntil`.** Cada vuelta adelanta un cuadro, vacía la cola del hilo principal y deja pasar tiempo real, porque Room y DataStore trabajan en hilos de verdad que el reloj virtual de Compose no mueve.
+| [`ImportadorTest`](../app/src/test/java/mx/ollin/actividades/ImportadorTest.kt) | La hoja de Registros: exportar e importar deja los datos iguales |
+| [`ImportadorCatalogosTest`](../app/src/test/java/mx/ollin/actividades/ImportadorCatalogosTest.kt) | Las pestañas de Categorias, Habitos y Diccionarios, y la cadencia de ida y vuelta |
 
 Las pruebas con Room arrancan con una `Application` pelona en vez de `OllinApp`: la de verdad siembra el catálogo contra la base cifrada, y SQLCipher es una biblioteca nativa de Android que en la JVM no existe.
 
@@ -90,6 +80,27 @@ Las pruebas con Room arrancan con una `Application` pelona en vez de `OllinApp`:
 
 - `sdk=34` — Robolectric todavía no trae imagen del 36 al que apunta la app, y la base no cambia de comportamiento entre esas versiones.
 - `sqliteMode=NATIVE` — el SQLite emulado sirve una sola conexión por hilo, y Room reparte sus consultas entre varios hilos de disco. Con `LEGACY`, cualquier prueba que lea desde un `Flow` revienta con *"Illegal connection pointer"*.
+
+### De interfaz — sobre un teléfono o un emulador
+
+```bash
+./gradlew connectedDebugAndroidTest
+```
+
+Viven en `app/src/androidTest/java/mx/ollin/actividades/ui/`, **no** en `src/test/`, así que `testDebugUnitTest` no las corre. Se intentaron en la JVM con Robolectric y no salió: su reloj virtual no conversa con el cronómetro de la pantalla de hoy ni con los diálogos.
+
+| Prueba | Qué cubre |
+|---|---|
+| [`NavegacionTest`](../app/src/androidTest/java/mx/ollin/actividades/ui/NavegacionTest.kt) | Que cada pantalla siga siendo alcanzable con el dedo |
+| [`HoyPantallaTest`](../app/src/androidTest/java/mx/ollin/actividades/ui/HoyPantallaTest.kt) | Cronómetro, pendientes y marcado de hábitos, de la pulsación a la base |
+| [`CapturaPantallaTest`](../app/src/androidTest/java/mx/ollin/actividades/ui/CapturaPantallaTest.kt) | Validación del título, alta, edición y borrado |
+| [`HabitosPantallaTest`](../app/src/androidTest/java/mx/ollin/actividades/ui/HabitosPantallaTest.kt) | Alta con cadencia, pausa y reanudación, borrado |
+| [`AjustesYArchivoTest`](../app/src/androidTest/java/mx/ollin/actividades/ui/AjustesYArchivoTest.kt) | Que lo que se toca en Ajustes y Archivo quede escrito en preferencias |
+
+[`BancoDePruebas`](../app/src/androidTest/java/mx/ollin/actividades/ui/BancoDePruebas.kt) es el andamio común. Levanta un `Contenedor` de verdad —mismos ViewModel, mismo repositorio, mismas preferencias— y solo sustituye la base por una en memoria, por la costura `abreBase` del contenedor: la de producción va cifrada y compartirla entre pruebas dejaría a cada una heredando los datos de la anterior. Dos detalles que costaron encontrarse:
+
+- **`espera(...)` en vez de `waitUntil`.** La condición no siempre es lo que hay en pantalla: muchas veces es lo que quedó escrito en la base o en las preferencias, y eso ocurre en hilos que el reloj de Compose no mueve. Se sondea en tiempo real y se cierra con un `waitForIdle`, porque que un texto ya se vea no significa que haya terminado de animarse.
+- **`restauraDeFabrica()` antes de cada prueba.** El DataStore de la app es uno solo y sobrevive de una prueba a la siguiente; sin esto, lo que una guarda condiciona a la que corra después y el resultado de la suite depende del orden.
 
 ## Convenciones del código
 

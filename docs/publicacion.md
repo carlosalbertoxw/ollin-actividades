@@ -85,7 +85,7 @@ La compilación de depuración lleva `applicationId` con sufijo `.debug` y `vers
 
 ## Antes de publicar
 
-- Pasar la suite completa: `./gradlew testDebugUnitTest`.
+- Pasar las dos suites: `./gradlew testDebugUnitTest` y, con un teléfono o un emulador conectado, `./gradlew connectedDebugAndroidTest`. Ver [desarrollo](desarrollo.md#pruebas).
 - Subir `versionCode` y `versionName`.
 - Instalar el APK de release en un teléfono y abrirlo: R8 puede romper cosas que la compilación de depuración no enseña.
 - Comprobar que la base abre. Es lo que más riesgo corre con la ofuscación, por SQLCipher y Room.

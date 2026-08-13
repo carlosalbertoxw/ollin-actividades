@@ -37,14 +37,35 @@ data class ResultadoImportacion(
     val omitidas: Int = 0,
     val categoriasCreadas: List<String> = emptyList(),
     val habitosCreados: List<String> = emptyList(),
+    /** Las que ya existian y el archivo cambio: ambito, color, orden, cadencia. */
+    val categoriasActualizadas: Int = 0,
+    val habitosActualizados: Int = 0,
+    /** Que pestañas del libro se aprovecharon, en el orden en que se leyeron. */
+    val hojasLeidas: List<String> = emptyList(),
     val sinCategoria: Int = 0,
     val diagnosticos: List<Diagnostico> = emptyList()
 ) {
     val huboProblemas: Boolean get() = diagnosticos.any { it.severidad != Severidad.INFO }
+
+    /** Cierto si el libro solo traia catalogos: no hay renglones que contar. */
+    val soloCatalogos: Boolean get() = filasLeidas == 0 && hojasLeidas.isNotEmpty()
 }
 
 /**
  * Lee un libro de Excel y lo vuelca en la bitacora de Ollin.
+ *
+ * Aprovecha las cuatro pestañas que sabe reconocer, en este orden y solo si
+ * vienen en el archivo:
+ *
+ * 1. **Categorias** — el catalogo con su ambito, color, orden y si esta archivada.
+ * 2. **Habitos** — la plantilla de cada habito con su cadencia y su meta.
+ * 3. **Diccionarios** — solo para rellenar los nombres que las anteriores no trajeron.
+ * 4. **Registros** — la bitacora.
+ *
+ * El orden importa: Registros nombra sus categorias y habitos por texto, asi
+ * que solo puede enlazarlos con los que ya existen. Leyendo antes los catalogos,
+ * un registro cae en la categoria con su color y su ambito de verdad en vez de
+ * en una recien inventada.
  *
  * Reconoce los encabezados sin importar acentos ni mayusculas, y admite hojas
  * que no salieron de aqui: con una columna de fecha y otra de titulo ya hay
@@ -73,6 +94,8 @@ class ImportadorExcel(
             "habito" to listOf("habito", "habit"),
             "notas" to listOf("notas", "nota", "comentario", "comentarios", "observaciones")
         )
+
+        val REQUERIDAS = listOf("fecha", "titulo")
 
         val FORMATOS_FECHA = listOf(
             DateTimeFormatter.ISO_LOCAL_DATE,
@@ -113,8 +136,24 @@ class ImportadorExcel(
         opciones: OpcionesImportacion = OpcionesImportacion()
     ): ResultadoImportacion {
         val libro = XlsxLector.lee(entrada)
-        val hoja = eligeHojaDeDatos(libro)
-            ?: return ResultadoImportacion(
+        val catalogos = ImportadorCatalogos(categoriaDao, habitoDao).aplica(libro, opciones)
+
+        val datos = eligeHojaDeDatos(libro)
+        if (datos == null) {
+            // Un libro de puros catalogos es legitimo: sirve para reordenar las
+            // categorias o retocar los habitos sin tocar la bitacora. Lo que no
+            // se hace en ese caso es vaciarla, aunque venga marcado reemplazar:
+            // no hay nada con que reemplazarla.
+            if (catalogos.hojas.isNotEmpty()) {
+                return catalogos.aResultado(
+                    Diagnostico(
+                        Severidad.INFO,
+                        "El libro no traia hoja de Registros. Solo se actualizaron los " +
+                            "catalogos; la bitacora quedo intacta."
+                    )
+                )
+            }
+            return ResultadoImportacion(
                 diagnosticos = listOf(
                     Diagnostico(
                         Severidad.ERROR,
@@ -122,92 +161,89 @@ class ImportadorExcel(
                     )
                 )
             )
-        return procesa(hoja, opciones)
+        }
+        return procesa(datos.first, datos.second, opciones, catalogos)
     }
 
     /** La hoja buena es la que trae, al menos, Fecha + Titulo. */
-    private fun eligeHojaDeDatos(libro: LibroLeido): HojaLeida? {
-        val preferida = libro.hoja("Registros")
-        if (preferida != null && mapaColumnas(preferida).esUtilizable()) return preferida
-        return libro.hojas.firstOrNull { mapaColumnas(it).esUtilizable() }
-    }
-
-    private class MapaColumnas(private val indices: Map<String, Int>) {
-        operator fun get(clave: String): Int? = indices[clave]
-        fun esUtilizable(): Boolean =
-            indices.containsKey("fecha") && indices.containsKey("titulo")
-    }
-
-    private fun mapaColumnas(hoja: HojaLeida): MapaColumnas {
-        val encabezado = hoja.filas.firstOrNull() ?: return MapaColumnas(emptyMap())
-        val indices = mutableMapOf<String, Int>()
-        encabezado.forEachIndexed { i, celda ->
-            val texto = celda.comoTexto()?.normalizaClave() ?: return@forEachIndexed
-            SINONIMOS.forEach { (clave, alias) ->
-                if (!indices.containsKey(clave) && alias.any { it == texto }) indices[clave] = i
-            }
+    private fun eligeHojaDeDatos(libro: LibroLeido): Pair<HojaLeida, MapaColumnas>? {
+        libro.hojaLlamada("Registros")
+            ?.let { hoja -> hoja.reconoce(SINONIMOS, REQUERIDAS)?.let { return hoja to it } }
+        return libro.hojas.firstNotNullOfOrNull { hoja ->
+            hoja.reconoce(SINONIMOS, REQUERIDAS)?.let { hoja to it }
         }
-        return MapaColumnas(indices)
     }
 
     private suspend fun procesa(
         hoja: HojaLeida,
-        opciones: OpcionesImportacion
+        mapa: MapaColumnas,
+        opciones: OpcionesImportacion,
+        catalogos: ResumenCatalogos
     ): ResultadoImportacion {
-        val columnas = mapaColumnas(hoja)
-        val diagnosticos = mutableListOf<Diagnostico>()
+        val diagnosticos = catalogos.diagnosticos.toMutableList()
         val crudas = mutableListOf<FilaCruda>()
         var omitidas = 0
 
-        hoja.filas.drop(1).forEachIndexed { indice, fila ->
-            val numeroFila = indice + 2
-            if (fila.all { it.estaVacia }) return@forEachIndexed
+        hoja.renglones(mapa).forEach { renglon ->
+            val dia = renglon.celda("fecha")?.let(::leeFecha)
+            val titulo = renglon.texto("titulo")
 
-            fun celda(clave: String) = columnas[clave]?.let { fila.getOrNull(it) }
-
-            val dia = celda("fecha")?.let(::leeFecha)
-            val titulo = celda("titulo")?.comoTexto()?.trim()
-
-            if (dia == null || titulo.isNullOrBlank()) {
+            if (dia == null || titulo == null) {
                 omitidas++
                 diagnosticos += Diagnostico(
                     Severidad.AVISO,
                     "Renglon incompleto (falta la fecha o el titulo). Se omitio.",
-                    numeroFila
+                    renglon.numero
                 )
-                return@forEachIndexed
+                return@forEach
             }
 
-            val minutos = celda("minutos")?.let(::leeEntero)
+            val minutos = renglon.entero("minutos")
             crudas += FilaCruda(
-                numeroFila = numeroFila,
+                numeroFila = renglon.numero,
                 dia = dia,
                 titulo = titulo,
-                categoria = celda("categoria")?.comoTexto()?.trim()?.ifBlank { null },
-                ambito = celda("ambito")?.comoTexto()?.let(::leeAmbito),
-                estado = celda("estado")?.comoTexto()?.let(::leeEstado)
-                    ?: infiereEstado(dia, minutos),
-                inicio = celda("inicio")?.let(::leeHora),
-                fin = celda("fin")?.let(::leeHora),
+                categoria = renglon.texto("categoria"),
+                ambito = renglon.texto("ambito")?.let(::leeAmbito),
+                estado = renglon.texto("estado")?.let(::leeEstado) ?: infiereEstado(dia, minutos),
+                inicio = renglon.celda("inicio")?.let(::leeHora),
+                fin = renglon.celda("fin")?.let(::leeHora),
                 minutos = minutos,
-                cantidad = celda("cantidad")?.numero,
-                unidad = celda("unidad")?.comoTexto()?.let(::leeUnidad) ?: Unidad.NINGUNA,
-                habito = celda("habito")?.comoTexto()?.trim()?.ifBlank { null },
-                notas = celda("notas")?.comoTexto()?.trim()?.ifBlank { null }
+                cantidad = renglon.decimal("cantidad"),
+                unidad = renglon.texto("unidad")?.let(::leeUnidad) ?: Unidad.NINGUNA,
+                habito = renglon.texto("habito"),
+                notas = renglon.texto("notas")
             )
         }
 
+        val filasLeidas = hoja.altoDeDatos(mapa)
+        val hojas = catalogos.hojas + hoja.nombre
+
         if (crudas.isEmpty()) {
-            return ResultadoImportacion(
-                filasLeidas = (hoja.filas.size - 1).coerceAtLeast(0),
+            // Con catalogos leidos esto no es un fracaso: un libro exportado con
+            // la bitacora vacia sirve igual para acomodar categorias y habitos.
+            val aviso = if (catalogos.hojas.isEmpty()) {
+                Diagnostico(Severidad.ERROR, "No hubo ningun renglon aprovechable.")
+            } else {
+                Diagnostico(
+                    Severidad.AVISO,
+                    "La hoja de Registros no traia renglones aprovechables. Los catalogos " +
+                        "si se actualizaron y la bitacora quedo intacta."
+                )
+            }
+            return catalogos.aResultado().copy(
+                filasLeidas = filasLeidas,
                 omitidas = omitidas,
-                diagnosticos = diagnosticos +
-                    Diagnostico(Severidad.ERROR, "No hubo ningun renglon aprovechable.")
+                hojasLeidas = hojas,
+                diagnosticos = diagnosticos + aviso
             )
         }
 
         // ---- 1. Resolver categorias -----------------------------------------
-        val categoriasCreadas = mutableListOf<String>()
+        // El indice se relee de la base y no del resumen: la fase de catalogos
+        // ya dio de alta las suyas, y aqui solo quedan las que unicamente
+        // aparecen mencionadas en un renglon de la bitacora.
+        val categoriasCreadas = catalogos.categoriasCreadas.toMutableList()
         val indiceCategorias = categoriaDao.todas()
             .associateBy { it.nombre.normalizaClave() }
             .toMutableMap()
@@ -236,7 +272,7 @@ class ImportadorExcel(
         }
 
         // ---- 2. Resolver habitos --------------------------------------------
-        val habitosCreados = mutableListOf<String>()
+        val habitosCreados = catalogos.habitosCreados.toMutableList()
         val indiceHabitos = habitoDao.todos()
             .associateBy { it.nombre.normalizaClave() }
             .toMutableMap()
@@ -274,11 +310,14 @@ class ImportadorExcel(
         }
 
         return ResultadoImportacion(
-            filasLeidas = (hoja.filas.size - 1).coerceAtLeast(0),
+            filasLeidas = filasLeidas,
             importadas = aInsertar.size,
             omitidas = omitidas,
             categoriasCreadas = categoriasCreadas,
             habitosCreados = habitosCreados,
+            categoriasActualizadas = catalogos.categoriasActualizadas,
+            habitosActualizados = catalogos.habitosActualizados,
+            hojasLeidas = hojas,
             sinCategoria = sinCategoria,
             diagnosticos = diagnosticos
         )
@@ -360,11 +399,6 @@ class ImportadorExcel(
             ?: runCatching { LocalTime.parse(texto, DateTimeFormatter.ofPattern("H:mm")) }.getOrNull()
     }
 
-    private fun leeEntero(celda: CeldaLeida): Int? {
-        celda.numero?.let { return Math.round(it).toInt() }
-        return celda.texto?.trim()?.filter { it.isDigit() || it == '-' }?.toIntOrNull()
-    }
-
     private fun leeEstado(texto: String): EstadoActividad? {
         val clave = texto.normalizaClave()
         return EstadoActividad.entries.firstOrNull {
@@ -404,3 +438,13 @@ class ImportadorExcel(
         else -> EstadoActividad.COMPLETADO
     }
 }
+
+/** El resumen de catalogos visto como resultado, para un libro sin Registros. */
+private fun ResumenCatalogos.aResultado(vararg extra: Diagnostico) = ResultadoImportacion(
+    categoriasCreadas = categoriasCreadas,
+    habitosCreados = habitosCreados,
+    categoriasActualizadas = categoriasActualizadas,
+    habitosActualizados = habitosActualizados,
+    hojasLeidas = hojas,
+    diagnosticos = diagnosticos + extra
+)

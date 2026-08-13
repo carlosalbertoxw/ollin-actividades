@@ -298,8 +298,10 @@ fun ArchivoPantalla(contenedor: Contenedor, alCerrar: () -> Unit) {
             // ----------------------------------------------------------- importar
             SeccionTitulo("Importar")
             Text(
-                "Lee un .xlsx y reconoce sus encabezados sin importar acentos ni mayusculas. " +
-                    "Con una columna de fecha y otra de titulo ya es suficiente.",
+                "Lee un .xlsx y aprovecha las pestañas de Categorias, Habitos, Diccionarios " +
+                    "y Registros que traiga. Reconoce los encabezados sin importar acentos ni " +
+                    "mayusculas: para la bitacora, con una columna de fecha y otra de titulo " +
+                    "ya es suficiente.",
                 style = MaterialTheme.typography.bodySmall,
                 color = colores.textoTenue
             )
@@ -464,15 +466,27 @@ private fun ResumenImportacion(resultado: ResultadoImportacion, alCerrar: () -> 
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
-                "Importadas ${resultado.importadas} de ${resultado.filasLeidas} renglones",
+                // Un libro puede traer solo catalogos: contar renglones de una
+                // bitacora que no venia diria "0 de 0" y sonaria a que fallo.
+                if (resultado.soloCatalogos) "Catalogos actualizados"
+                else "Importadas ${resultado.importadas} de ${resultado.filasLeidas} renglones",
                 style = MaterialTheme.typography.titleSmall
             )
 
+            if (resultado.hojasLeidas.isNotEmpty()) {
+                Text("· Pestañas leidas: ${resultado.hojasLeidas.joinToString()}")
+            }
             if (resultado.categoriasCreadas.isNotEmpty()) {
                 Text("· Categorias nuevas: ${resultado.categoriasCreadas.joinToString()}")
             }
+            if (resultado.categoriasActualizadas > 0) {
+                Text("· ${resultado.categoriasActualizadas} categorias actualizadas")
+            }
             if (resultado.habitosCreados.isNotEmpty()) {
                 Text("· Habitos nuevos: ${resultado.habitosCreados.joinToString()}")
+            }
+            if (resultado.habitosActualizados > 0) {
+                Text("· ${resultado.habitosActualizados} habitos actualizados")
             }
             if (resultado.sinCategoria > 0) {
                 Text("· ${resultado.sinCategoria} actividades sin categoria")
