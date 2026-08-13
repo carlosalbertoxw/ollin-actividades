@@ -15,7 +15,7 @@ local.properties
 *.aab
 
 # Firma de release. Ni el almacen ni sus contrasenas entran al repositorio:
-# con ellos cualquiera publica una actualizacion falsa de Ollin.
+# con ellos cualquiera publica una actualizacion falsa de Ollin Actividades.
 *.keystore
 *.jks
 /keystore.properties

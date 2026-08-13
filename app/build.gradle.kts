@@ -16,7 +16,12 @@ plugins {
  *
  * Nunca van escritas aqui: este archivo si viaja en el repositorio, y un
  * almacen de claves filtrado permite publicar actualizaciones falsas de Ollin
- * que Android instalaria sin protestar.
+ * Actividades que Android instalaria sin protestar.
+ *
+ * Las variables llevan el nombre completo de la app, no un `OLLIN_` a secas:
+ * Ollin Finanzas se publica aparte y con su propio almacen, y en un servidor
+ * compartido unos nombres genericos harian que cada app tomara la llave de la
+ * otra sin avisar.
  */
 val credenciales = Properties().apply {
     val archivo = rootProject.file("keystore.properties")
@@ -26,7 +31,7 @@ val credenciales = Properties().apply {
 fun credencial(clave: String, variable: String): String? =
     (credenciales.getProperty(clave) ?: System.getenv(variable))?.takeIf { it.isNotBlank() }
 
-val almacenDeClaves = credencial("storeFile", "OLLIN_STORE_FILE")
+val almacenDeClaves = credencial("storeFile", "OLLIN_ACTIVIDADES_STORE_FILE")
     ?.let(rootProject::file)
     ?.takeIf { it.isFile }
 
@@ -54,9 +59,9 @@ android {
         create("release") {
             if (almacenDeClaves != null) {
                 storeFile = almacenDeClaves
-                storePassword = credencial("storePassword", "OLLIN_STORE_PASSWORD")
-                keyAlias = credencial("keyAlias", "OLLIN_KEY_ALIAS")
-                keyPassword = credencial("keyPassword", "OLLIN_KEY_PASSWORD")
+                storePassword = credencial("storePassword", "OLLIN_ACTIVIDADES_STORE_PASSWORD")
+                keyAlias = credencial("keyAlias", "OLLIN_ACTIVIDADES_KEY_ALIAS")
+                keyPassword = credencial("keyPassword", "OLLIN_ACTIVIDADES_KEY_PASSWORD")
             }
             // v1 no: minSdk 26 ya entiende v2, y firmar tambien el zip viejo
             // solo agrega una firma que nadie verifica.
