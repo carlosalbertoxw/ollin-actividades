@@ -19,17 +19,13 @@
             android:exported="true"
             android:windowSoftInputMode="adjustResize"
             android:theme="@style/Theme.Ollin">
+            <!-- El unico camino de entrada. La importacion de .xlsx se hace
+                 desde Ajustes > Archivo, que abre el selector del sistema: no
+                 se declara VIEW porque nada aqui lee el uri de un intent, y un
+                 "Abrir con Ollin" que no hiciera nada seria peor que no estar. -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-
-            <!-- Permite "Abrir con Ollin" desde un gestor de archivos o desde la nube. -->
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:mimeType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
             </intent-filter>
         </activity>
     </application>

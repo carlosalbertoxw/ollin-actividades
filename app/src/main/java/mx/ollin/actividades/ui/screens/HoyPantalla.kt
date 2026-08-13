@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,10 +18,10 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -37,10 +38,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -49,15 +52,18 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-
 import kotlinx.coroutines.launch
+import mx.ollin.actividades.data.db.Actividad
 import mx.ollin.actividades.data.db.ActividadDetallada
 import mx.ollin.actividades.data.db.Categoria
 import mx.ollin.actividades.data.db.Habito
@@ -78,34 +84,64 @@ import mx.ollin.actividades.ui.recuerdaVm
 import mx.ollin.actividades.ui.theme.LocalColoresOllin
 import mx.ollin.actividades.ui.theme.colorDeCategoria
 import java.time.Instant
+import java.time.LocalDate
 
-class HoyVm(private val contenedor: Contenedor) : ViewModel() {
+@OptIn(ExperimentalCoroutinesApi::class)
+class HoyVm(contenedor: Contenedor) : ViewModel() {
 
     private val repo = contenedor.repositorio
-    private val hoy = Tiempo.hoy()
 
     /**
-     * El latido del cronometro. Emite mientras alguien mira la pantalla y se
-     * apaga solo al salir: un tick por segundo en segundo plano gastaria
-     * bateria para redibujar algo que nadie ve.
+     * El dia que la pantalla esta enseñando.
+     *
+     * No puede ser una constante del ViewModel. La app se queda abierta y cruza
+     * la medianoche, y con el dia congelado seguiria enseñando lo de ayer bajo
+     * el titulo "Hoy" —y, peor, ahi escribiria los habitos que marcaras—.
+     *
+     * Se reprograma sola para despertar justo en el cambio de dia: entre una
+     * medianoche y la siguiente no gasta nada, y solo emite cuando de verdad
+     * cambio la fecha, asi que tampoco provoca recomposiciones de mas.
      */
-    val ahora: StateFlow<Instant> = flow {
+    val dia: StateFlow<LocalDate> = flow {
         while (true) {
-            emit(Tiempo.ahora())
-            delay(1_000)
+            val actual = Tiempo.hoy()
+            emit(actual)
+            delay(milisHastaElCambioDeDia(actual))
         }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(1_000), Tiempo.ahora())
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), Tiempo.hoy())
 
     val enCurso: StateFlow<ActividadDetallada?> = repo.observaEnCurso()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
-    val delDia: StateFlow<List<ActividadDetallada>> = repo.observaDelDia(hoy)
+    /**
+     * El latido del cronometro.
+     *
+     * Late solo mientras hay algo corriendo y mientras alguien mira la pantalla.
+     * Sin actividad en curso no hay ningun numero que avance, asi que un tick
+     * por segundo solo serviria para gastar bateria sin enseñar nada distinto.
+     */
+    val ahora: StateFlow<Instant> = enCurso
+        .flatMapLatest { corriendo ->
+            if (corriendo == null) flowOf(Tiempo.ahora())
+            else flow {
+                while (true) {
+                    emit(Tiempo.ahora())
+                    delay(1_000)
+                }
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(1_000), Tiempo.ahora())
+
+    val delDia: StateFlow<List<ActividadDetallada>> = dia
+        .flatMapLatest(repo::observaDelDia)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    val pendientes: StateFlow<List<ActividadDetallada>> = repo.observaPendientes(hoy)
+    val pendientes: StateFlow<List<ActividadDetallada>> = dia
+        .flatMapLatest { repo.observaPendientes(it) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    val habitos: StateFlow<List<HabitoConAvance>> = repo.observaHabitosConAvance(hoy)
+    val habitos: StateFlow<List<HabitoConAvance>> = dia
+        .flatMapLatest { repo.observaHabitosConAvance(it) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     val categorias: StateFlow<List<Categoria>> = repo.observaCategorias()
@@ -124,7 +160,8 @@ class HoyVm(private val contenedor: Contenedor) : ViewModel() {
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), Ajustes())
 
     /** Minutos completados hoy por ambito. Es el resumen de la jornada. */
-    val minutosPorAmbito: StateFlow<Map<Ambito?, Int>> = repo.observaTotalPorAmbito(hoy, hoy)
+    val minutosPorAmbito: StateFlow<Map<Ambito?, Int>> = dia
+        .flatMapLatest { repo.observaTotalPorAmbito(it, it) }
         .map { totales -> totales.associate { it.ambito to it.minutos } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
@@ -158,10 +195,11 @@ class HoyVm(private val contenedor: Contenedor) : ViewModel() {
         }
     }
 
-    fun alterna(habito: HabitoConAvance) {
+    fun alterna(avance: HabitoConAvance) {
+        val elDia = dia.value
         viewModelScope.launch {
-            if (habito.cumplidoHoy) repo.deshaceHabito(habito.habito.id, hoy)
-            else repo.registraHabito(habito.habito, dia = hoy)
+            if (avance.cumplidoHoy) repo.deshaceHabito(avance.habito.id, elDia)
+            else repo.registraHabito(avance.habito, dia = elDia)
         }
     }
 
@@ -174,6 +212,15 @@ class HoyVm(private val contenedor: Contenedor) : ViewModel() {
             )
         }
     }
+
+    private companion object {
+        /** Lo que falta para la medianoche, con un piso para no girar en vacio. */
+        fun milisHastaElCambioDeDia(desde: LocalDate): Long {
+            val manana = desde.plusDays(1).atStartOfDay(Tiempo.zona()).toInstant()
+            return (manana.toEpochMilli() - Tiempo.ahora().toEpochMilli())
+                .coerceAtLeast(1_000L)
+        }
+    }
 }
 
 @Composable
@@ -183,8 +230,8 @@ fun HoyPantalla(
     alAbrirAjustes: () -> Unit
 ) {
     val vm = recuerdaVm("hoy") { HoyVm(contenedor) }
+    val dia by vm.dia.collectAsStateWithLifecycle()
     val enCurso by vm.enCurso.collectAsStateWithLifecycle()
-    val ahora by vm.ahora.collectAsStateWithLifecycle()
     val delDia by vm.delDia.collectAsStateWithLifecycle()
     val pendientes by vm.pendientes.collectAsStateWithLifecycle()
     val habitos by vm.habitos.collectAsStateWithLifecycle()
@@ -195,14 +242,27 @@ fun HoyPantalla(
     val ajustes by vm.ajustes.collectAsStateWithLifecycle()
     val colores = LocalColoresOllin.current
 
-    val completadas = delDia.filter { it.actividad.estado == EstadoActividad.COMPLETADO }
-    val totalHoy = completadas.sumOf { it.actividad.duracionMinutos ?: 0 }
+    // El latido se toma sin `by` a proposito: leerlo aqui haria que cada segundo
+    // se recompusiera la pantalla entera —las metas, los habitos, la bitacora—
+    // para mover un solo numero. Se pasa como funcion y lo lee quien lo pinta.
+    val ahora = vm.ahora.collectAsStateWithLifecycle()
+
+    // Derivados de listas que pueden ser largas. Sin recordarlos se recalculan
+    // en cada recomposicion, incluidas las que provoca el cronometro.
+    val completadas = remember(delDia) {
+        delDia.filter { it.actividad.estado == EstadoActividad.COMPLETADO }
+    }
+    val totalHoy = remember(completadas) {
+        completadas.sumOf { it.actividad.duracionMinutos ?: 0 }
+    }
+    val habitosDeHoy = remember(habitos) { habitos.filter { it.tocaHoy } }
+    val cumplidosDeHoy = remember(habitosDeHoy) { habitosDeHoy.count { it.cumplidoHoy } }
 
     LazyColumn(
         Modifier.fillMaxSize(),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 96.dp)
+        contentPadding = PaddingValues(bottom = 96.dp)
     ) {
-        item {
+        item(key = "encabezado") {
             Row(
                 Modifier
                     .fillMaxWidth()
@@ -211,7 +271,7 @@ fun HoyPantalla(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
-                    Text(Tiempo.diaRelativo(Tiempo.hoy()), style = MaterialTheme.typography.headlineSmall)
+                    Text(Tiempo.diaRelativo(dia), style = MaterialTheme.typography.headlineSmall)
                     Text(
                         if (totalHoy > 0) "${Tiempo.duracionLarga(totalHoy)} registradas"
                         else "Sin tiempo registrado todavia",
@@ -225,7 +285,7 @@ fun HoyPantalla(
             }
         }
 
-        item {
+        item(key = "ayuda") {
             AyudaDePantalla(
                 contenedor,
                 Tutorial.HOY,
@@ -233,10 +293,10 @@ fun HoyPantalla(
             )
         }
 
-        item {
+        item(key = "cronometro") {
             TarjetaCronometro(
                 enCurso = enCurso,
-                ahora = ahora,
+                ahora = { ahora.value },
                 categorias = categorias,
                 categoriaRapida = categoriaRapida,
                 alElegirCategoria = vm::eligeCategoriaRapida,
@@ -247,7 +307,7 @@ fun HoyPantalla(
             )
         }
 
-        item {
+        item(key = "metas") {
             Row(
                 Modifier
                     .fillMaxWidth()
@@ -271,21 +331,27 @@ fun HoyPantalla(
             }
         }
 
-        if (habitos.isNotEmpty()) {
-            item {
+        // La seccion se decide con la lista ya filtrada: un dia en que ningun
+        // habito toca no debe abrir un apartado vacio, y la cuenta tiene que
+        // contar sobre lo mismo que se enseña o acabaria diciendo "3 de 2".
+        if (habitosDeHoy.isNotEmpty()) {
+            item(key = "titulo-habitos") {
                 SeccionTitulo(
                     "Habitos de hoy",
                     Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                 ) {
-                    val cumplidos = habitos.count { it.cumplidoHoy }
                     Text(
-                        "$cumplidos de ${habitos.count { it.tocaHoy }}",
+                        "$cumplidosDeHoy de ${habitosDeHoy.size}",
                         style = MaterialTheme.typography.bodySmall,
                         color = colores.textoTenue
                     )
                 }
             }
-            items(habitos.filter { it.tocaHoy }, key = { it.habito.id }) { avance ->
+            // Las claves llevan prefijo porque en esta lista conviven habitos y
+            // actividades, y sus identificadores salen de tablas distintas: el
+            // primer habito y la primera actividad son los dos el 1, y una clave
+            // repetida en un LazyColumn no es un aviso, es un cierre en seco.
+            items(habitosDeHoy, key = { "habito-${it.habito.id}" }) { avance ->
                 RenglonHabitoHoy(
                     avance = avance,
                     categoria = avance.habito.categoriaId?.let(indiceCategorias::get),
@@ -296,16 +362,17 @@ fun HoyPantalla(
         }
 
         if (pendientes.isNotEmpty()) {
-            item {
+            item(key = "titulo-pendientes") {
                 SeccionTitulo(
                     "Pendientes",
                     Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                 )
             }
-            items(pendientes, key = { it.actividad.id }) { detalle ->
+            // Sin `ahora`: una pendiente no lleva tiempo corriendo, asi que el
+            // renglon se pinta igual con cualquier reloj.
+            items(pendientes, key = { "pendiente-${it.actividad.id}" }) { detalle ->
                 RenglonActividad(
                     detalle = detalle,
-                    ahora = ahora,
                     alPulsar = { alAbrirActividad(detalle.actividad.id) },
                     accion = {
                         Row {
@@ -330,7 +397,7 @@ fun HoyPantalla(
         }
 
         if (ajustes.muestraCompletadasEnHoy && completadas.isNotEmpty()) {
-            item {
+            item(key = "titulo-registro") {
                 SeccionTitulo(
                     "Registro de hoy",
                     Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
@@ -342,10 +409,9 @@ fun HoyPantalla(
                     )
                 }
             }
-            items(completadas, key = { it.actividad.id }) { detalle ->
+            items(completadas, key = { "hecho-${it.actividad.id}" }) { detalle ->
                 RenglonActividad(
                     detalle = detalle,
-                    ahora = ahora,
                     alPulsar = { alAbrirActividad(detalle.actividad.id) }
                 )
                 HorizontalDivider(color = colores.trazoSuave)
@@ -362,7 +428,7 @@ fun HoyPantalla(
 @Composable
 private fun TarjetaCronometro(
     enCurso: ActividadDetallada?,
-    ahora: Instant,
+    ahora: () -> Instant,
     categorias: List<Categoria>,
     categoriaRapida: Long?,
     alElegirCategoria: (Long) -> Unit,
@@ -372,7 +438,9 @@ private fun TarjetaCronometro(
     modifier: Modifier = Modifier
 ) {
     val colores = LocalColoresOllin.current
-    var titulo by remember { mutableStateOf("") }
+    // Sobrevive a girar el telefono: perder lo que ibas escribiendo por voltear
+    // la mano es la clase de tropiezo que hace que no vuelvas a anotar nada.
+    var titulo by rememberSaveable { mutableStateOf("") }
 
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -397,13 +465,7 @@ private fun TarjetaCronometro(
                 Spacer(Modifier.height(8.dp))
                 Text(actividad.titulo, style = MaterialTheme.typography.titleLarge)
                 Spacer(Modifier.height(10.dp))
-                Text(
-                    Tiempo.cronometro(actividad.segundosVividos(ahora)),
-                    fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 44.sp,
-                    color = colores.enCurso
-                )
+                Cronometro(actividad, ahora)
                 Text(
                     "Desde las ${Tiempo.hora(actividad.inicio)}",
                     style = MaterialTheme.typography.bodySmall,
@@ -462,12 +524,31 @@ private fun TarjetaCronometro(
     }
 }
 
+/**
+ * Lo unico que cambia cada segundo.
+ *
+ * Vive aparte y lee el reloj dentro de su propio cuerpo para que la
+ * recomposicion del tick no salga de estas cuatro lineas: si el reloj se leyera
+ * en la tarjeta, cada segundo se volverian a componer el titulo, la categoria y
+ * los dos botones.
+ */
+@Composable
+private fun Cronometro(actividad: Actividad, ahora: () -> Instant) {
+    Text(
+        Tiempo.cronometro(actividad.segundosVividos(ahora())),
+        fontFamily = FontFamily.Monospace,
+        fontWeight = FontWeight.Bold,
+        fontSize = 44.sp,
+        color = LocalColoresOllin.current.enCurso
+    )
+}
+
 @Composable
 private fun MetaDelDia(
     etiqueta: String,
     minutos: Int,
     meta: Int,
-    color: androidx.compose.ui.graphics.Color,
+    color: Color,
     modifier: Modifier = Modifier
 ) {
     val colores = LocalColoresOllin.current

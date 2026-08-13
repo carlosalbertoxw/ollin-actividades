@@ -1,9 +1,34 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
 }
+
+/**
+ * Credenciales de firma.
+ *
+ * Se leen de `keystore.properties` en la raiz del proyecto, que no se versiona;
+ * si no existe, se caen a variables de entorno, que es lo que sirve en un
+ * servidor de integracion. Ver `keystore.properties.example` y docs/publicacion.md.
+ *
+ * Nunca van escritas aqui: este archivo si viaja en el repositorio, y un
+ * almacen de claves filtrado permite publicar actualizaciones falsas de Ollin
+ * que Android instalaria sin protestar.
+ */
+val credenciales = Properties().apply {
+    val archivo = rootProject.file("keystore.properties")
+    if (archivo.isFile) archivo.inputStream().use(::load)
+}
+
+fun credencial(clave: String, variable: String): String? =
+    (credenciales.getProperty(clave) ?: System.getenv(variable))?.takeIf { it.isNotBlank() }
+
+val almacenDeClaves = credencial("storeFile", "OLLIN_STORE_FILE")
+    ?.let(rootProject::file)
+    ?.takeIf { it.isFile }
 
 android {
     namespace = "mx.ollin.actividades"
@@ -25,12 +50,32 @@ android {
         localeFilters += listOf("es")
     }
 
+    signingConfigs {
+        create("release") {
+            if (almacenDeClaves != null) {
+                storeFile = almacenDeClaves
+                storePassword = credencial("storePassword", "OLLIN_STORE_PASSWORD")
+                keyAlias = credencial("keyAlias", "OLLIN_KEY_ALIAS")
+                keyPassword = credencial("keyPassword", "OLLIN_KEY_PASSWORD")
+            }
+            // v1 no: minSdk 26 ya entiende v2, y firmar tambien el zip viejo
+            // solo agrega una firma que nadie verifica.
+            enableV1Signing = false
+            enableV2Signing = true
+            enableV3Signing = true
+        }
+    }
+
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
         }
         release {
+            // Sin credenciales el artefacto sale sin firmar en vez de fallar la
+            // compilacion: quien solo quiere comprobar que R8 no rompio nada no
+            // tiene por que tener el almacen de claves de publicacion.
+            signingConfig = signingConfigs.getByName("release").takeIf { almacenDeClaves != null }
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -109,10 +154,15 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core.ktx)
-    testImplementation(libs.androidx.room.testing)
 
+    // Las pruebas de interfaz corren sobre un telefono o un emulador. Se
+    // intentaron en la JVM con Robolectric y no salio: su reloj virtual no
+    // conversa con el cronometro de la pantalla de hoy ni con los dialogos.
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.androidx.test.core.ktx)
+    androidTestImplementation(libs.kotlinx.coroutines.test)
+    androidTestImplementation(libs.androidx.room.runtime)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
 }

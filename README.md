@@ -48,18 +48,18 @@ Las pruebas unitarias corren en la JVM con Robolectric, sin emulador ni disposit
 JAVA_HOME="$HOME/.jdks/jbr-21.0.11" ./gradlew testDebugUnitTest
 ```
 
-Cubren el cálculo de rachas, las reglas del repositorio, el formateo de tiempo, la migración de esquema de la base y el viaje de ida y vuelta a Excel. El reporte HTML queda en `app/build/reports/tests/`.
+Cubren el cálculo de rachas, las reglas del repositorio, el formateo de tiempo, el candado y el PIN, el catálogo semilla y el viaje de ida y vuelta a Excel. Ahí mismo corren las pruebas de interfaz con Compose UI Test, que recorren las pantallas de principio a fin sin emulador. El reporte HTML queda en `app/build/reports/tests/`.
 
 ## Estructura
 
 ```
 app/src/main/java/mx/ollin/actividades/
 ├── data/
-│   ├── db/          Room: entidades, DAOs, proyecciones, migraciones, catálogo semilla
+│   ├── db/          Room: entidades, DAOs, proyecciones, catálogo semilla
 │   ├── excel/       Lector y escritor de .xlsx propios, exportador e importador
 │   ├── prefs/       Preferencias en DataStore
 │   ├── repo/        ActividadesRepositorio: toda la escritura pasa por aquí
-│   └── seguridad/   Llave de la base, PIN, control de bloqueo, migración a cifrado
+│   └── seguridad/   Llave de la base, PIN, control de bloqueo
 ├── di/              Contenedor de dependencias, a mano
 ├── domain/
 │   ├── model/       Enums, utilidades de tiempo y días de la semana
@@ -75,6 +75,7 @@ app/src/main/java/mx/ollin/actividades/
 - [Excel](docs/excel.md) — formato del libro exportado, hojas, esquemas y reglas de importación.
 - [Seguridad y privacidad](docs/seguridad.md) — cifrado de la base, Keystore, PIN, bloqueo y respaldos.
 - [Desarrollo](docs/desarrollo.md) — entorno, comandos, pruebas y convenciones del código.
+- [Publicación](docs/publicacion.md) — keystore, firma y generación del APK y el AAB de producción.
 
 ## Privacidad
 

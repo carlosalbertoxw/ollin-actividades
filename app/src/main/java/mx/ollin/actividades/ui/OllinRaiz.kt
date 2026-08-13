@@ -84,9 +84,13 @@ fun OllinRaiz(contenedor: Contenedor) {
                 enter = scaleIn() + fadeIn(),
                 exit = scaleOut() + fadeOut()
             ) {
+                // La descripcion va en el icono a proposito: el boton flotante
+                // extendido borra la semantica de su contenido, asi que su
+                // rotulo no llega a un lector de pantalla y sin esto se
+                // anunciaria como "boton" a secas.
                 ExtendedFloatingActionButton(
                     onClick = { nav.navigate(Rutas.captura()) },
-                    icon = { Icon(Icons.Filled.Add, contentDescription = null) },
+                    icon = { Icon(Icons.Filled.Add, contentDescription = "Registrar") },
                     text = { Text("Registrar") }
                 )
             }

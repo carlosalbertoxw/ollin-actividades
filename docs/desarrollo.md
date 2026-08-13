@@ -45,9 +45,10 @@ sdk.dir=C\:\\Users\\<usuario>\\AppData\\Local\\Android\\Sdk
 
 - **`localeFilters += listOf("es")`** — la app está escrita en español; no se empaquetan los recursos de las bibliotecas en los otros ochenta idiomas.
 - **`buildConfig = true`** — la pantalla de Acerca de enseña `BuildConfig.VERSION_NAME`.
-- **`room.schemaLocation`** — KSP escribe los esquemas en `app/schemas/`, que sí se versionan: son la referencia contra la que se prueban las migraciones.
+- **`room.schemaLocation`** — KSP escribe los esquemas en `app/schemas/`, que sí se versionan: son la referencia contra la que se probarán las migraciones futuras.
 - **`androidx.fragment` fijado a mano** — `biometric` 1.1.0 arrastra `fragment` 1.2.5, anterior a la API de `ActivityResult`: su `FragmentActivity` rechaza los request codes de más de 16 bits que genera `activity` 1.10.1 y cualquier launcher revienta al abrirse.
-- **`release`** con `isMinifyEnabled` e `isShrinkResources`.
+- **`release`** con `isMinifyEnabled` e `isShrinkResources`, y firmado con las credenciales de [`keystore.properties`](publicacion.md). Sin ese archivo el APK sale sin firmar en vez de fallar la compilación.
+- **`maxHeapSize = "2g"`** en las pruebas unitarias: las de Compose componen pantallas enteras bajo Robolectric y con el montón por omisión se quedan sin memoria.
 
 ## Pruebas
 
@@ -58,9 +59,30 @@ Todas corren en la JVM, sin emulador. Robolectric para lo que necesita `Context`
 | [`RachasTest`](../app/src/test/java/mx/ollin/actividades/RachasTest.kt) | Rachas por día, por semana y por ciclos |
 | [`TiempoTest`](../app/src/test/java/mx/ollin/actividades/TiempoTest.kt) | Formato de duración y cronómetro, redondeo de minutos, máscara de días, unidades |
 | [`RepositorioTest`](../app/src/test/java/mx/ollin/actividades/RepositorioTest.kt) | Reglas de escritura del repositorio sobre una base en memoria |
-| [`MigracionTest`](../app/src/test/java/mx/ollin/actividades/MigracionTest.kt) | La migración 1 → 2 contra el esquema real de la versión 1 |
+| [`SembradorTest`](../app/src/test/java/mx/ollin/actividades/SembradorTest.kt) | El catálogo semilla y su idempotencia |
+| [`ClavePinTest`](../app/src/test/java/mx/ollin/actividades/ClavePinTest.kt) | Derivación del PIN: sal, determinismo y comparación |
+| [`BloqueoTest`](../app/src/test/java/mx/ollin/actividades/BloqueoTest.kt) | Preferencias del candado y el minuto de gracia de `ControlBloqueo` |
+| [`AjustesRepositorioTest`](../app/src/test/java/mx/ollin/actividades/AjustesRepositorioTest.kt) | Valores de fábrica, acotado de metas y selección de hojas |
 | [`ExcelRoundTripTest`](../app/src/test/java/mx/ollin/actividades/ExcelRoundTripTest.kt) | Escritor y lector de `.xlsx` |
 | [`ImportadorTest`](../app/src/test/java/mx/ollin/actividades/ImportadorTest.kt) | Exportar e importar deja los datos iguales |
+
+### Pruebas de interfaz (Compose UI Test)
+
+Viven en `app/src/test/java/mx/ollin/actividades/ui/` y también corren en la JVM: Robolectric hospeda la composición, así que entran en `testDebugUnitTest` como cualquier otra.
+
+| Prueba | Qué cubre |
+|---|---|
+| [`NavegacionTest`](../app/src/test/java/mx/ollin/actividades/ui/NavegacionTest.kt) | Que cada pantalla siga siendo alcanzable con el dedo |
+| [`HoyPantallaTest`](../app/src/test/java/mx/ollin/actividades/ui/HoyPantallaTest.kt) | Cronómetro, pendientes y marcado de hábitos, de la pulsación a la base |
+| [`CapturaPantallaTest`](../app/src/test/java/mx/ollin/actividades/ui/CapturaPantallaTest.kt) | Validación del título, alta, edición y borrado |
+| [`HabitosPantallaTest`](../app/src/test/java/mx/ollin/actividades/ui/HabitosPantallaTest.kt) | Alta con cadencia, pausa y reanudación, borrado |
+| [`AjustesYArchivoTest`](../app/src/test/java/mx/ollin/actividades/ui/AjustesYArchivoTest.kt) | Que lo que se toca en Ajustes y Archivo quede escrito en preferencias |
+
+[`BancoDePruebas`](../app/src/test/java/mx/ollin/actividades/ui/BancoDePruebas.kt) es el andamio común. Levanta un `Contenedor` de verdad —mismos ViewModel, mismo repositorio, mismas preferencias— y solo sustituye la base por una en memoria. Tres detalles que costaron encontrarse:
+
+- **`qualifiers = "w411dp-h891dp-xhdpi"`.** Robolectric simula por omisión una pantalla diminuta donde casi todo queda recortado, y un nodo recortado no cuenta como visible.
+- **`tomaElReloj()` en las pantallas con cronómetro.** El latido de un segundo de la pantalla de hoy nunca deja a Compose en reposo: con el reloj automático se queda midiendo texto decenas de miles de veces hasta agotar la memoria.
+- **`espera(...)` en vez de `waitUntil`.** Cada vuelta adelanta un cuadro, vacía la cola del hilo principal y deja pasar tiempo real, porque Room y DataStore trabajan en hilos de verdad que el reloj virtual de Compose no mueve.
 
 Las pruebas con Room arrancan con una `Application` pelona en vez de `OllinApp`: la de verdad siembra el catálogo contra la base cifrada, y SQLCipher es una biblioteca nativa de Android que en la JVM no existe.
 
@@ -88,3 +110,7 @@ Las pruebas con Room arrancan con una `Application` pelona en vez de `OllinApp`:
 ## Añadir una versión de la base
 
 Ver el final de [modelo de datos](modelo-de-datos.md#migraciones).
+
+## Publicar
+
+Ver [publicación](publicacion.md).

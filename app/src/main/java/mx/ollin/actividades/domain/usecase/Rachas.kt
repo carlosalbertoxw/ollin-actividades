@@ -24,13 +24,6 @@ data class ResumenRacha(
     val unidadRacha: UnidadRacha
 ) {
     val unidad: String get() = unidadRacha.etiqueta
-
-    /** Se conserva por comodidad de quien solo quiere distinguir el caso semanal. */
-    val enSemanas: Boolean get() = unidadRacha == UnidadRacha.SEMANAS
-
-    companion object {
-        val VACIA = ResumenRacha(0, 0, UnidadRacha.DIAS)
-    }
 }
 
 /**

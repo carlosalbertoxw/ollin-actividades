@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Solo los colores que se resuelven fuera de Compose: el tema de arranque
+         y los vectores del icono. La paleta de la interfaz esta en
+         ui/theme/Color.kt y no se duplica aqui. -->
     <color name="ollin_obsidiana">#FF12181B</color>
     <color name="ollin_jade">#FF2F9E6E</color>
-    <color name="ollin_grana">#FFC4453F</color>
     <color name="ollin_cempasuchil">#FFE9A13B</color>
-    <color name="ollin_anil">#FF3D6DB5</color>
 </resources>

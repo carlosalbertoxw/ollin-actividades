@@ -1,5 +1,7 @@
 *.iml
 .gradle/
+# Sesiones del compilador de Kotlin, se regenera en cada compilacion.
+.kotlin/
 /local.properties
 /.idea/
 .DS_Store
@@ -11,5 +13,10 @@
 local.properties
 *.apk
 *.aab
+
+# Firma de release. Ni el almacen ni sus contrasenas entran al repositorio:
+# con ellos cualquiera publica una actualizacion falsa de Ollin.
 *.keystore
+*.jks
+/keystore.properties
 !debug.keystore

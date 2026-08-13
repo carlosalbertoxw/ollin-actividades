@@ -93,10 +93,15 @@ Solo puede haber una actividad `EN_CURSO`. Arrancar el cronómetro cierra la ant
 | Versión | Cambio |
 |---|---|
 | 1 | Esquema inicial |
-| 2 | Cadencias periódicas: `intervaloDias`, `intervaloMeses` y `ancla` en `habito` |
 
-`ancla` admite nulos a propósito: para los hábitos que ya existían significa "cuenta desde el día en que te di de alta", que es lo que resuelve `Habito.anclaEfectiva()` sin inventarles una fecha.
+La app todavía no se ha publicado, así que no hay ninguna instalación allá afuera de la que migrar: el esquema arranca limpio en la versión 1 y `OllinDatabase` no registra ninguna `Migration`. El esquema real vive en [`app/schemas/…/1.json`](../app/schemas/), que lo genera KSP y sí se versiona.
 
-La migración se prueba contra el esquema real de la versión 1 en [`MigracionTest`](../app/src/test/java/mx/ollin/actividades/MigracionTest.kt): si se equivoca, Room no abre y la bitácora queda inaccesible.
+`ancla` admite nulos a propósito: significa "cuenta desde el día en que di de alta el hábito", que es lo que resuelve `Habito.anclaEfectiva()` sin inventarle una fecha.
 
-Al agregar una versión: modifica las entidades, sube `version` en `OllinDatabase`, escribe la `Migration`, regístrala en `addMigrations(...)`, versiona el nuevo `app/schemas/N.json` que genera KSP y agrega su prueba.
+**A partir de la primera publicación esto cambia.** En cuanto haya bitácoras reales, cualquier cambio de entidad exige:
+
+1. Modificar las entidades.
+2. Subir `version` en `OllinDatabase`.
+3. Escribir la `Migration` y registrarla en `addMigrations(...)`.
+4. Versionar el nuevo `app/schemas/N.json` que genera KSP.
+5. Agregar una prueba que corra la migración contra el esquema real de la versión anterior: si se equivoca, Room no abre y la bitácora queda inaccesible.

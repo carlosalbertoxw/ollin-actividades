@@ -118,7 +118,9 @@ fun CategoriasPantalla(contenedor: Contenedor, alCerrar: () -> Unit) {
                         orden = categorias.size
                     )
                 },
-                icon = { Icon(Icons.Filled.Add, contentDescription = null) },
+                // La descripcion va en el icono: el boton extendido borra la
+                // semantica de su contenido. Ver la misma nota en OllinRaiz.
+                icon = { Icon(Icons.Filled.Add, contentDescription = "Nueva categoria") },
                 text = { Text("Nueva") }
             )
         }

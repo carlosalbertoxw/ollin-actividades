@@ -5,7 +5,6 @@ import android.net.Uri
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import mx.ollin.actividades.data.excel.DatosExportacion
 import mx.ollin.actividades.data.excel.EsquemaExportacion
@@ -63,8 +62,6 @@ class ActividadesRepositorio(
     fun observaCategorias(): Flow<List<Categoria>> = categorias.observaActivas()
 
     fun observaTodasLasCategorias(): Flow<List<Categoria>> = categorias.observaTodas()
-
-    fun observaHabitos(): Flow<List<Habito>> = habitos.observaTodos()
 
     fun observaActividades(
         texto: String = "",
@@ -146,12 +143,6 @@ class ActividadesRepositorio(
                     tocaHoy = habito.tocaHoy(dia)
                 )
             }
-        }
-
-    /** Racha de un habito concreto. Se pide aparte porque recorre su historial. */
-    fun observaRacha(habito: Habito, dia: LocalDate = Tiempo.hoy()): Flow<ResumenRacha> =
-        actividades.observaCumplimientos(habito.id).map { cumplimientos ->
-            Rachas.calcula(habito, cumplimientos.associate { it.dia to it.veces }, dia)
         }
 
     // ---------------- Escritura de actividades ----------------
@@ -281,19 +272,6 @@ class ActividadesRepositorio(
                 estado = EstadoActividad.COMPLETADO,
                 fin = null,
                 duracionMinutos = minutos.coerceAtLeast(0)
-            )
-        )
-    }
-
-    /** Regresa una actividad a pendiente, por si se marco de mas. */
-    suspend fun reabre(id: Long) {
-        val actividad = actividades.porId(id) ?: return
-        actividades.actualiza(
-            actividad.copy(
-                estado = EstadoActividad.PENDIENTE,
-                fin = null,
-                duracionMinutos = null,
-                actualizadoEn = System.currentTimeMillis()
             )
         )
     }

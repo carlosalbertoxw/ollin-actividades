@@ -17,23 +17,10 @@ llave maestra en AndroidKeyStore  ──►  no sale del dispositivo, ni con roo
 
 Dos detalles que no son evidentes:
 
-- **La frase se representa en hexadecimal a propósito.** SQLCipher la recibe por dos caminos —Room la pasa como bytes, la migración la pega dentro de un `ATTACH ... KEY`— y con texto imprimible los dos derivan exactamente la misma llave. Con bytes crudos no coincidirían y la base migrada quedaría ilegible.
+- **La frase se representa en hexadecimal a propósito.** SQLCipher deriva su llave del texto que recibe, y con caracteres imprimibles el resultado es el mismo por cualquier camino por el que se le entregue la frase. Con bytes crudos, dos caminos distintos producirían llaves distintas y la base quedaría ilegible.
 - **La llave del Keystore no exige desbloqueo del usuario** (`setUserAuthenticationRequired(false)`): la base se abre antes de que puedas autenticarte, y exigirlo dejaría la app sin arrancar.
 
 La frase nueva se escribe con `commit()` y no `apply()`: si el proceso muriera antes de persistirla, la base quedaría cifrada con una frase que ya nadie conoce.
-
-### Migración desde una base en claro
-
-Ollin nació sin cifrado, así que en los teléfonos donde ya estaba instalada hay un `.db` legible. [`MigraCifrado`](../app/src/main/java/mx/ollin/actividades/data/seguridad/MigraCifrado.kt) lo convierte en el arranque, antes de que Room toque el archivo.
-
-No se puede cifrar en sitio: SQLCipher escribe su sal en los primeros bytes, así que hay que volcar el contenido a un archivo nuevo con `sqlcipher_export` y sustituir el viejo. El proceso:
-
-1. Detecta la firma `SQLite format 3 ` al inicio del archivo. Si no está, no hay nada que hacer (es idempotente).
-2. `ATTACH` de un destino cifrado + `sqlcipher_export`. Abrir el original aquí también reincorpora lo que quedara pendiente en el WAL.
-3. Restaura la versión de esquema en el destino: `sqlcipher_export` copia tablas y datos pero no la versión, y sin ella Room tomaría la base por corrupta.
-4. Borra los diarios `-wal`/`-shm` viejos y renombra.
-
-Si la conversión falla, la excepción se deja escapar: seguir con la base en claro sería arrancar sin el cifrado que el usuario cree tener. El archivo original queda intacto y el siguiente arranque puede reintentarlo.
 
 ## Bloqueo de la app
 

@@ -59,7 +59,7 @@ El lector carga el paquete completo en memoria porque `sharedStrings.xml` puede 
 
 ## Importación
 
-`Ajustes → Archivo → Importar` abre el selector del sistema. La app también acepta "Abrir con Ollin" desde un gestor de archivos gracias al `intent-filter` de tipo `spreadsheetml.sheet`.
+`Ajustes → Archivo → Importar` abre el selector de documentos del sistema. Es el único camino: la app no se declara como manejadora de `.xlsx`, así que no aparece en el "Abrir con" de un gestor de archivos.
 
 ### Qué hoja se lee
 

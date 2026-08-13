@@ -44,7 +44,6 @@ import mx.ollin.actividades.domain.model.Tiempo
 import mx.ollin.actividades.ui.theme.EstiloTiempo
 import mx.ollin.actividades.ui.theme.LocalColoresOllin
 import mx.ollin.actividades.ui.theme.colorDeCategoria
-import java.time.Instant
 
 /** Cada ambito tiene su icono. Se repite en filtros, chips y renglones. */
 fun iconoDe(ambito: Ambito?): ImageVector = when (ambito) {
@@ -279,7 +278,6 @@ fun Marco(
 fun RenglonActividad(
     detalle: ActividadDetallada,
     modifier: Modifier = Modifier,
-    ahora: Instant? = null,
     alPulsar: () -> Unit = {},
     accion: @Composable (() -> Unit)? = null
 ) {
@@ -289,7 +287,9 @@ fun RenglonActividad(
         detalle.categoriaColor,
         colores.de(detalle.categoriaAmbito)
     )
-    val minutos = actividad.minutosVividos(ahora ?: Tiempo.ahora())
+    // No recibe reloj: en las listas solo hay pendientes y completadas, y
+    // ninguna de las dos tiene un tiempo que avance mientras se mira.
+    val minutos = actividad.minutosVividos()
 
     Row(
         modifier

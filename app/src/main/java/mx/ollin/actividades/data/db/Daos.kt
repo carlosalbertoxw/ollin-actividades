@@ -276,28 +276,12 @@ interface ActividadDao {
     // ---- Habitos ----
 
     /**
-     * Dias en que se cumplio un habito, del mas reciente al mas viejo. El
-     * calculo de la racha se hace en Kotlin: necesita saber que dias tocaba el
-     * habito, y eso vive en la plantilla, no en la tabla de registros.
-     */
-    @Query(
-        """
-        SELECT a.dia AS dia,
-               COUNT(a.id) AS veces,
-               CAST(COALESCE(SUM(a.duracionMinutos), 0) AS INTEGER) AS minutos
-        FROM actividad a
-        WHERE a.habitoId = :habitoId AND a.estado = 'COMPLETADO'
-        GROUP BY a.dia
-        ORDER BY a.dia DESC
-        LIMIT :limite
-        """
-    )
-    fun observaCumplimientos(habitoId: Long, limite: Int = 400): Flow<List<CumplimientoDia>>
-
-    /**
      * Cumplimientos de todos los habitos por dia. Una sola consulta alimenta
      * los checks de hoy y las rachas de la pantalla de habitos; pedirlas habito
      * por habito serviria la misma tabla N veces.
+     *
+     * El calculo de la racha se hace en Kotlin: necesita saber que dias tocaba
+     * el habito, y eso vive en la plantilla, no en la tabla de registros.
      */
     @Query(
         """

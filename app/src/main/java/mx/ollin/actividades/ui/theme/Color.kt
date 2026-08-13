@@ -2,7 +2,6 @@ package mx.ollin.actividades.ui.theme
 
 import androidx.compose.ui.graphics.Color
 import mx.ollin.actividades.domain.model.Ambito
-import mx.ollin.actividades.domain.model.EstadoActividad
 
 /**
  * Paleta de Ollin.
@@ -47,8 +46,6 @@ data class ColoresOllin(
     val personal: Color,
     val enCurso: Color,
     val completado: Color,
-    val pendiente: Color,
-    val superficieElevada: Color,
     val textoTenue: Color,
     val trazoSuave: Color
 ) {
@@ -59,12 +56,6 @@ data class ColoresOllin(
         Ambito.PERSONAL -> personal
         null -> textoTenue
     }
-
-    fun de(estado: EstadoActividad): Color = when (estado) {
-        EstadoActividad.PENDIENTE -> pendiente
-        EstadoActividad.EN_CURSO -> enCurso
-        EstadoActividad.COMPLETADO -> completado
-    }
 }
 
 val ColoresOscuros = ColoresOllin(
@@ -74,8 +65,6 @@ val ColoresOscuros = ColoresOllin(
     personal = Pigmento.GranaClaro,
     enCurso = Pigmento.Cempasuchil,
     completado = Pigmento.JadeClaro,
-    pendiente = Color(0xFF9AA5A1),
-    superficieElevada = Pigmento.ObsidianaClara,
     textoTenue = Color(0xFF9AA5A1),
     trazoSuave = Color(0xFF2E3A3F)
 )
@@ -87,8 +76,6 @@ val ColoresClaros = ColoresOllin(
     personal = Pigmento.Grana,
     enCurso = Color(0xFFB07A22),
     completado = Pigmento.Jade,
-    pendiente = Pigmento.TintaSuave,
-    superficieElevada = Color(0xFFFFFFFF),
     textoTenue = Pigmento.TintaSuave,
     trazoSuave = Pigmento.PapelSombra
 )

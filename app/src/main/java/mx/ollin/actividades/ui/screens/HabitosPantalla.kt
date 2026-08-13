@@ -136,9 +136,12 @@ fun HabitosPantalla(contenedor: Contenedor) {
 
     Scaffold(
         floatingActionButton = {
+            // La descripcion va en el icono: el boton extendido borra la
+            // semantica de su contenido y su rotulo no llegaria al lector de
+            // pantalla. Ver la misma nota en OllinRaiz.
             ExtendedFloatingActionButton(
                 onClick = { editando = Habito(nombre = "") },
-                icon = { Icon(Icons.Filled.Add, contentDescription = null) },
+                icon = { Icon(Icons.Filled.Add, contentDescription = "Nuevo habito") },
                 text = { Text("Nuevo habito") }
             )
         }

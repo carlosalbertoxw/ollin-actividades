@@ -36,8 +36,6 @@ object Tiempo {
 
     fun instante(fechaHora: LocalDateTime): Instant = fechaHora.atZone(zona()).toInstant()
 
-    fun inicioDelDia(dia: LocalDate): Instant = dia.atStartOfDay(zona()).toInstant()
-
     fun hora(instante: Instant): String = HORA.format(local(instante))
 
     fun fechaCorta(dia: LocalDate): String = FECHA_CORTA.format(dia)

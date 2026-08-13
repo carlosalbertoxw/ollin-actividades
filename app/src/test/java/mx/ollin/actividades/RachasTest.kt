@@ -4,6 +4,7 @@ import mx.ollin.actividades.data.db.Habito
 import mx.ollin.actividades.domain.model.DiasSemana
 import mx.ollin.actividades.domain.model.Frecuencia
 import mx.ollin.actividades.domain.usecase.Rachas
+import mx.ollin.actividades.domain.usecase.UnidadRacha
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.time.DayOfWeek
@@ -254,7 +255,7 @@ class RachasTest {
             listOf(0L, 2L, 4L, 7L, 9L, 11L).forEach { put(lunes.plusDays(it), 1) }
         }
         val resumen = Rachas.calcula(semanal, cumplidos, lunes.plusDays(11))
-        assertEquals(true, resumen.enSemanas)
+        assertEquals(UnidadRacha.SEMANAS, resumen.unidadRacha)
         assertEquals(2, resumen.actual)
     }
 }

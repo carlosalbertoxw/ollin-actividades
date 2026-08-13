@@ -190,6 +190,55 @@ class RepositorioTest {
         assertTrue(reanudado.cumplidoHoy)
     }
 
+    /**
+     * Borrar un habito no puede borrar lo que ya se hizo. La clave foranea es
+     * SET_NULL a proposito: los cumplimientos siguen siendo actividades
+     * completadas, cuentan en la analitica y conservan sus minutos; lo unico que
+     * pierden es el vinculo con una plantilla que ya no existe.
+     */
+    @Test
+    fun `eliminar un habito conserva los registros que dejo`() = runTest {
+        val habitoId = repo.guardaHabito(Habito(nombre = "Nadar", minutosSugeridos = 45))
+        val habito = repo.habito(habitoId)!!
+        repo.registraHabito(habito)
+
+        repo.eliminaHabito(habito)
+
+        assertNull(repo.habito(habitoId))
+        val registros = db.actividadDao().todas()
+        assertEquals(1, registros.size)
+        assertEquals("Nadar", registros.first().titulo)
+        assertEquals(45, registros.first().duracionMinutos)
+        assertNull(registros.first().habitoId)
+    }
+
+    /**
+     * Lo mismo con las categorias: archivar es lo habitual, pero si alguien
+     * borra una, sus actividades se quedan sin categoria en vez de irse con ella.
+     */
+    @Test
+    fun `eliminar una categoria no se lleva sus actividades`() = runTest {
+        val categoriaId = repo.guardaCategoria(Categoria(nombre = "Ocio", ambito = Ambito.PERSONAL))
+        val hoy = Tiempo.hoy()
+        repo.guarda(
+            Actividad(
+                titulo = "Leer novela",
+                categoriaId = categoriaId,
+                estado = EstadoActividad.COMPLETADO,
+                inicio = Tiempo.instante(hoy.atTime(20, 0)),
+                dia = hoy,
+                duracionMinutos = 60
+            )
+        )
+
+        repo.eliminaCategoria(repo.categoria(categoriaId)!!)
+
+        val registros = db.actividadDao().todas()
+        assertEquals(1, registros.size)
+        assertNull(registros.first().categoriaId)
+        assertEquals(60, registros.first().duracionMinutos)
+    }
+
     @Test
     fun `la analitica solo suma lo completado`() = runTest {
         val hoy = Tiempo.hoy()
