@@ -36,11 +36,11 @@ val almacenDeClaves = credencial("storeFile", "OLLIN_ACTIVIDADES_STORE_FILE")
     ?.takeIf { it.isFile }
 
 android {
-    namespace = "mx.ollin.actividades"
+    namespace = "com.carlosalbertoxw.ollin.actividades"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "mx.ollin.actividades"
+        applicationId = "com.carlosalbertoxw.ollin.actividades"
         minSdk = 26
         targetSdk = 36
         versionCode = 1

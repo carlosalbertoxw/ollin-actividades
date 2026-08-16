@@ -63,16 +63,16 @@ Sin emulador. Robolectric para lo que necesita `Context`.
 
 | Prueba | Qué cubre |
 |---|---|
-| [`RachasTest`](../app/src/test/java/mx/ollin/actividades/RachasTest.kt) | Rachas por día, por semana y por ciclos |
-| [`TiempoTest`](../app/src/test/java/mx/ollin/actividades/TiempoTest.kt) | Formato de duración y cronómetro, redondeo de minutos, máscara de días, unidades |
-| [`RepositorioTest`](../app/src/test/java/mx/ollin/actividades/RepositorioTest.kt) | Reglas de escritura del repositorio sobre una base en memoria |
-| [`SembradorTest`](../app/src/test/java/mx/ollin/actividades/SembradorTest.kt) | El catálogo semilla y su idempotencia |
-| [`ClavePinTest`](../app/src/test/java/mx/ollin/actividades/ClavePinTest.kt) | Derivación del PIN: sal, determinismo y comparación |
-| [`BloqueoTest`](../app/src/test/java/mx/ollin/actividades/BloqueoTest.kt) | Preferencias del candado y el minuto de gracia de `ControlBloqueo` |
-| [`AjustesRepositorioTest`](../app/src/test/java/mx/ollin/actividades/AjustesRepositorioTest.kt) | Valores de fábrica, acotado de metas y selección de hojas |
-| [`ExcelRoundTripTest`](../app/src/test/java/mx/ollin/actividades/ExcelRoundTripTest.kt) | Escritor y lector de `.xlsx` |
-| [`ImportadorTest`](../app/src/test/java/mx/ollin/actividades/ImportadorTest.kt) | La hoja de Registros: exportar e importar deja los datos iguales |
-| [`ImportadorCatalogosTest`](../app/src/test/java/mx/ollin/actividades/ImportadorCatalogosTest.kt) | Las pestañas de Categorias, Habitos y Diccionarios, y la cadencia de ida y vuelta |
+| [`RachasTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/RachasTest.kt) | Rachas por día, por semana y por ciclos |
+| [`TiempoTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/TiempoTest.kt) | Formato de duración y cronómetro, redondeo de minutos, máscara de días, unidades |
+| [`RepositorioTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/RepositorioTest.kt) | Reglas de escritura del repositorio sobre una base en memoria |
+| [`SembradorTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/SembradorTest.kt) | El catálogo semilla y su idempotencia |
+| [`ClavePinTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/ClavePinTest.kt) | Derivación del PIN: sal, determinismo y comparación |
+| [`BloqueoTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/BloqueoTest.kt) | Preferencias del candado y el minuto de gracia de `ControlBloqueo` |
+| [`AjustesRepositorioTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/AjustesRepositorioTest.kt) | Valores de fábrica, acotado de metas y selección de hojas |
+| [`ExcelRoundTripTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/ExcelRoundTripTest.kt) | Escritor y lector de `.xlsx` |
+| [`ImportadorTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/ImportadorTest.kt) | La hoja de Registros: exportar e importar deja los datos iguales |
+| [`ImportadorCatalogosTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/ImportadorCatalogosTest.kt) | Las pestañas de Categorias, Habitos y Diccionarios, y la cadencia de ida y vuelta |
 
 Las pruebas con Room arrancan con una `Application` pelona en vez de `OllinApp`: la de verdad siembra el catálogo contra la base cifrada, y SQLCipher es una biblioteca nativa de Android que en la JVM no existe.
 
@@ -87,17 +87,17 @@ Las pruebas con Room arrancan con una `Application` pelona en vez de `OllinApp`:
 ./gradlew connectedDebugAndroidTest
 ```
 
-Viven en `app/src/androidTest/java/mx/ollin/actividades/ui/`, **no** en `src/test/`, así que `testDebugUnitTest` no las corre. Se intentaron en la JVM con Robolectric y no salió: su reloj virtual no conversa con el cronómetro de la pantalla de hoy ni con los diálogos.
+Viven en `app/src/androidTest/java/com/carlosalbertoxw/ollin/actividades/ui/`, **no** en `src/test/`, así que `testDebugUnitTest` no las corre. Se intentaron en la JVM con Robolectric y no salió: su reloj virtual no conversa con el cronómetro de la pantalla de hoy ni con los diálogos.
 
 | Prueba | Qué cubre |
 |---|---|
-| [`NavegacionTest`](../app/src/androidTest/java/mx/ollin/actividades/ui/NavegacionTest.kt) | Que cada pantalla siga siendo alcanzable con el dedo |
-| [`HoyPantallaTest`](../app/src/androidTest/java/mx/ollin/actividades/ui/HoyPantallaTest.kt) | Cronómetro, pendientes y marcado de hábitos, de la pulsación a la base |
-| [`CapturaPantallaTest`](../app/src/androidTest/java/mx/ollin/actividades/ui/CapturaPantallaTest.kt) | Validación del título, alta, edición y borrado |
-| [`HabitosPantallaTest`](../app/src/androidTest/java/mx/ollin/actividades/ui/HabitosPantallaTest.kt) | Alta con cadencia, pausa y reanudación, borrado |
-| [`AjustesYArchivoTest`](../app/src/androidTest/java/mx/ollin/actividades/ui/AjustesYArchivoTest.kt) | Que lo que se toca en Ajustes y Archivo quede escrito en preferencias |
+| [`NavegacionTest`](../app/src/androidTest/java/com/carlosalbertoxw/ollin/actividades/ui/NavegacionTest.kt) | Que cada pantalla siga siendo alcanzable con el dedo |
+| [`HoyPantallaTest`](../app/src/androidTest/java/com/carlosalbertoxw/ollin/actividades/ui/HoyPantallaTest.kt) | Cronómetro, pendientes y marcado de hábitos, de la pulsación a la base |
+| [`CapturaPantallaTest`](../app/src/androidTest/java/com/carlosalbertoxw/ollin/actividades/ui/CapturaPantallaTest.kt) | Validación del título, alta, edición y borrado |
+| [`HabitosPantallaTest`](../app/src/androidTest/java/com/carlosalbertoxw/ollin/actividades/ui/HabitosPantallaTest.kt) | Alta con cadencia, pausa y reanudación, borrado |
+| [`AjustesYArchivoTest`](../app/src/androidTest/java/com/carlosalbertoxw/ollin/actividades/ui/AjustesYArchivoTest.kt) | Que lo que se toca en Ajustes y Archivo quede escrito en preferencias |
 
-[`BancoDePruebas`](../app/src/androidTest/java/mx/ollin/actividades/ui/BancoDePruebas.kt) es el andamio común. Levanta un `Contenedor` de verdad —mismos ViewModel, mismo repositorio, mismas preferencias— y solo sustituye la base por una en memoria, por la costura `abreBase` del contenedor: la de producción va cifrada y compartirla entre pruebas dejaría a cada una heredando los datos de la anterior. Dos detalles que costaron encontrarse:
+[`BancoDePruebas`](../app/src/androidTest/java/com/carlosalbertoxw/ollin/actividades/ui/BancoDePruebas.kt) es el andamio común. Levanta un `Contenedor` de verdad —mismos ViewModel, mismo repositorio, mismas preferencias— y solo sustituye la base por una en memoria, por la costura `abreBase` del contenedor: la de producción va cifrada y compartirla entre pruebas dejaría a cada una heredando los datos de la anterior. Dos detalles que costaron encontrarse:
 
 - **`espera(...)` en vez de `waitUntil`.** La condición no siempre es lo que hay en pantalla: muchas veces es lo que quedó escrito en la base o en las preferencias, y eso ocurre en hilos que el reloj de Compose no mueve. Se sondea en tiempo real y se cierra con un `waitForIdle`, porque que un texto ya se vea no significa que haya terminado de animarse.
 - **`restauraDeFabrica()` antes de cada prueba.** El DataStore de la app es uno solo y sobrevive de una prueba a la siguiente; sin esto, lo que una guarda condiciona a la que corra después y el resultado de la suite depende del orden.

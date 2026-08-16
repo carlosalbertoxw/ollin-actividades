@@ -8,7 +8,7 @@ Todo el paquete `data/excel/` es propio, **sin dependencias externas**. Apache P
 
 ### Hojas
 
-Se eligen desde la pantalla de Archivo ([`HojaExportable`](../app/src/main/java/mx/ollin/actividades/data/excel/CatalogoHojas.kt)):
+Se eligen desde la pantalla de Archivo ([`HojaExportable`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/data/excel/CatalogoHojas.kt)):
 
 | Hoja | Contenido |
 |---|---|
@@ -25,7 +25,7 @@ Las pestañas salen en orden de lectura natural: primero el resumen, luego el de
 
 ### Esquemas de columna
 
-[`EsquemaExportacion`](../app/src/main/java/mx/ollin/actividades/data/excel/CatalogoHojas.kt) decide el ancho de la hoja Registros:
+[`EsquemaExportacion`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/data/excel/CatalogoHojas.kt) decide el ancho de la hoja Registros:
 
 - **Extendido** — `Fecha, Titulo, Categoria, Ambito, Estado, Inicio, Fin, Minutos, Cantidad, Unidad, Habito, Notas`. Conserva todo.
 - **Compacto** — `Fecha, Titulo, Categoria, Estado, Minutos`.
@@ -44,12 +44,12 @@ El libro incluye además anchos de columna, panel congelado en el encabezado, au
 
 | Archivo | Papel |
 |---|---|
-| [`ModeloHoja.kt`](../app/src/main/java/mx/ollin/actividades/data/excel/ModeloHoja.kt) | `Celda` (texto, número, fecha, hora, booleano, fórmula), `Hoja`, anchos, validaciones, tablas y los índices de estilo |
-| [`Ooxml.kt`](../app/src/main/java/mx/ollin/actividades/data/excel/Ooxml.kt) | Seriales de fecha, letras de columna, escape de XML, saneo de nombres de hoja |
-| [`XlsxEscritor.kt`](../app/src/main/java/mx/ollin/actividades/data/excel/XlsxEscritor.kt) | Serializa el paquete OOXML completo dentro de un ZIP |
-| [`XlsxLector.kt`](../app/src/main/java/mx/ollin/actividades/data/excel/XlsxLector.kt) | Lee un `.xlsx` con el SAX del JDK |
-| [`ExportadorExcel.kt`](../app/src/main/java/mx/ollin/actividades/data/excel/ExportadorExcel.kt) | Arma las hojas a partir de `DatosExportacion` |
-| [`ImportadorExcel.kt`](../app/src/main/java/mx/ollin/actividades/data/excel/ImportadorExcel.kt) | Vuelca un libro en la bitácora |
+| [`ModeloHoja.kt`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/data/excel/ModeloHoja.kt) | `Celda` (texto, número, fecha, hora, booleano, fórmula), `Hoja`, anchos, validaciones, tablas y los índices de estilo |
+| [`Ooxml.kt`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/data/excel/Ooxml.kt) | Seriales de fecha, letras de columna, escape de XML, saneo de nombres de hoja |
+| [`XlsxEscritor.kt`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/data/excel/XlsxEscritor.kt) | Serializa el paquete OOXML completo dentro de un ZIP |
+| [`XlsxLector.kt`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/data/excel/XlsxLector.kt) | Lee un `.xlsx` con el SAX del JDK |
+| [`ExportadorExcel.kt`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/data/excel/ExportadorExcel.kt) | Arma las hojas a partir de `DatosExportacion` |
+| [`ImportadorExcel.kt`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/data/excel/ImportadorExcel.kt) | Vuelca un libro en la bitácora |
 
 Los índices de estilo de `Estilo` deben coincidir en orden exacto con `cellXfs` en `XlsxEscritor.estilosXml()`.
 
@@ -144,5 +144,5 @@ Los fallos se traducen a mensajes accionables; la excepción cruda se manda a lo
 
 ## Pruebas
 
-- [`ExcelRoundTripTest`](../app/src/test/java/mx/ollin/actividades/ExcelRoundTripTest.kt) — el escritor y el lector reales, sin Android de por medio.
-- [`ImportadorTest`](../app/src/test/java/mx/ollin/actividades/ImportadorTest.kt) — lo que sale por la exportación vuelve a entrar por la importación y queda igual, contra una base en memoria.
+- [`ExcelRoundTripTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/ExcelRoundTripTest.kt) — el escritor y el lector reales, sin Android de por medio.
+- [`ImportadorTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/ImportadorTest.kt) — lo que sale por la exportación vuelve a entrar por la importación y queda igual, contra una base en memoria.

@@ -2,7 +2,7 @@
 
 Un hábito es una plantilla; sus cumplimientos son actividades completadas que apuntan a él. Marcar un hábito deja un registro normal en la bitácora: aparece en el historial, suma en la analítica y se puede editar después.
 
-El cálculo vive en [`Rachas`](../app/src/main/java/mx/ollin/actividades/domain/usecase/Rachas.kt), sin dependencias de Android, y se prueba en [`RachasTest`](../app/src/test/java/mx/ollin/actividades/RachasTest.kt).
+El cálculo vive en [`Rachas`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/domain/usecase/Rachas.kt), sin dependencias de Android, y se prueba en [`RachasTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/RachasTest.kt).
 
 ## Cadencias
 

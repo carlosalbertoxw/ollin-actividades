@@ -18,29 +18,29 @@ Room (OllinDatabase, cifrada con SQLCipher)
 
 Una pantalla por archivo en `ui/screens/`, cada una con su `ViewModel` declarado en el mismo archivo. Los estados se exponen como `StateFlow` y se consumen con `collectAsStateWithLifecycle`.
 
-No hay `Factory` por pantalla: [`recuerdaVm`](../app/src/main/java/mx/ollin/actividades/ui/Fabrica.kt) crea el ViewModel pasándole el `Contenedor` a mano.
+No hay `Factory` por pantalla: [`recuerdaVm`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/ui/Fabrica.kt) crea el ViewModel pasándole el `Contenedor` a mano.
 
 ```kotlin
 val vm = recuerdaVm("analitica") { AnaliticaVm(contenedor) }
 ```
 
-La navegación vive en [`OllinRaiz`](../app/src/main/java/mx/ollin/actividades/ui/OllinRaiz.kt), con un `NavHost` de Navigation Compose. Las cuatro pestañas inferiores son el enum [`Destino`](../app/src/main/java/mx/ollin/actividades/ui/nav/Destinos.kt) —Hoy, Registro, Hábitos, Analítica— y el resto de las rutas (captura, categorías, ajustes, archivo, acerca de) son constantes en `Rutas`. El botón flotante de captura se oculta en Hábitos, que tiene el suyo.
+La navegación vive en [`OllinRaiz`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/ui/OllinRaiz.kt), con un `NavHost` de Navigation Compose. Las cuatro pestañas inferiores son el enum [`Destino`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/ui/nav/Destinos.kt) —Hoy, Registro, Hábitos, Analítica— y el resto de las rutas (captura, categorías, ajustes, archivo, acerca de) son constantes en `Rutas`. El botón flotante de captura se oculta en Hábitos, que tiene el suyo.
 
 ### `domain/`
 
-Sin dependencias de Android. Contiene los enums del modelo ([`Ambito`, `EstadoActividad`, `Unidad`, `Frecuencia`](../app/src/main/java/mx/ollin/actividades/domain/model/Enums.kt)), las utilidades de calendario y reloj ([`Tiempo`, `DiasSemana`](../app/src/main/java/mx/ollin/actividades/domain/model/Tiempo.kt)) y el cálculo de [rachas](rachas.md).
+Sin dependencias de Android. Contiene los enums del modelo ([`Ambito`, `EstadoActividad`, `Unidad`, `Frecuencia`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/domain/model/Enums.kt)), las utilidades de calendario y reloj ([`Tiempo`, `DiasSemana`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/domain/model/Tiempo.kt)) y el cálculo de [rachas](rachas.md).
 
 ### `data/`
 
 - `db/` — Room. Las entidades son también el modelo de dominio: con un solo módulo, duplicarlas en otra capa solo agregaría mapeo. Ver [modelo de datos](modelo-de-datos.md).
-- `repo/` — [`ActividadesRepositorio`](../app/src/main/java/mx/ollin/actividades/data/repo/ActividadesRepositorio.kt). Único punto de escritura; ahí viven las reglas que mantienen coherentes inicio, fin, día y duración.
+- `repo/` — [`ActividadesRepositorio`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/data/repo/ActividadesRepositorio.kt). Único punto de escritura; ahí viven las reglas que mantienen coherentes inicio, fin, día y duración.
 - `excel/` — lector y escritor de `.xlsx` propios, más el exportador e importador de la bitácora. Ver [Excel](excel.md).
 - `prefs/` — preferencias en DataStore, expuestas como un `Flow<Ajustes>`.
 - `seguridad/` — llave de la base, derivación del PIN y control de bloqueo. Ver [seguridad](seguridad.md).
 
 ## Inyección de dependencias
 
-Manual, en [`Contenedor`](../app/src/main/java/mx/ollin/actividades/di/Contenedor.kt): base de datos, repositorio, ajustes, control de bloqueo y sembrador, todos `by lazy`. Se construye una vez en [`OllinApp`](../app/src/main/java/mx/ollin/actividades/OllinApp.kt) y se pasa por parámetro a las pantallas.
+Manual, en [`Contenedor`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/di/Contenedor.kt): base de datos, repositorio, ajustes, control de bloqueo y sembrador, todos `by lazy`. Se construye una vez en [`OllinApp`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/OllinApp.kt) y se pasa por parámetro a las pantallas.
 
 Con tres objetos compartidos, Hilt aportaría anotaciones y tiempo de compilación sin resolver ningún problema real.
 
@@ -48,7 +48,7 @@ Con tres objetos compartidos, Hilt aportaría anotaciones y tiempo de compilaci�
 
 ## Arranque y bloqueo
 
-[`MainActivity`](../app/src/main/java/mx/ollin/actividades/MainActivity.kt) es una `FragmentActivity` y no una `ComponentActivity`, porque el diálogo de huella y credencial del sistema se monta sobre el gestor de fragmentos.
+[`MainActivity`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/MainActivity.kt) es una `FragmentActivity` y no una `ComponentActivity`, porque el diálogo de huella y credencial del sistema se monta sobre el gestor de fragmentos.
 
 El árbol que se compone depende de dos señales:
 

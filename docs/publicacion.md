@@ -2,6 +2,14 @@
 
 Cómo se genera el APK (o el AAB) de producción de Ollin Actividades, firmado y listo para instalar o subir a una tienda.
 
+## La identidad de la app
+
+El `applicationId` y el `namespace` son `com.carlosalbertoxw.ollin.actividades`, y el código fuente vive bajo ese mismo paquete.
+
+Lleva el dominio de quien publica y no un `mx.ollin` a secas: `mx.ollin` no está respaldado por ningún dominio registrado, y el `applicationId` es un identificador global en la tienda —quien registre `ollin.mx` antes podría reclamarlo—. `com.carlosalbertoxw` sí es un espacio propio, y deja sitio para que Ollin Finanzas cuelgue del mismo tronco sin colisionar.
+
+**Una vez publicada, esta cadena no se puede cambiar.** Para Android una app con otro `applicationId` es otra app: no actualiza a la instalada, sino que se instala al lado, y la bitácora de la primera se queda donde estaba —cifrada con una llave del Keystore que la nueva no puede leer—. El renombrado se hizo mientras `versionCode` seguía en 1 y no había ninguna instalación fuera de este equipo, que es la única ventana en que sale gratis.
+
 ## Por qué hace falta firmar
 
 Android no instala un APK sin firma, y la firma es lo que ata una actualización a la app que ya está instalada: si mañana publicas una versión firmada con otra llave, el sistema la trata como una app distinta y se niega a actualizar. **No hay forma de recuperar un almacén de claves perdido**; la única salida sería publicar con otro `applicationId` y pedirle a cada persona que reinstale desde cero, perdiendo su bitácora.

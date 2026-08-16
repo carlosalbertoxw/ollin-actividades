@@ -32,7 +32,7 @@ Desde Android Studio basta con abrir el proyecto. Desde la terminal, apuntando `
 JAVA_HOME="$HOME/.jdks/jbr-21.0.11" ./gradlew assembleDebug
 ```
 
-El APK queda en `app/build/outputs/apk/debug/`. La variante de depuración se instala junto a la de producción: usa el `applicationId` `mx.ollin.actividades.debug`.
+El APK queda en `app/build/outputs/apk/debug/`. La variante de depuración se instala junto a la de producción: usa el `applicationId` `com.carlosalbertoxw.ollin.actividades.debug`.
 
 Para instalar en un dispositivo conectado:
 
@@ -59,7 +59,7 @@ JAVA_HOME="$HOME/.jdks/jbr-21.0.11" ./gradlew connectedDebugAndroidTest
 ## Estructura
 
 ```
-app/src/main/java/mx/ollin/actividades/
+app/src/main/java/com/carlosalbertoxw/ollin/actividades/
 ├── data/
 │   ├── db/          Room: entidades, DAOs, proyecciones, catálogo semilla
 │   ├── excel/       Lector y escritor de .xlsx propios, exportador e importador

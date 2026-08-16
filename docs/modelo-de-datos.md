@@ -2,7 +2,7 @@
 
 Room sobre SQLite cifrado. Tres tablas, versión de esquema **2**, esquemas exportados en `app/schemas/`.
 
-Las entidades de Room son también el modelo de dominio: [`Entidades.kt`](../app/src/main/java/mx/ollin/actividades/data/db/Entidades.kt).
+Las entidades de Room son también el modelo de dominio: [`Entidades.kt`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/data/db/Entidades.kt).
 
 ## Tablas
 
@@ -21,7 +21,7 @@ El catálogo con el que se clasifica la bitácora. Índice único por `nombre`.
 
 El ámbito (`TRABAJO`, `FISICO`, `HABITO`, `PERSONAL`) es el lente con el que se mira un registro: permite que una sola tabla sirva de bitácora de trabajo, monitor de ejercicio y tracker de hábitos sin tres modelos paralelos.
 
-Una instalación nueva arranca con 16 categorías de ejemplo ([`Semilla.kt`](../app/src/main/java/mx/ollin/actividades/data/db/Semilla.kt)), renombrables y borrables sin consecuencias. Una app de registro que abre vacía obliga a inventar la taxonomía antes de poder anotar nada.
+Una instalación nueva arranca con 16 categorías de ejemplo ([`Semilla.kt`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/data/db/Semilla.kt)), renombrables y borrables sin consecuencias. Una app de registro que abre vacía obliga a inventar la taxonomía antes de poder anotar nada.
 
 ### `habito`
 
@@ -60,7 +60,7 @@ El registro. Es la única tabla que crece con el uso diario. Índices en `dia`, 
 
 ## Las marcas de tiempo
 
-La regla de la casa, en [`Tiempo`](../app/src/main/java/mx/ollin/actividades/domain/model/Tiempo.kt): el instante se guarda en UTC porque es un punto en la línea del tiempo y no debe moverse al viajar; el día se guarda aparte como día epoch local porque "cuánto trabajé el martes" es una pregunta del calendario de quien la hace.
+La regla de la casa, en [`Tiempo`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/domain/model/Tiempo.kt): el instante se guarda en UTC porque es un punto en la línea del tiempo y no debe moverse al viajar; el día se guarda aparte como día epoch local porque "cuánto trabajé el martes" es una pregunta del calendario de quien la hace.
 
 `inicio`, `dia` y `duracionMinutos` se guardan los tres aunque uno se derive de los otros: agrupar por día local en SQL exigiría aplicar el huso en cada consulta, y recalcular la duración en cada suma impide usar un índice. Quien escribe paga una vez lo que quien lee pagaría siempre.
 
@@ -80,13 +80,13 @@ Solo puede haber una actividad `EN_CURSO`. Arrancar el cronómetro cierra la ant
 
 ## Proyecciones
 
-[`Proyecciones.kt`](../app/src/main/java/mx/ollin/actividades/data/db/Proyecciones.kt) declara lo que devuelven las consultas con join o agregación. Son de solo lectura: nadie las inserta ni las modifica.
+[`Proyecciones.kt`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/data/db/Proyecciones.kt) declara lo que devuelven las consultas con join o agregación. Son de solo lectura: nadie las inserta ni las modifica.
 
 `ActividadDetallada` (actividad + nombre, color y ámbito de su categoría + nombre de su hábito), `TotalCategoria`, `TotalDia`, `TotalAmbito`, `ConteoEstado`, `CumplimientoDia` y `CumplimientoHabito`.
 
 ## Convertidores
 
-[`Convertidores.kt`](../app/src/main/java/mx/ollin/actividades/data/db/Convertidores.kt) traduce `Instant` (milisegundos epoch), `LocalDate` (día epoch) y los enums (por nombre) a columnas de SQLite.
+[`Convertidores.kt`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/data/db/Convertidores.kt) traduce `Instant` (milisegundos epoch), `LocalDate` (día epoch) y los enums (por nombre) a columnas de SQLite.
 
 ## Migraciones
 
