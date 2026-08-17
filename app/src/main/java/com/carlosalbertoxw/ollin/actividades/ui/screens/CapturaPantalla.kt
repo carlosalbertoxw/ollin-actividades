@@ -46,15 +46,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
-import com.carlosalbertoxw.ollin.actividades.data.db.Actividad
 import com.carlosalbertoxw.ollin.actividades.data.db.Categoria
 import com.carlosalbertoxw.ollin.actividades.di.Contenedor
 import com.carlosalbertoxw.ollin.actividades.domain.model.EstadoActividad
@@ -64,106 +56,8 @@ import com.carlosalbertoxw.ollin.actividades.ui.components.iconoDe
 import com.carlosalbertoxw.ollin.actividades.ui.recuerdaVm
 import com.carlosalbertoxw.ollin.actividades.ui.theme.LocalColoresOllin
 import java.time.Instant
-import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneOffset
-
-/** El formulario completo, con los cinco datos del registro y las medidas opcionales. */
-data class FormularioActividad(
-    val id: Long = 0,
-    val titulo: String = "",
-    val categoriaId: Long? = null,
-    val estado: EstadoActividad = EstadoActividad.COMPLETADO,
-    val fecha: LocalDate = Tiempo.hoy(),
-    val hora: LocalTime = LocalTime.now().withSecond(0).withNano(0),
-    val duracionTexto: String = "30",
-    val cantidadTexto: String = "",
-    val unidad: Unidad = Unidad.NINGUNA,
-    val notas: String = "",
-    val habitoId: Long? = null,
-    val creadoEn: Long = System.currentTimeMillis()
-) {
-    val esNueva: Boolean get() = id == 0L
-    val duracion: Int get() = duracionTexto.toIntOrNull()?.coerceAtLeast(0) ?: 0
-}
-
-class CapturaVm(contenedor: Contenedor, private val actividadId: Long?) : ViewModel() {
-
-    private val repo = contenedor.repositorio
-
-    private val _form = MutableStateFlow(FormularioActividad())
-    val form: StateFlow<FormularioActividad> = _form
-
-    val categorias: StateFlow<List<Categoria>> = repo.observaCategorias()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
-    init {
-        if (actividadId != null) {
-            viewModelScope.launch {
-                repo.actividad(actividadId)?.let { a ->
-                    val local = Tiempo.local(a.inicio)
-                    _form.value = FormularioActividad(
-                        id = a.id,
-                        titulo = a.titulo,
-                        categoriaId = a.categoriaId,
-                        estado = a.estado,
-                        fecha = local.toLocalDate(),
-                        hora = local.toLocalTime(),
-                        duracionTexto = (a.duracionMinutos ?: a.minutosVividos()).toString(),
-                        cantidadTexto = a.cantidad?.let { c ->
-                            if (c % 1.0 == 0.0) c.toLong().toString() else c.toString()
-                        } ?: "",
-                        unidad = a.unidad,
-                        notas = a.notas.orEmpty(),
-                        habitoId = a.habitoId,
-                        creadoEn = a.creadoEn
-                    )
-                }
-            }
-        }
-    }
-
-    fun actualiza(bloque: (FormularioActividad) -> FormularioActividad) {
-        _form.value = bloque(_form.value)
-    }
-
-    /** Devuelve falso si falta el titulo, que es el unico campo sin valor por omision. */
-    fun guarda(alTerminar: () -> Unit): Boolean {
-        val f = _form.value
-        if (f.titulo.isBlank()) return false
-        val inicio = Tiempo.instante(f.fecha.atTime(f.hora))
-        viewModelScope.launch {
-            repo.guarda(
-                Actividad(
-                    id = f.id,
-                    titulo = f.titulo.trim(),
-                    categoriaId = f.categoriaId,
-                    estado = f.estado,
-                    inicio = inicio,
-                    fin = null,
-                    dia = f.fecha,
-                    duracionMinutos = if (f.estado == EstadoActividad.EN_CURSO) null else f.duracion,
-                    cantidad = f.cantidadTexto.replace(',', '.').toDoubleOrNull(),
-                    unidad = f.unidad,
-                    habitoId = f.habitoId,
-                    notas = f.notas.takeIf { it.isNotBlank() },
-                    creadoEn = f.creadoEn
-                )
-            )
-            alTerminar()
-        }
-        return true
-    }
-
-    fun elimina(alTerminar: () -> Unit) {
-        val id = _form.value.id
-        if (id == 0L) return alTerminar()
-        viewModelScope.launch {
-            repo.elimina(id)
-            alTerminar()
-        }
-    }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -172,7 +66,7 @@ fun CapturaPantalla(
     actividadId: Long?,
     alCerrar: () -> Unit
 ) {
-    val vm = recuerdaVm("captura-$actividadId") { CapturaVm(contenedor, actividadId) }
+    val vm = recuerdaVm("captura-$actividadId") { CapturaVm(contenedor.repositorio, actividadId) }
     val form by vm.form.collectAsStateWithLifecycle()
     val categorias by vm.categorias.collectAsStateWithLifecycle()
     val colores = LocalColoresOllin.current
@@ -218,11 +112,11 @@ fun CapturaPantalla(
                 value = form.titulo,
                 onValueChange = { texto -> vm.actualiza { it.copy(titulo = texto) } },
                 modifier = Modifier.fillMaxWidth(),
-                label = { Text("Que hiciste") },
-                placeholder = { Text("Reunion de diseno") },
+                label = { Text("Qué hiciste") },
+                placeholder = { Text("Reunión de diseño") },
                 isError = faltaTitulo,
                 supportingText = if (faltaTitulo) {
-                    { Text("Ponle un titulo para poder guardarlo") }
+                    { Text("Ponle un título para poder guardarlo") }
                 } else null,
                 singleLine = true
             )
@@ -241,7 +135,7 @@ fun CapturaPantalla(
             }
 
             Spacer(Modifier.height(16.dp))
-            Text("Categoria", style = MaterialTheme.typography.labelLarge, color = colores.textoTenue)
+            Text("Categoría", style = MaterialTheme.typography.labelLarge, color = colores.textoTenue)
             Spacer(Modifier.height(6.dp))
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(categorias, key = { it.id }) { categoria ->
@@ -290,7 +184,7 @@ fun CapturaPantalla(
                         vm.actualiza { it.copy(duracionTexto = texto.filter(Char::isDigit).take(4)) }
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Duracion en minutos") },
+                    label = { Text("Duración en minutos") },
                     supportingText = { Text(Tiempo.duracionLarga(form.duracion)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true
@@ -307,7 +201,7 @@ fun CapturaPantalla(
             } else {
                 Spacer(Modifier.height(12.dp))
                 Text(
-                    "Mientras corre, la duracion la lleva el cronometro.",
+                    "Mientras corre, la duración la lleva el cronómetro.",
                     style = MaterialTheme.typography.bodySmall,
                     color = colores.textoTenue
                 )
@@ -425,7 +319,7 @@ fun CapturaPantalla(
                 TextButton(onClick = { confirmandoBorrado = false }) { Text("Cancelar") }
             },
             title = { Text("Eliminar la actividad") },
-            text = { Text("Se borra el registro y deja de contar en la analitica.") }
+            text = { Text("Se borra el registro y deja de contar en la analítica.") }
         )
     }
 }

@@ -13,7 +13,7 @@ import java.util.Locale
  * algo que toca cada dos meses no significaria nada.
  */
 enum class UnidadRacha(val etiqueta: String) {
-    DIAS("dias"),
+    DIAS("días"),
     SEMANAS("semanas"),
     VECES("veces")
 }

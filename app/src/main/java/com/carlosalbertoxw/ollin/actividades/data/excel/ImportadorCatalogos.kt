@@ -146,7 +146,7 @@ internal class ImportadorCatalogos(
         val mapa = hoja.reconoce(COLUMNAS_CATEGORIA, requeridas = listOf("nombre")) ?: run {
             diagnosticos += Diagnostico(
                 Severidad.AVISO,
-                "La hoja Categorias no trae una columna con el nombre de la categoria. Se ignoro."
+                "La hoja Categorías no trae una columna con el nombre de la categoría. Se ignoró."
             )
             return
         }
@@ -178,7 +178,7 @@ internal class ImportadorCatalogos(
             if (!opciones.creaFaltantes) {
                 diagnosticos += Diagnostico(
                     Severidad.AVISO,
-                    "La categoria \"$nombre\" no existe en Ollin y no se creo.",
+                    "La categoría \"$nombre\" no existe en Ollin y no se creó.",
                     renglon.numero
                 )
                 return@forEach
@@ -213,7 +213,7 @@ internal class ImportadorCatalogos(
         val mapa = hoja.reconoce(COLUMNAS_HABITO, requeridas = listOf("nombre")) ?: run {
             diagnosticos += Diagnostico(
                 Severidad.AVISO,
-                "La hoja Habitos no trae una columna con el nombre del habito. Se ignoro."
+                "La hoja Hábitos no trae una columna con el nombre del hábito. Se ignoró."
             )
             return
         }
@@ -237,7 +237,7 @@ internal class ImportadorCatalogos(
             if (textoCadencia != null && cadencia == null) {
                 diagnosticos += Diagnostico(
                     Severidad.AVISO,
-                    "No entendi la cadencia \"$textoCadencia\" de \"$nombre\". " +
+                    "No entendí la cadencia \"$textoCadencia\" de \"$nombre\". " +
                         "Se quedo con la que tenia.",
                     renglon.numero
                 )

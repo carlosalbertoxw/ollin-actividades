@@ -47,13 +47,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 import com.carlosalbertoxw.ollin.actividades.data.db.Categoria
 import com.carlosalbertoxw.ollin.actividades.di.Contenedor
 import com.carlosalbertoxw.ollin.actividades.domain.model.Ambito
@@ -72,26 +66,10 @@ private val PALETA = listOf(
     "#8E6FC9", "#4FA5B5", "#8C8C8C", "#B07A22"
 )
 
-class CategoriasVm(contenedor: Contenedor) : ViewModel() {
-
-    private val repo = contenedor.repositorio
-
-    val categorias: StateFlow<List<Categoria>> = repo.observaTodasLasCategorias()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
-    fun guarda(categoria: Categoria) {
-        viewModelScope.launch { repo.guardaCategoria(categoria) }
-    }
-
-    fun elimina(categoria: Categoria) {
-        viewModelScope.launch { repo.eliminaCategoria(categoria) }
-    }
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CategoriasPantalla(contenedor: Contenedor, alCerrar: () -> Unit) {
-    val vm = recuerdaVm("categorias") { CategoriasVm(contenedor) }
+    val vm = recuerdaVm("categorias") { CategoriasVm(contenedor.repositorio) }
     val categorias by vm.categorias.collectAsStateWithLifecycle()
     val colores = LocalColoresOllin.current
 
@@ -100,7 +78,7 @@ fun CategoriasPantalla(contenedor: Contenedor, alCerrar: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Categorias") },
+                title = { Text("Categorías") },
                 navigationIcon = {
                     IconButton(onClick = alCerrar) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
@@ -120,7 +98,7 @@ fun CategoriasPantalla(contenedor: Contenedor, alCerrar: () -> Unit) {
                 },
                 // La descripcion va en el icono: el boton extendido borra la
                 // semantica de su contenido. Ver la misma nota en OllinRaiz.
-                icon = { Icon(Icons.Filled.Add, contentDescription = "Nueva categoria") },
+                icon = { Icon(Icons.Filled.Add, contentDescription = "Nueva categoría") },
                 text = { Text("Nueva") }
             )
         }
@@ -252,7 +230,7 @@ private fun DialogoCategoria(
                 TextButton(onClick = alCerrar) { Text("Cancelar") }
             }
         },
-        title = { Text(if (inicial.id == 0L) "Nueva categoria" else "Editar categoria") },
+        title = { Text(if (inicial.id == 0L) "Nueva categoría" else "Editar categoría") },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 OutlinedTextField(

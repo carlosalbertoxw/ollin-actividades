@@ -19,7 +19,7 @@ private val Context.almacen by preferencesDataStore(name = "ollin_actividades_aj
 enum class ModoBloqueo(val etiqueta: String) {
     NINGUNO("Sin bloqueo"),
     /** El patron, PIN, contrasena o huella del propio telefono. */
-    SISTEMA("Del telefono"),
+    SISTEMA("Del teléfono"),
     /** Un PIN exclusivo de Ollin, distinto al del telefono. */
     PIN("PIN propio")
 }
@@ -52,7 +52,12 @@ data class Ajustes(
     val modoBloqueo: ModoBloqueo = ModoBloqueo.NINGUNO,
     /** Del PIN solo se guarda su huella derivada; el PIN en claro no se escribe nunca. */
     val pinHash: String? = null,
-    val pinSal: String? = null
+    val pinSal: String? = null,
+    /**
+     * Intentos fallidos seguidos contra el PIN. Se guarda en disco a proposito:
+     * es lo que hace que matar la app no sirva para saltarse la espera.
+     */
+    val pinFallos: Int = 0
 )
 
 class AjustesRepositorio(private val contexto: Context) {
@@ -73,6 +78,7 @@ class AjustesRepositorio(private val contexto: Context) {
         val BLOQUEO = stringPreferencesKey("modo_bloqueo")
         val PIN_HASH = stringPreferencesKey("pin_hash")
         val PIN_SAL = stringPreferencesKey("pin_sal")
+        val PIN_FALLOS = intPreferencesKey("pin_fallos")
     }
 
     val ajustes: Flow<Ajustes> = contexto.almacen.data.map(::mapea)
@@ -104,7 +110,8 @@ class AjustesRepositorio(private val contexto: Context) {
             ?.let { runCatching { ModoBloqueo.valueOf(it) }.getOrNull() }
             ?: ModoBloqueo.NINGUNO,
         pinHash = p[Claves.PIN_HASH],
-        pinSal = p[Claves.PIN_SAL]
+        pinSal = p[Claves.PIN_SAL],
+        pinFallos = p[Claves.PIN_FALLOS] ?: 0
     )
 
     suspend fun guardaTema(oscuro: Boolean?) {
@@ -190,6 +197,7 @@ class AjustesRepositorio(private val contexto: Context) {
             it[Claves.BLOQUEO] = ModoBloqueo.SISTEMA.name
             it.remove(Claves.PIN_HASH)
             it.remove(Claves.PIN_SAL)
+            it.remove(Claves.PIN_FALLOS)
         }
     }
 
@@ -198,6 +206,9 @@ class AjustesRepositorio(private val contexto: Context) {
             it[Claves.BLOQUEO] = ModoBloqueo.PIN.name
             it[Claves.PIN_HASH] = hash
             it[Claves.PIN_SAL] = sal
+            // Un PIN nuevo estrena contador: la espera que dejo el anterior no
+            // tiene por que heredarla quien acaba de demostrar que es el dueno.
+            it.remove(Claves.PIN_FALLOS)
         }
     }
 
@@ -206,6 +217,19 @@ class AjustesRepositorio(private val contexto: Context) {
             it.remove(Claves.BLOQUEO)
             it.remove(Claves.PIN_HASH)
             it.remove(Claves.PIN_SAL)
+            it.remove(Claves.PIN_FALLOS)
         }
+    }
+
+    /** Suma un fallo. El contador no tiene techo; la espera si. */
+    suspend fun sumaFalloPin() {
+        contexto.almacen.edit {
+            it[Claves.PIN_FALLOS] = (it[Claves.PIN_FALLOS] ?: 0) + 1
+        }
+    }
+
+    /** Lo unico que pone el contador a cero es acertar el PIN. */
+    suspend fun limpiaFallosPin() {
+        contexto.almacen.edit { it.remove(Claves.PIN_FALLOS) }
     }
 }

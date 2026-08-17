@@ -70,7 +70,7 @@ app/src/main/java/com/carlosalbertoxw/ollin/actividades/
 ├── domain/
 │   ├── model/       Enums, utilidades de tiempo y días de la semana
 │   └── usecase/     Cálculo de rachas
-└── ui/              Compose: pantallas, navegación, tema, componentes
+└── ui/              Compose: pantallas y sus ViewModels, navegación, tema, componentes
 ```
 
 ## Documentación

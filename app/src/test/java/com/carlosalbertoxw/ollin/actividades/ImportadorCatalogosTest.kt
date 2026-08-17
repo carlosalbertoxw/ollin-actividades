@@ -56,7 +56,7 @@ class ImportadorCatalogosTest {
             ApplicationProvider.getApplicationContext(),
             OllinDatabase::class.java
         ).allowMainThreadQueries().build()
-        importador = ImportadorExcel(db.categoriaDao(), db.habitoDao(), db.actividadDao())
+        importador = ImportadorExcel(db)
     }
 
     @After

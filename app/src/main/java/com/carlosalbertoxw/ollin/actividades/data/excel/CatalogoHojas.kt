@@ -10,11 +10,11 @@ package com.carlosalbertoxw.ollin.actividades.data.excel
 enum class EsquemaExportacion(val etiqueta: String, val descripcion: String) {
     EXTENDIDO(
         "Extendido",
-        "Agrega Ambito, Inicio, Fin, Cantidad, Unidad, Habito y Notas. Es el que conserva todo."
+        "Agrega Ámbito, Inicio, Fin, Cantidad, Unidad, Hábito y Notas. Es el que conserva todo."
     ),
     COMPACTO(
         "Compacto",
-        "Solo las 5 columnas indispensables: fecha, titulo, categoria, estado y minutos."
+        "Solo las 5 columnas indispensables: fecha, título, categoría, estado y minutos."
     );
 
     val columnas: List<String>
@@ -49,28 +49,28 @@ enum class HojaExportable(
 ) {
     REGISTROS(
         "Registros",
-        "Toda la bitacora, una actividad por renglon. Es la fuente de las demas hojas.",
+        "Toda la bitácora, una actividad por renglón. Es la fuente de las demás hojas.",
         obligatoria = true
     ),
     POR_DIA(
         "Por dia",
-        "Minutos y sesiones de cada dia con actividad, para ver la constancia de un vistazo."
+        "Minutos y sesiones de cada día con actividad, para ver la constancia de un vistazo."
     ),
     POR_CATEGORIA(
         "Por categoria",
-        "Cuanto tiempo se fue a cada categoria y que tajada del total representa."
+        "Cuánto tiempo se fue a cada categoría y qué tajada del total representa."
     ),
     HABITOS(
         "Habitos",
-        "Los habitos con su cadencia, su racha actual y la mejor que has tenido."
+        "Los hábitos con su cadencia, su racha actual y la mejor que has tenido."
     ),
     CATEGORIAS(
         "Categorias",
-        "El catalogo con su ambito y su color. Sirve para reordenarlo fuera del telefono."
+        "El catálogo con su ámbito y su color. Sirve para reordenarlo fuera del teléfono."
     ),
     DICCIONARIOS(
         "Diccionarios",
-        "Listas de categorias, ambitos, estados, unidades y habitos. Alimenta los desplegables de Registros."
+        "Listas de categorías, ámbitos, estados, unidades y hábitos. Alimenta los desplegables de Registros."
     );
 
     companion object {

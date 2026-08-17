@@ -30,13 +30,20 @@ fun pedirCredencialDelSistema(
     actividad: FragmentActivity,
     titulo: String,
     alLograr: () -> Unit,
-    alFallar: (String) -> Unit
+    alFallar: (String) -> Unit,
+    /**
+     * Se invoca solo en el camino anterior a Android 11, que es el unico que
+     * abre una actividad y por lo tanto manda Ollin al fondo. El dialogo
+     * unificado de Android 11 en adelante se monta encima sin detenerla, asi
+     * que avisar ahi dejaria concedida una gracia que nadie va a gastar.
+     */
+    alSalirAlSistema: () -> Unit = {}
 ): () -> Unit {
     val lanzador = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { resultado ->
         if (resultado.resultCode == Activity.RESULT_OK) alLograr()
-        else alFallar("No se pudo verificar. Intenta de nuevo.")
+        else alFallar("No se pudo verificar. Inténtalo de nuevo.")
     }
 
     return {
@@ -56,7 +63,7 @@ fun pedirCredencialDelSistema(
             ).authenticate(
                 BiometricPrompt.PromptInfo.Builder()
                     .setTitle(titulo)
-                    .setSubtitle("Usa tu huella, patron o PIN")
+                    .setSubtitle("Usa tu huella, patrón o PIN")
                     .setAllowedAuthenticators(BIOMETRIC_WEAK or DEVICE_CREDENTIAL)
                     .build()
             )
@@ -67,8 +74,12 @@ fun pedirCredencialDelSistema(
                 titulo,
                 "Usa tu patron, PIN o contrasena"
             )
-            if (intencion != null) lanzador.launch(intencion)
-            else alFallar("Tu telefono ya no tiene patron ni PIN configurado.")
+            if (intencion != null) {
+                alSalirAlSistema()
+                lanzador.launch(intencion)
+            } else {
+                alFallar("Tu teléfono ya no tiene patrón ni PIN configurado.")
+            }
         }
     }
 }

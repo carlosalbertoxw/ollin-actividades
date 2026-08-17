@@ -124,7 +124,7 @@ class ExcelRoundTripTest {
         val fila = libro.hoja("Registros")!!.filas.first { it[1].comoTexto() == "Correr 5 km" }
 
         assertEquals(5.0, fila[8].numero!!, 0.001)
-        assertEquals("Kilometros", fila[9].comoTexto())
+        assertEquals("Kilómetros", fila[9].comoTexto())
     }
 
     @Test
@@ -221,10 +221,10 @@ class ExcelRoundTripTest {
         val fila = hoja.filas.first { it.getOrNull(0)?.comoTexto() == "Leer 20 minutos" }
 
         assertEquals("Enfoque profundo", fila[1].comoTexto())
-        assertEquals("Todos los dias", fila[2].comoTexto())
+        assertEquals("Todos los días", fila[2].comoTexto())
         assertEquals(1.0, fila[6].numero!!, 0.001)   // un cumplimiento
         assertEquals(1.0, fila[7].numero!!, 0.001)   // racha de un dia
-        assertEquals("dias", fila[9].comoTexto())
+        assertEquals("días", fila[9].comoTexto())
     }
 
     @Test

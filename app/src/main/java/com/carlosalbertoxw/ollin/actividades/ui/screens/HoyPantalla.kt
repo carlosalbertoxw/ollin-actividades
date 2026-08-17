@@ -49,25 +49,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 import com.carlosalbertoxw.ollin.actividades.data.db.Actividad
 import com.carlosalbertoxw.ollin.actividades.data.db.ActividadDetallada
 import com.carlosalbertoxw.ollin.actividades.data.db.Categoria
-import com.carlosalbertoxw.ollin.actividades.data.db.Habito
-import com.carlosalbertoxw.ollin.actividades.data.prefs.Ajustes
 import com.carlosalbertoxw.ollin.actividades.data.repo.HabitoConAvance
 import com.carlosalbertoxw.ollin.actividades.di.Contenedor
 import com.carlosalbertoxw.ollin.actividades.domain.model.Ambito
@@ -84,144 +69,6 @@ import com.carlosalbertoxw.ollin.actividades.ui.recuerdaVm
 import com.carlosalbertoxw.ollin.actividades.ui.theme.LocalColoresOllin
 import com.carlosalbertoxw.ollin.actividades.ui.theme.colorDeCategoria
 import java.time.Instant
-import java.time.LocalDate
-
-@OptIn(ExperimentalCoroutinesApi::class)
-class HoyVm(contenedor: Contenedor) : ViewModel() {
-
-    private val repo = contenedor.repositorio
-
-    /**
-     * El dia que la pantalla esta enseñando.
-     *
-     * No puede ser una constante del ViewModel. La app se queda abierta y cruza
-     * la medianoche, y con el dia congelado seguiria enseñando lo de ayer bajo
-     * el titulo "Hoy" —y, peor, ahi escribiria los habitos que marcaras—.
-     *
-     * Se reprograma sola para despertar justo en el cambio de dia: entre una
-     * medianoche y la siguiente no gasta nada, y solo emite cuando de verdad
-     * cambio la fecha, asi que tampoco provoca recomposiciones de mas.
-     */
-    val dia: StateFlow<LocalDate> = flow {
-        while (true) {
-            val actual = Tiempo.hoy()
-            emit(actual)
-            delay(milisHastaElCambioDeDia(actual))
-        }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), Tiempo.hoy())
-
-    val enCurso: StateFlow<ActividadDetallada?> = repo.observaEnCurso()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
-
-    /**
-     * El latido del cronometro.
-     *
-     * Late solo mientras hay algo corriendo y mientras alguien mira la pantalla.
-     * Sin actividad en curso no hay ningun numero que avance, asi que un tick
-     * por segundo solo serviria para gastar bateria sin enseñar nada distinto.
-     */
-    val ahora: StateFlow<Instant> = enCurso
-        .flatMapLatest { corriendo ->
-            if (corriendo == null) flowOf(Tiempo.ahora())
-            else flow {
-                while (true) {
-                    emit(Tiempo.ahora())
-                    delay(1_000)
-                }
-            }
-        }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(1_000), Tiempo.ahora())
-
-    val delDia: StateFlow<List<ActividadDetallada>> = dia
-        .flatMapLatest(repo::observaDelDia)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
-    val pendientes: StateFlow<List<ActividadDetallada>> = dia
-        .flatMapLatest { repo.observaPendientes(it) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
-    val habitos: StateFlow<List<HabitoConAvance>> = dia
-        .flatMapLatest { repo.observaHabitosConAvance(it) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
-    val categorias: StateFlow<List<Categoria>> = repo.observaCategorias()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
-    /**
-     * Para resolver la categoria de cada habito. Va sobre todas y no solo las
-     * activas: un habito puede apuntar a una archivada, y esconderla la haria
-     * parecer un habito suelto.
-     */
-    val indiceCategorias: StateFlow<Map<Long, Categoria>> = repo.observaTodasLasCategorias()
-        .map { lista -> lista.associateBy { it.id } }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
-
-    val ajustes: StateFlow<Ajustes> = contenedor.ajustes.ajustes
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), Ajustes())
-
-    /** Minutos completados hoy por ambito. Es el resumen de la jornada. */
-    val minutosPorAmbito: StateFlow<Map<Ambito?, Int>> = dia
-        .flatMapLatest { repo.observaTotalPorAmbito(it, it) }
-        .map { totales -> totales.associate { it.ambito to it.minutos } }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
-
-    private val _categoriaRapida = MutableStateFlow<Long?>(null)
-    val categoriaRapida: StateFlow<Long?> = _categoriaRapida
-
-    fun eligeCategoriaRapida(id: Long?) {
-        _categoriaRapida.value = if (_categoriaRapida.value == id) null else id
-    }
-
-    fun inicia(titulo: String) {
-        val limpio = titulo.trim()
-        if (limpio.isEmpty()) return
-        viewModelScope.launch {
-            repo.iniciaAhora(titulo = limpio, categoriaId = _categoriaRapida.value)
-        }
-    }
-
-    fun detiene() {
-        val id = enCurso.value?.actividad?.id ?: return
-        viewModelScope.launch { repo.detiene(id) }
-    }
-
-    fun arranca(id: Long) {
-        viewModelScope.launch { repo.arranca(id) }
-    }
-
-    fun completaSinCronometro(id: Long) {
-        viewModelScope.launch {
-            repo.completa(id, ajustes.value.duracionRapidaMinutos)
-        }
-    }
-
-    fun alterna(avance: HabitoConAvance) {
-        val elDia = dia.value
-        viewModelScope.launch {
-            if (avance.cumplidoHoy) repo.deshaceHabito(avance.habito.id, elDia)
-            else repo.registraHabito(avance.habito, dia = elDia)
-        }
-    }
-
-    fun cronometraHabito(habito: Habito) {
-        viewModelScope.launch {
-            repo.iniciaAhora(
-                titulo = habito.nombre,
-                categoriaId = habito.categoriaId,
-                habitoId = habito.id
-            )
-        }
-    }
-
-    private companion object {
-        /** Lo que falta para la medianoche, con un piso para no girar en vacio. */
-        fun milisHastaElCambioDeDia(desde: LocalDate): Long {
-            val manana = desde.plusDays(1).atStartOfDay(Tiempo.zona()).toInstant()
-            return (manana.toEpochMilli() - Tiempo.ahora().toEpochMilli())
-                .coerceAtLeast(1_000L)
-        }
-    }
-}
 
 @Composable
 fun HoyPantalla(
@@ -229,7 +76,7 @@ fun HoyPantalla(
     alAbrirActividad: (Long) -> Unit,
     alAbrirAjustes: () -> Unit
 ) {
-    val vm = recuerdaVm("hoy") { HoyVm(contenedor) }
+    val vm = recuerdaVm("hoy") { HoyVm(contenedor.repositorio, contenedor.ajustes) }
     val dia by vm.dia.collectAsStateWithLifecycle()
     val enCurso by vm.enCurso.collectAsStateWithLifecycle()
     val delDia by vm.delDia.collectAsStateWithLifecycle()
@@ -274,7 +121,7 @@ fun HoyPantalla(
                     Text(Tiempo.diaRelativo(dia), style = MaterialTheme.typography.headlineSmall)
                     Text(
                         if (totalHoy > 0) "${Tiempo.duracionLarga(totalHoy)} registradas"
-                        else "Sin tiempo registrado todavia",
+                        else "Sin tiempo registrado todavía",
                         style = MaterialTheme.typography.bodySmall,
                         color = colores.textoTenue
                     )
@@ -337,7 +184,7 @@ fun HoyPantalla(
         if (habitosDeHoy.isNotEmpty()) {
             item(key = "titulo-habitos") {
                 SeccionTitulo(
-                    "Habitos de hoy",
+                    "Hábitos de hoy",
                     Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                 ) {
                     Text(
@@ -457,7 +304,7 @@ private fun TarjetaCronometro(
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        enCurso.categoriaNombre ?: "Sin categoria",
+                        enCurso.categoriaNombre ?: "Sin categoría",
                         style = MaterialTheme.typography.labelMedium,
                         color = colores.textoTenue
                     )
@@ -481,13 +328,13 @@ private fun TarjetaCronometro(
                     TextButton(onClick = alAbrir) { Text("Editar") }
                 }
             } else {
-                Text("Que estas haciendo", style = MaterialTheme.typography.titleMedium)
+                Text("Qué estás haciendo", style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(10.dp))
                 OutlinedTextField(
                     value = titulo,
                     onValueChange = { titulo = it },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Reunion de diseno, correr 5 km...") },
+                    placeholder = { Text("Reunión de diseño, correr 5 km…") },
                     singleLine = true
                 )
                 Spacer(Modifier.height(10.dp))
@@ -633,7 +480,7 @@ private fun RenglonHabitoHoy(
                 Spacer(Modifier.width(6.dp))
                 Text(
                     buildString {
-                        append(categoria?.nombre ?: "Sin categoria")
+                        append(categoria?.nombre ?: "Sin categoría")
                         append(" · ")
                         if (avance.racha.actual > 0) {
                             append("Racha de ${avance.racha.actual} ${avance.racha.unidad}")

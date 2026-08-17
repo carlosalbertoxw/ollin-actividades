@@ -57,7 +57,18 @@ Excel cuenta los días desde el 30/12/1899 (desplazamiento 25 569) y la hora es 
 
 El lector carga el paquete completo en memoria porque `sharedStrings.xml` puede venir después de las hojas dentro del ZIP; para una bitácora personal el costo es irrelevante y evita necesitar acceso aleatorio. Hay un tope de 64 MB por archivo.
 
+### Un `.xlsx` es entrada externa
+
+Aunque el archivo lo elija el propio usuario, es lo único que entra a la app desde fuera, y se trata como tal:
+
+- **El tope se aplica mientras se lee**, no después. Descomprimir la entrada entera para luego mirar cuánto ocupa deja sin defensa contra una hoja de relación 1000:1: la memoria se agota antes de llegar a la comprobación.
+- **El SAX va con las entidades externas cerradas** (`disallow-doctype-decl`, entidades generales y de parámetro, DTD externa) y con un `EntityResolver` que devuelve la cadena vacía. No toda implementación reconoce esas banderas y algunas lanzan al pedirlas, así que el resolutor es el cinturón que no depende de ninguna. Una hoja de cálculo no declara DTD; lo que sí hace un XML preparado es leer un archivo del teléfono y dejarlo caer en una celda, o expandirse en cascada hasta tumbar la app.
+
 ## Importación
+
+Toda la escritura de una importación va dentro de **una sola transacción**. El parseo queda fuera a propósito: es la parte lenta, no toca la base, y un archivo ilegible no tiene por qué llegar a abrirla.
+
+Esto importa sobre todo con «Reemplazar todo», que es el valor por omisión: la bitácora se borra antes de escribir la nueva. Sin transacción, un fallo a media inserción —una fecha corrupta que desborda al convertirla, memoria agotada con un libro grande— dejaba la tabla vacía y nada con que repoblarla, y no hay de dónde recuperarla: la base va cifrada con una llave del Keystore que no se respalda, así que el único respaldo es el `.xlsx` que se estaba importando. Lo cubre [`ImportadorTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/ImportadorTest.kt), con un libro que revienta ya empezada la escritura.
 
 `Ajustes → Archivo → Importar` abre el selector de documentos del sistema. Es el único camino: la app no se declara como manejadora de `.xlsx`, así que no aparece en el "Abrir con" de un gestor de archivos.
 

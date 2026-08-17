@@ -49,51 +49,19 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import com.carlosalbertoxw.ollin.actividades.data.prefs.Ajustes
-import com.carlosalbertoxw.ollin.actividades.data.prefs.AjustesRepositorio
 import com.carlosalbertoxw.ollin.actividades.data.prefs.ModoBloqueo
 import com.carlosalbertoxw.ollin.actividades.data.seguridad.ClavePin
 import com.carlosalbertoxw.ollin.actividades.di.Contenedor
 import com.carlosalbertoxw.ollin.actividades.domain.model.Tiempo
 import com.carlosalbertoxw.ollin.actividades.ui.recuerdaVm
 import com.carlosalbertoxw.ollin.actividades.ui.seguridad.pedirCredencialDelSistema
+import com.carlosalbertoxw.ollin.actividades.ui.seguridad.segundosDeEsperaPin
+import com.carlosalbertoxw.ollin.actividades.ui.seguridad.textoDeEspera
 import com.carlosalbertoxw.ollin.actividades.ui.seguridad.telefonoAsegurado
 import com.carlosalbertoxw.ollin.actividades.ui.theme.LocalColoresOllin
-
-class AjustesVm(contenedor: Contenedor) : ViewModel() {
-
-    private val repo: AjustesRepositorio = contenedor.ajustes
-
-    val ajustes: StateFlow<Ajustes> = repo.ajustes
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), Ajustes())
-
-    fun tema(oscuro: Boolean?) = viewModelScope.launch { repo.guardaTema(oscuro) }
-    fun colorDinamico(valor: Boolean) = viewModelScope.launch { repo.guardaColorDinamico(valor) }
-    fun metaTrabajo(minutos: Int) = viewModelScope.launch { repo.guardaMetaTrabajo(minutos) }
-    fun metaFisico(minutos: Int) = viewModelScope.launch { repo.guardaMetaFisico(minutos) }
-    fun duracionRapida(minutos: Int) = viewModelScope.launch { repo.guardaDuracionRapida(minutos) }
-    fun completadasEnHoy(valor: Boolean) = viewModelScope.launch { repo.guardaMuestraCompletadas(valor) }
-
-    fun tutoriales(valor: Boolean) = viewModelScope.launch { repo.guardaMuestraTutoriales(valor) }
-
-    fun reiniciaTutoriales() = viewModelScope.launch { repo.reiniciaTutoriales() }
-
-    fun quitaBloqueo() = viewModelScope.launch { repo.quitaBloqueo() }
-
-    fun usaBloqueoDelSistema() = viewModelScope.launch { repo.activaBloqueoSistema() }
-
-    fun usaBloqueoConPin(pin: String) = viewModelScope.launch {
-        val sal = ClavePin.nuevaSal()
-        repo.activaBloqueoPin(hash = ClavePin.deriva(pin, sal), sal = sal)
-    }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -104,7 +72,7 @@ fun AjustesPantalla(
     alAbrirAcercaDe: () -> Unit,
     alCerrar: () -> Unit
 ) {
-    val vm = recuerdaVm("ajustes") { AjustesVm(contenedor) }
+    val vm = recuerdaVm("ajustes") { AjustesVm(contenedor.ajustes) }
     val ajustes by vm.ajustes.collectAsStateWithLifecycle()
     val colores = LocalColoresOllin.current
 
@@ -167,9 +135,9 @@ fun AjustesPantalla(
             HorizontalDivider(color = colores.trazoSuave)
             Spacer(Modifier.height(20.dp))
 
-            Text("Metas del dia", style = MaterialTheme.typography.titleMedium)
+            Text("Metas del día", style = MaterialTheme.typography.titleMedium)
             Text(
-                "La referencia de las barras de la pantalla de hoy. No es una calificacion.",
+                "La referencia de las barras de la pantalla de hoy. No es una calificación.",
                 style = MaterialTheme.typography.bodySmall,
                 color = colores.textoTenue
             )
@@ -190,7 +158,7 @@ fun AjustesPantalla(
             }
             Spacer(Modifier.height(12.dp))
             CampoMinutos(
-                etiqueta = "Duracion al marcar sin cronometro",
+                etiqueta = "Duración al marcar sin cronómetro",
                 minutos = ajustes.duracionRapidaMinutos,
                 alCambiar = vm::duracionRapida,
                 modifier = Modifier.fillMaxWidth()
@@ -210,7 +178,7 @@ fun AjustesPantalla(
                 Column(Modifier.weight(1f)) {
                     Text("Mostrar lo completado en Hoy", style = MaterialTheme.typography.bodyMedium)
                     Text(
-                        "Apagado, la pantalla de hoy solo ensena lo que falta.",
+                        "Apagado, la pantalla de hoy solo enseña lo que falta.",
                         style = MaterialTheme.typography.bodySmall,
                         color = colores.textoTenue
                     )
@@ -250,8 +218,8 @@ fun AjustesPantalla(
             }
 
             ListItem(
-                headlineContent = { Text("Categorias") },
-                supportingContent = { Text("Renombrar, cambiar de ambito o archivar") },
+                headlineContent = { Text("Categorías") },
+                supportingContent = { Text("Renombrar, cambiar de ámbito o archivar") },
                 leadingContent = {
                     Icon(Icons.AutoMirrored.Filled.Label, contentDescription = null)
                 },
@@ -262,7 +230,7 @@ fun AjustesPantalla(
 
             ListItem(
                 headlineContent = { Text("Archivo") },
-                supportingContent = { Text("Exportar e importar tu bitacora en Excel (.xlsx)") },
+                supportingContent = { Text("Exportar e importar tu bitácora en Excel (.xlsx)") },
                 leadingContent = {
                     Icon(Icons.Filled.FolderOpen, contentDescription = null)
                 },
@@ -279,7 +247,10 @@ fun AjustesPantalla(
                 ajustes = ajustes,
                 alQuitar = { vm.quitaBloqueo() },
                 alUsarSistema = { vm.usaBloqueoDelSistema() },
-                alUsarPin = { vm.usaBloqueoConPin(it) }
+                alUsarPin = { vm.usaBloqueoConPin(it) },
+                alFallarPin = { vm.sumaFalloPin() },
+                alAcertarPin = { vm.limpiaFallosPin() },
+                alSalirAlSistema = contenedor.controlBloqueo::esperaVueltaDelSistema
             )
 
             Spacer(Modifier.height(20.dp))
@@ -288,7 +259,7 @@ fun AjustesPantalla(
 
             ListItem(
                 headlineContent = { Text("Acerca de Ollin") },
-                supportingContent = { Text("Version, que hace y que pasa con tus datos") },
+                supportingContent = { Text("Versión, qué hace y qué pasa con tus datos") },
                 leadingContent = {
                     Icon(Icons.Outlined.Info, contentDescription = null)
                 },
@@ -314,7 +285,10 @@ private fun SeccionBloqueo(
     ajustes: Ajustes,
     alQuitar: () -> Unit,
     alUsarSistema: () -> Unit,
-    alUsarPin: (String) -> Unit
+    alUsarPin: (String) -> Unit,
+    alFallarPin: () -> Unit,
+    alAcertarPin: () -> Unit,
+    alSalirAlSistema: () -> Unit
 ) {
     val contexto = LocalContext.current
     val actividad = LocalActivity.current as? FragmentActivity
@@ -331,8 +305,8 @@ private fun SeccionBloqueo(
 
     Text("Bloqueo", style = MaterialTheme.typography.titleMedium)
     Text(
-        "Ollin pide la llave al abrirse y al volver despues de un minuto fuera. " +
-            "Ese minuto es lo que evita que elegir un archivo de Excel te expulse.",
+        "Ollin pide la llave al abrirse, y al volver de un viaje al selector de " +
+            "archivos que haya tardado mas de un minuto.",
         style = MaterialTheme.typography.bodySmall,
         color = colores.textoTenue
     )
@@ -342,7 +316,7 @@ private fun SeccionBloqueo(
     // hay forma de confirmar quien eres: mejor no ofrecer el candado.
     if (actividad == null) {
         Text(
-            "El bloqueo no esta disponible en esta pantalla.",
+            "El bloqueo no está disponible en esta pantalla.",
             style = MaterialTheme.typography.bodySmall,
             color = colores.textoTenue
         )
@@ -351,9 +325,10 @@ private fun SeccionBloqueo(
 
     val confirmaConSistema = pedirCredencialDelSistema(
         actividad = actividad,
-        titulo = "Confirma que eres tu",
+        titulo = "Confirma que eres tú",
         alLograr = { pendiente?.invoke(); pendiente = null },
-        alFallar = { pendiente = null; aviso = it }
+        alFallar = { pendiente = null; aviso = it },
+        alSalirAlSistema = alSalirAlSistema
     )
 
     fun conConfirmacion(accion: () -> Unit) {
@@ -375,8 +350,8 @@ private fun SeccionBloqueo(
                         ModoBloqueo.NINGUNO -> conConfirmacion(alQuitar)
                         ModoBloqueo.SISTEMA ->
                             if (estaAsegurado) conConfirmacion(alUsarSistema)
-                            else aviso = "Tu telefono no tiene patron, PIN ni contrasena. " +
-                                "Configuralo en los ajustes de Android y vuelve aqui."
+                            else aviso = "Tu teléfono no tiene patrón, PIN ni contraseña. " +
+                                "Configúralo en los ajustes de Android y vuelve aquí."
                         ModoBloqueo.PIN -> conConfirmacion { pidiendoPinNuevo = true }
                     }
                 },
@@ -401,11 +376,11 @@ private fun SeccionBloqueo(
     Spacer(Modifier.height(8.dp))
     Text(
         when (modoActual) {
-            ModoBloqueo.NINGUNO -> "Cualquiera que tome tu telefono desbloqueado puede abrir Ollin."
-            ModoBloqueo.SISTEMA -> "Se usa el patron, PIN o huella con que desbloqueas el telefono. " +
-                "Ollin no guarda ningun secreto."
+            ModoBloqueo.NINGUNO -> "Cualquiera que tome tu teléfono desbloqueado puede abrir Ollin."
+            ModoBloqueo.SISTEMA -> "Se usa el patrón, PIN o huella con que desbloqueas el teléfono. " +
+                "Ollin no guarda ningún secreto."
             ModoBloqueo.PIN -> "Se usa un PIN solo de Ollin. Si lo olvidas no hay forma de " +
-                "recuperarlo: tendrias que reinstalar la app y perderias los datos."
+                "recuperarlo: tendrías que reinstalar la app y perderías los datos."
         },
         style = MaterialTheme.typography.bodySmall,
         color = colores.textoTenue
@@ -421,6 +396,8 @@ private fun SeccionBloqueo(
     if (pidiendoPinActual) {
         DialogoPinActual(
             ajustes = ajustes,
+            alFallar = alFallarPin,
+            alAcertar = alAcertarPin,
             alConfirmar = {
                 pidiendoPinActual = false
                 pendiente?.invoke()
@@ -441,6 +418,8 @@ private fun SeccionBloqueo(
 @Composable
 private fun DialogoPinActual(
     ajustes: Ajustes,
+    alFallar: () -> Unit,
+    alAcertar: () -> Unit,
     alConfirmar: () -> Unit,
     alCancelar: () -> Unit
 ) {
@@ -448,6 +427,8 @@ private fun DialogoPinActual(
     var error by remember { mutableStateOf<String?>(null) }
     var verificando by remember { mutableStateOf(false) }
     val ambito = rememberCoroutineScope()
+
+    val espera = segundosDeEsperaPin(ajustes.pinFallos)
 
     AlertDialog(
         onDismissRequest = alCancelar,
@@ -464,6 +445,7 @@ private fun DialogoPinActual(
                     label = { Text("PIN actual") },
                     singleLine = true,
                     isError = error != null,
+                    enabled = espera == 0,
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword)
                 )
@@ -474,21 +456,43 @@ private fun DialogoPinActual(
                         color = MaterialTheme.colorScheme.error
                     )
                 }
+                if (espera > 0) {
+                    Text(
+                        "Demasiados intentos fallidos. Vuelve a probar en un momento.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = LocalColoresOllin.current.textoTenue
+                    )
+                }
             }
         },
         confirmButton = {
             TextButton(
-                enabled = pin.length >= ClavePin.LARGO_MINIMO && !verificando,
+                enabled = pin.length >= ClavePin.LARGO_MINIMO && !verificando && espera == 0,
                 onClick = {
                     verificando = true
                     error = null
                     ambito.launch {
                         val correcto = ClavePin.coincide(pin, ajustes.pinHash, ajustes.pinSal)
                         verificando = false
-                        if (correcto) alConfirmar() else { error = "PIN incorrecto"; pin = "" }
+                        if (correcto) {
+                            alAcertar()
+                            alConfirmar()
+                        } else {
+                            alFallar()
+                            error = "PIN incorrecto"
+                            pin = ""
+                        }
                     }
                 }
-            ) { Text(if (verificando) "Comprobando..." else "Confirmar") }
+            ) {
+                Text(
+                    when {
+                        espera > 0 -> textoDeEspera(espera)
+                        verificando -> "Comprobando…"
+                        else -> "Confirmar"
+                    }
+                )
+            }
         },
         dismissButton = { TextButton(onClick = alCancelar) { Text("Cancelar") } }
     )
@@ -508,8 +512,8 @@ private fun DialogoNuevoPin(alGuardar: (String) -> Unit, alCancelar: () -> Unit)
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
-                    "Minimo ${ClavePin.LARGO_MINIMO} digitos. No se guarda tal cual: " +
-                        "de el solo queda una huella de la que no se puede volver atras.",
+                    "Mínimo ${ClavePin.LARGO_MINIMO} dígitos. No se guarda tal cual: " +
+                        "de él solo queda una huella de la que no se puede volver atrás.",
                     style = MaterialTheme.typography.bodySmall
                 )
                 OutlinedTextField(
@@ -525,7 +529,7 @@ private fun DialogoNuevoPin(alGuardar: (String) -> Unit, alCancelar: () -> Unit)
                     onValueChange = {
                         confirmacion = it.filter(Char::isDigit).take(ClavePin.LARGO_MAXIMO)
                     },
-                    label = { Text("Repitelo") },
+                    label = { Text("Repítelo") },
                     singleLine = true,
                     isError = distintos,
                     visualTransformation = PasswordVisualTransformation(),

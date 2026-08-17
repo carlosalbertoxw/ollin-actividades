@@ -66,6 +66,7 @@ class MainActivity : FragmentActivity() {
                     bloqueado && ajustes.modoBloqueo != ModoBloqueo.NINGUNO -> BloqueoPantalla(
                         actividad = this,
                         ajustes = ajustes,
+                        preferencias = contenedor.ajustes,
                         alDesbloquear = bloqueo::desbloquea
                     )
 

@@ -16,7 +16,7 @@ enum class Destino(
     HOY("hoy", "Hoy", Icons.Filled.Today),
     ACTIVIDADES("actividades", "Registro", Icons.AutoMirrored.Filled.ListAlt),
     HABITOS("habitos", "Habitos", Icons.Filled.Repeat),
-    ANALITICA("analitica", "Analitica", Icons.Filled.Insights)
+    ANALITICA("analitica", "Analítica", Icons.Filled.Insights)
 }
 
 object Rutas {

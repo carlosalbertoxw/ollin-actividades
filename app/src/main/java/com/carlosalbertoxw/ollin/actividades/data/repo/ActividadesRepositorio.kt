@@ -5,6 +5,7 @@ import android.net.Uri
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 import com.carlosalbertoxw.ollin.actividades.data.excel.DatosExportacion
 import com.carlosalbertoxw.ollin.actividades.data.excel.EsquemaExportacion
@@ -122,6 +123,15 @@ class ActividadesRepositorio(
      * lo que toca hacer, pero la de habitos los administra, y ahi hay que ver
      * tambien los pausados. Si no, pausar uno equivaldria a perderlo: la app no
      * volveria a ensenarlo por ningun lado y nadie podria reactivarlo.
+     *
+     * El `flowOn` no es decorativo. El bloque de un `combine` corre en el
+     * contexto de quien recolecta, y quien recolecta es un `stateIn` sobre
+     * `viewModelScope`, o sea el hilo principal. Dentro se agrupan cuatrocientos
+     * dias de cumplimientos y se llama a [Rachas.calcula] una vez por habito,
+     * que barre hasta mil quinientos dias cada uno; y esto no ocurre una vez,
+     * sino cada vez que se inserta o edita cualquier actividad. Sin sacarlo de
+     * Main, marcar un habito da un tiron justo en el momento en que la app
+     * tiene que sentirse instantanea.
      */
     fun observaHabitosConAvance(
         dia: LocalDate = Tiempo.hoy(),
@@ -143,7 +153,7 @@ class ActividadesRepositorio(
                     tocaHoy = habito.tocaHoy(dia)
                 )
             }
-        }
+        }.flowOn(Dispatchers.Default)
 
     // ---------------- Escritura de actividades ----------------
 
@@ -156,49 +166,12 @@ class ActividadesRepositorio(
      * completada sin duracion, porque toda la analitica suma esa columna.
      */
     suspend fun guarda(actividad: Actividad): Long {
-        val normalizada = normaliza(actividad)
+        val normalizada = actividad.coherente()
         return if (normalizada.id == 0L) {
             actividades.inserta(normalizada)
         } else {
             actividades.actualiza(normalizada)
             normalizada.id
-        }
-    }
-
-    private fun normaliza(a: Actividad): Actividad {
-        val dia = Tiempo.dia(a.inicio)
-        return when (a.estado) {
-            EstadoActividad.EN_CURSO -> a.copy(
-                dia = dia,
-                fin = null,
-                duracionMinutos = null,
-                actualizadoEn = System.currentTimeMillis()
-            )
-
-            EstadoActividad.PENDIENTE -> a.copy(
-                dia = dia,
-                fin = null,
-                actualizadoEn = System.currentTimeMillis()
-            )
-
-            EstadoActividad.COMPLETADO -> {
-                val fin = a.fin
-                if (fin != null) {
-                    a.copy(
-                        dia = dia,
-                        duracionMinutos = minutosEntre(a.inicio, fin),
-                        actualizadoEn = System.currentTimeMillis()
-                    )
-                } else {
-                    val minutos = a.duracionMinutos ?: 0
-                    a.copy(
-                        dia = dia,
-                        fin = a.inicio.plusSeconds(minutos * 60L),
-                        duracionMinutos = minutos,
-                        actualizadoEn = System.currentTimeMillis()
-                    )
-                }
-            }
         }
     }
 
@@ -251,7 +224,7 @@ class ActividadesRepositorio(
     suspend fun detiene(id: Long, cantidad: Double? = null): Int {
         val actividad = actividades.porId(id) ?: return 0
         val fin = Tiempo.ahora()
-        val minutos = minutosEntre(actividad.inicio, fin)
+        val minutos = Tiempo.minutosEntre(actividad.inicio, fin)
         actividades.actualiza(
             actividad.copy(
                 estado = EstadoActividad.COMPLETADO,
@@ -286,7 +259,7 @@ class ActividadesRepositorio(
                 previa.copy(
                     estado = EstadoActividad.COMPLETADO,
                     fin = momento,
-                    duracionMinutos = minutosEntre(previa.inicio, momento),
+                    duracionMinutos = Tiempo.minutosEntre(previa.inicio, momento),
                     actualizadoEn = System.currentTimeMillis()
                 )
             )
@@ -348,9 +321,19 @@ class ActividadesRepositorio(
 
     fun observaConteoActividades(): Flow<Int> = actividades.observaConteo()
 
+    /**
+     * El importador recibe la base entera y no los tres DAO sueltos: necesita
+     * abrir una transaccion. Con "reemplazar todo" la importacion borra la
+     * bitacora antes de escribir la nueva, y sin transaccion un fallo a media
+     * insercion —una restriccion violada, memoria agotada con un libro grande—
+     * dejaba la tabla vacia y nada con que repoblarla. No hay de donde
+     * recuperarla: la base va cifrada con una llave del Keystore que no se
+     * respalda, asi que el unico respaldo real es el .xlsx que se estaba
+     * importando.
+     */
     suspend fun importa(uri: Uri, opciones: OpcionesImportacion): ResultadoImportacion =
         withContext(Dispatchers.IO) {
-            val importador = ImportadorExcel(categorias, habitos, actividades)
+            val importador = ImportadorExcel(db)
             resolver.openInputStream(uri)?.use { importador.importa(it, opciones) }
                 ?: error("No se pudo abrir el archivo seleccionado")
         }
@@ -391,17 +374,5 @@ class ActividadesRepositorio(
     companion object {
         /** Dias de historia que se leen para calcular rachas. Poco mas de un ano. */
         private const val VENTANA_RACHA = 400L
-
-        /**
-         * Minutos entre dos instantes, redondeando al mas cercano. Una sesion
-         * de 89 segundos vale mas como "1 min" que como "1 min" truncado de
-         * 119: el redondeo reparte el error en vez de sesgarlo hacia abajo.
-         */
-        fun minutosEntre(inicio: Instant, fin: Instant): Int {
-            val millis = (fin.toEpochMilli() - inicio.toEpochMilli()).coerceAtLeast(0L)
-            return ((millis + 30_000L) / 60_000L)
-                .coerceAtMost(Int.MAX_VALUE.toLong())
-                .toInt()
-        }
     }
 }

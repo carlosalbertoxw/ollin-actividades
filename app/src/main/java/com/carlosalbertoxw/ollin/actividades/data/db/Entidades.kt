@@ -112,6 +112,53 @@ data class Actividad(
     /** Segundos transcurridos, para el cronometro de la pantalla de hoy. */
     fun segundosVividos(ahora: Instant = Tiempo.ahora()): Long =
         ((ahora.toEpochMilli() - inicio.toEpochMilli()) / 1000L).coerceAtLeast(0L)
+
+    /**
+     * Deja coherentes dia, fin y duracion antes de escribir.
+     *
+     * Las tres reglas: el dia siempre se deriva del inicio; si hay hora de fin
+     * manda el reloj y la duracion se recalcula; si solo hay duracion capturada
+     * a mano, se deduce la hora de fin. **Una actividad completada nunca se
+     * queda sin duracion**, porque toda la analitica suma esa columna.
+     *
+     * Vive en la entidad y no en el repositorio porque tiene dos clientes: la
+     * captura desde la pantalla y la importacion de un .xlsx. Cuando eran dos
+     * implementaciones paralelas, la aritmetica de fin y duracion estaba escrita
+     * dos veces, y la analitica habria dado cifras distintas segun por donde
+     * hubiera entrado el registro en cuanto una de las dos cambiara.
+     */
+    fun coherente(momento: Long = System.currentTimeMillis()): Actividad {
+        val dia = Tiempo.dia(inicio)
+        return when (estado) {
+            EstadoActividad.EN_CURSO ->
+                copy(dia = dia, fin = null, duracionMinutos = null, actualizadoEn = momento)
+
+            // La duracion de una pendiente es un plan, no un hecho, y se
+            // conserva: ninguna consulta de la analitica la suma, porque todas
+            // filtran por COMPLETADO.
+            EstadoActividad.PENDIENTE ->
+                copy(dia = dia, fin = null, actualizadoEn = momento)
+
+            EstadoActividad.COMPLETADO -> {
+                val cierre = fin
+                if (cierre != null) {
+                    copy(
+                        dia = dia,
+                        duracionMinutos = Tiempo.minutosEntre(inicio, cierre),
+                        actualizadoEn = momento
+                    )
+                } else {
+                    val minutos = (duracionMinutos ?: 0).coerceAtLeast(0)
+                    copy(
+                        dia = dia,
+                        fin = inicio.plusSeconds(minutos * 60L),
+                        duracionMinutos = minutos,
+                        actualizadoEn = momento
+                    )
+                }
+            }
+        }
+    }
 }
 
 /**
@@ -183,22 +230,22 @@ data class Habito(
      * de esta frase acabarian contradiciendose.
      */
     fun cadencia(): String = when (frecuencia) {
-        Frecuencia.DIARIA -> "Todos los dias"
+        Frecuencia.DIARIA -> "Todos los días"
         Frecuencia.DIAS_ELEGIDOS -> DiasSemana.etiqueta(diasSemana)
-        Frecuencia.SEMANAL -> "$metaSemanal dias por semana"
+        Frecuencia.SEMANAL -> "$metaSemanal días por semana"
         Frecuencia.CADA_DIAS -> when (val n = intervaloDias.coerceAtLeast(1)) {
-            1 -> "Todos los dias"
+            1 -> "Todos los días"
             7 -> "Cada semana"
             // Quince dias es la cadencia mas pedida y tiene nombre propio.
             15 -> "Cada quincena"
-            else -> "Cada $n dias"
+            else -> "Cada $n días"
         }
         Frecuencia.CADA_MESES -> when (val n = intervaloMeses.coerceAtLeast(1)) {
             1 -> "Cada mes"
             2 -> "Cada 2 meses"
             3 -> "Cada trimestre"
             6 -> "Cada semestre"
-            12 -> "Cada ano"
+            12 -> "Cada año"
             else -> "Cada $n meses"
         }
     }

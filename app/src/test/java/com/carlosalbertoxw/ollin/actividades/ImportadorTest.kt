@@ -8,12 +8,15 @@ import com.carlosalbertoxw.ollin.actividades.data.db.Actividad
 import com.carlosalbertoxw.ollin.actividades.data.db.Categoria
 import com.carlosalbertoxw.ollin.actividades.data.db.Habito
 import com.carlosalbertoxw.ollin.actividades.data.db.OllinDatabase
+import com.carlosalbertoxw.ollin.actividades.data.excel.Celda
 import com.carlosalbertoxw.ollin.actividades.data.excel.DatosExportacion
 import com.carlosalbertoxw.ollin.actividades.data.excel.EsquemaExportacion
 import com.carlosalbertoxw.ollin.actividades.data.excel.ExportadorExcel
+import com.carlosalbertoxw.ollin.actividades.data.excel.Hoja
 import com.carlosalbertoxw.ollin.actividades.data.excel.HojaExportable
 import com.carlosalbertoxw.ollin.actividades.data.excel.ImportadorExcel
 import com.carlosalbertoxw.ollin.actividades.data.excel.OpcionesImportacion
+import com.carlosalbertoxw.ollin.actividades.data.excel.XlsxEscritor
 import com.carlosalbertoxw.ollin.actividades.domain.model.Ambito
 import com.carlosalbertoxw.ollin.actividades.domain.model.EstadoActividad
 import com.carlosalbertoxw.ollin.actividades.domain.model.Tiempo
@@ -46,13 +49,20 @@ class ImportadorTest {
 
     private val hoy = LocalDate.of(2026, 8, 10)
 
+    /**
+     * Serial de Excel que da una fecha valida como LocalDate pero que desborda
+     * al reducirla a milisegundos. Simula un archivo corrupto que no revienta
+     * hasta que la escritura ya empezo.
+     */
+    private val SERIAL_IMPOSIBLE = 360_000_000_000.0
+
     @Before
     fun abre() {
         db = Room.inMemoryDatabaseBuilder(
             ApplicationProvider.getApplicationContext(),
             OllinDatabase::class.java
         ).allowMainThreadQueries().build()
-        importador = ImportadorExcel(db.categoriaDao(), db.habitoDao(), db.actividadDao())
+        importador = ImportadorExcel(db)
     }
 
     @After
@@ -70,6 +80,13 @@ class ImportadorTest {
             esquema,
             HojaExportable.PREDETERMINADAS
         ).escribeEn(salida)
+        return salida.toByteArray()
+    }
+
+    /** Un libro armado a mano, para los casos que la exportacion no produce. */
+    private fun libroCrudo(vararg hojas: Hoja): ByteArray {
+        val salida = ByteArrayOutputStream()
+        XlsxEscritor(hojas.toList()).escribeEn(salida)
         return salida.toByteArray()
     }
 
@@ -218,6 +235,47 @@ class ImportadorTest {
         val guardadas = db.actividadDao().todas()
         assertEquals(1, guardadas.size)
         assertEquals("Lo del archivo", guardadas.first().titulo)
+    }
+
+    /**
+     * La prueba que sostiene la transaccion de la importacion.
+     *
+     * "Reemplazar todo" borra la bitacora antes de escribir la nueva. Si algo
+     * revienta entre las dos cosas y no hay transaccion, no queda ni lo viejo
+     * ni lo nuevo, y no hay de donde recuperarlo: la base va cifrada con una
+     * llave del Keystore que no se respalda, asi que el unico respaldo es el
+     * .xlsx que se estaba importando.
+     *
+     * El fallo se provoca con una fecha absurda, que es lo que trae un archivo
+     * corrupto de verdad. El serial pasa el parseo sin protestar —LocalDate
+     * llega hasta el ano mil millones— y solo revienta al escribir, cuando el
+     * convertidor de Room reduce el instante a milisegundos y el producto se
+     * sale de un Long. Es decir: despues del borrado y a media insercion, que
+     * es exactamente el hueco que la transaccion tiene que tapar.
+     */
+    @Test
+    fun `si la importacion falla despues de borrar, la bitacora anterior sigue ahi`() = runTest {
+        db.actividadDao().inserta(completada(0, "Lo de antes", hoy, LocalTime.of(8, 0), 15, null))
+        db.actividadDao().inserta(completada(0, "Y esto tambien", hoy, LocalTime.of(9, 0), 20, null))
+
+        val libro = libroCrudo(
+            Hoja(
+                nombre = "Registros",
+                filas = listOf(
+                    listOf(Celda.Texto("Fecha"), Celda.Texto("Titulo"), Celda.Texto("Minutos")),
+                    listOf(Celda.Numero(SERIAL_IMPOSIBLE), Celda.Texto("Fila envenenada"), Celda.Numero(30.0))
+                )
+            )
+        )
+
+        val fallo = runCatching {
+            importador.importa(libro.inputStream(), OpcionesImportacion(reemplazarTodo = true))
+        }
+
+        assertTrue("La importacion tenia que fallar", fallo.isFailure)
+        val quedaron = db.actividadDao().todas()
+        assertEquals(2, quedaron.size)
+        assertEquals(listOf("Lo de antes", "Y esto tambien"), quedaron.map { it.titulo })
     }
 
     @Test

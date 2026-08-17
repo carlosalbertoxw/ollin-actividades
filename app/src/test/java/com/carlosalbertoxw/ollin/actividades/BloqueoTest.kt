@@ -116,11 +116,16 @@ class BloqueoTest {
         assertFalse(control.bloqueado.value)
     }
 
+    /**
+     * El minuto de gracia existe para que elegir un .xlsx en el selector del
+     * sistema no te expulse de la app, y se pide expresamente antes de abrirlo.
+     */
     @Test
-    fun `volver antes del minuto de gracia no vuelve a pedir la llave`() = runTest {
+    fun `volver del selector antes del minuto no vuelve a pedir la llave`() = runTest {
         ajustes.activaBloqueoSistema()
         val control = conCandadoAbierto()
 
+        control.esperaVueltaDelSistema()
         control.alIrAlFondo()
         pasaElTiempo(30_000)
         control.alVolverAlFrente()
@@ -128,17 +133,45 @@ class BloqueoTest {
         assertFalse(control.bloqueado.value)
     }
 
+    @Test
+    fun `volver del selector despues del minuto vuelve a bloquear`() = runTest {
+        ajustes.activaBloqueoSistema()
+        val control = conCandadoAbierto()
+
+        control.esperaVueltaDelSistema()
+        control.alIrAlFondo()
+        pasaElTiempo(ControlBloqueo.GRACIA_MILLIS + 1)
+        control.alVolverAlFrente()
+
+        assertTrue(control.bloqueado.value)
+    }
+
     /**
-     * El minuto de gracia existe para que elegir un .xlsx en el selector del
-     * sistema no te expulse de la app. Pasado ese minuto, el candado vuelve.
+     * Salir sin avisar es el caso que el candado existe para cubrir: pulsar
+     * Inicio y pasarle el telefono a alguien. Ahi no hay gracia que valga.
      */
     @Test
-    fun `volver despues del minuto de gracia vuelve a bloquear`() = runTest {
+    fun `salir al fondo sin avisar cierra de inmediato`() = runTest {
         ajustes.activaBloqueoSistema()
         val control = conCandadoAbierto()
 
         control.alIrAlFondo()
-        pasaElTiempo(ControlBloqueo.GRACIA_MILLIS + 1)
+        control.alVolverAlFrente()
+
+        assertTrue(control.bloqueado.value)
+    }
+
+    /** La gracia se gasta al usarla: el siguiente viaje tiene que volver a pedirla. */
+    @Test
+    fun `la gracia no se hereda al siguiente viaje`() = runTest {
+        ajustes.activaBloqueoSistema()
+        val control = conCandadoAbierto()
+
+        control.esperaVueltaDelSistema()
+        control.alIrAlFondo()
+        control.alVolverAlFrente()
+
+        control.alIrAlFondo()
         control.alVolverAlFrente()
 
         assertTrue(control.bloqueado.value)

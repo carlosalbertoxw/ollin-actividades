@@ -29,9 +29,12 @@ Android Studio usa su propio ajuste de *Gradle JDK* y no se ve afectado.
 ./gradlew assembleDebug        # APK de depuración
 ./gradlew installDebug         # instala en el dispositivo conectado
 ./gradlew testDebugUnitTest    # pruebas unitarias (JVM + Robolectric)
+./gradlew lintDebug            # Android Lint; falla la compilacion si encuentra errores
 ./gradlew assembleRelease      # con minify y shrink de recursos
 ./gradlew clean
 ```
+
+El estilo está en [`.editorconfig`](../.editorconfig) —el oficial de Kotlin, que ya declaraba `gradle.properties`— para que no dependa de la memoria de quien edite. Lint corre con `abortOnError`: un aviso que no rompe nada no se lee, y lo que marca como error son fugas de contexto, APIs por encima del `minSdk` o permisos ausentes, cosas que se notarían en el teléfono de alguien. Las quejas por traducciones ausentes están apagadas: la app es monolingüe por decisión explícita.
 
 La variante `debug` lleva `applicationIdSuffix = ".debug"` y `versionNameSuffix = "-debug"`, así que convive con la de producción instalada.
 
@@ -68,7 +71,7 @@ Sin emulador. Robolectric para lo que necesita `Context`.
 | [`RepositorioTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/RepositorioTest.kt) | Reglas de escritura del repositorio sobre una base en memoria |
 | [`SembradorTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/SembradorTest.kt) | El catálogo semilla y su idempotencia |
 | [`ClavePinTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/ClavePinTest.kt) | Derivación del PIN: sal, determinismo y comparación |
-| [`BloqueoTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/BloqueoTest.kt) | Preferencias del candado y el minuto de gracia de `ControlBloqueo` |
+| [`BloqueoTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/BloqueoTest.kt) | Preferencias del candado y la gracia de `ControlBloqueo`: solo para el viaje al selector, y se gasta al usarla |
 | [`AjustesRepositorioTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/AjustesRepositorioTest.kt) | Valores de fábrica, acotado de metas y selección de hojas |
 | [`ExcelRoundTripTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/ExcelRoundTripTest.kt) | Escritor y lector de `.xlsx` |
 | [`ImportadorTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/ImportadorTest.kt) | La hoja de Registros: exportar e importar deja los datos iguales |
@@ -106,14 +109,15 @@ Viven en `app/src/androidTest/java/com/carlosalbertoxw/ollin/actividades/ui/`, *
 
 - **Todo en español**: nombres de clases, funciones, variables y comentarios. Los nombres de prueba van en backticks y en prosa (`` `un dia saltado si la rompe` ``).
 - **Los comentarios explican el porqué, no el qué.** Si una decisión tiene una alternativa obvia que se descartó, el comentario dice por qué se descartó.
-- **Sin acentos en los comentarios y literales del código** (la documentación de `docs/` sí los usa).
-- **Una pantalla por archivo**, con su ViewModel arriba y los composables privados abajo.
-- **La escritura pasa por el repositorio.** Las pantallas no tocan los DAO.
+- **Sin acentos en los comentarios**; el texto que ve el usuario sí va acentuado. La excepción son los nombres de hoja y los encabezados de columna del `.xlsx`: esos son el formato del archivo, no copy, y cambiarlos rompería la reimportación de libros ya exportados.
+- **Una pantalla por archivo** en `ui/screens/`, con los composables privados abajo, y su ViewModel en el archivo hermano `XxxVm.kt`.
+- **El ViewModel recibe sus colaboradores** (`repositorio`, `ajustes`), no el `Contenedor` entero.
+- **La escritura pasa por el repositorio.** Las pantallas no tocan los DAO, y lo que borra en bloque va en transacción.
 - Las cadenas visibles están en el código, no en `strings.xml`: la app es monolingüe por diseño. En `strings.xml` solo viven el nombre y el lema.
 
 ## Añadir una pantalla
 
-1. Crea el archivo en `ui/screens/` con su `ViewModel` y su composable.
+1. Crea `ui/screens/XxxPantalla.kt` con el composable y `ui/screens/XxxVm.kt` con su ViewModel.
 2. Declara la ruta en `ui/nav/Destinos.kt` (`Destino` si es pestaña, `Rutas` si cuelga de una).
 3. Regístrala en el `NavHost` de `ui/OllinRaiz.kt`.
 4. Si abre con tarjeta de ayuda, agrega la entrada a `Tutorial` en `ui/components/Tutoriales.kt`. Ojo: la clave se guarda en preferencias, así que renombrarla haría reaparecer una tarjeta que alguien ya había descartado. Los textos sí se pueden cambiar.

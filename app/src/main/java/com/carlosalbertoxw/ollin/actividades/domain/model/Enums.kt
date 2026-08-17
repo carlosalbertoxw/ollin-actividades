@@ -9,8 +9,8 @@ import java.util.Locale
  */
 enum class Ambito(val etiqueta: String) {
     TRABAJO("Trabajo"),
-    FISICO("Actividad fisica"),
-    HABITO("Habito"),
+    FISICO("Actividad física"),
+    HABITO("Hábito"),
     PERSONAL("Personal")
 }
 
@@ -28,13 +28,13 @@ enum class EstadoActividad(val etiqueta: String) {
  */
 enum class Unidad(val etiqueta: String, val abreviatura: String, val decimales: Int) {
     NINGUNA("Sin medida", "", 0),
-    KILOMETROS("Kilometros", "km", 2),
+    KILOMETROS("Kilómetros", "km", 2),
     METROS("Metros", "m", 0),
     PASOS("Pasos", "pasos", 0),
     REPETICIONES("Repeticiones", "reps", 0),
     SERIES("Series", "series", 0),
-    CALORIAS("Calorias", "kcal", 0),
-    PAGINAS("Paginas", "pags", 0),
+    CALORIAS("Calorías", "kcal", 0),
+    PAGINAS("Páginas", "págs", 0),
     VASOS("Vasos", "vasos", 0),
     TAREAS("Tareas", "tareas", 0);
 
@@ -57,10 +57,10 @@ enum class Unidad(val etiqueta: String, val abreviatura: String, val decimales: 
  * cada quince dias, cada mes, cada dos meses o cada cuando se te ocurra.
  */
 enum class Frecuencia(val etiqueta: String) {
-    DIARIA("Todos los dias"),
-    DIAS_ELEGIDOS("Dias elegidos"),
-    SEMANAL("Cierto numero por semana"),
-    CADA_DIAS("Cada tantos dias"),
+    DIARIA("Todos los días"),
+    DIAS_ELEGIDOS("Días elegidos"),
+    SEMANAL("Cierto número por semana"),
+    CADA_DIAS("Cada tantos días"),
     CADA_MESES("Cada tantos meses");
 
     /** Cierto si la cadencia se cuenta desde una fecha ancla y no por semana. */

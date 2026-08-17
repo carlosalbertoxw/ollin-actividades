@@ -114,6 +114,18 @@ android {
         }
     }
 
+    lint {
+        // Un aviso que no rompe nada no se lee. Los que Lint marca como error
+        // —fugas de contexto, APIs por encima del minSdk, permisos que faltan—
+        // son cosas que en esta app se notarian en el telefono de alguien.
+        abortOnError = true
+        warningsAsErrors = false
+        checkDependencies = true
+        // La app es monolingue por decision explicita (localeFilters = "es"),
+        // asi que las quejas por traducciones ausentes son ruido.
+        disable += setOf("MissingTranslation", "ExtraTranslation")
+    }
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"

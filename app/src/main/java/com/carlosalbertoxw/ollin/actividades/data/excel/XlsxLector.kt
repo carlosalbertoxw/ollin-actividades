@@ -1,9 +1,13 @@
 package com.carlosalbertoxw.ollin.actividades.data.excel
 
 import org.xml.sax.Attributes
+import org.xml.sax.EntityResolver
+import org.xml.sax.InputSource
 import org.xml.sax.helpers.DefaultHandler
 import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import java.io.InputStream
+import java.io.StringReader
 import java.util.zip.ZipInputStream
 import javax.xml.parsers.SAXParserFactory
 
@@ -45,6 +49,15 @@ data class LibroLeido(val hojas: List<HojaLeida>) {
 object XlsxLector {
 
     private const val LIMITE_BYTES = 64L * 1024 * 1024
+    private const val BYTES_BUFFER = 64 * 1024
+
+    /** Todo lo que permitiria a un XML de fuera hacer algo mas que describir celdas. */
+    private val BANDERAS_CERRADAS = listOf(
+        "http://apache.org/xml/features/disallow-doctype-decl" to true,
+        "http://xml.org/sax/features/external-general-entities" to false,
+        "http://xml.org/sax/features/external-parameter-entities" to false,
+        "http://apache.org/xml/features/nonvalidating/load-external-dtd" to false
+    )
 
     class ArchivoInvalido(mensaje: String, causa: Throwable? = null) : Exception(mensaje, causa)
 
@@ -52,7 +65,7 @@ object XlsxLector {
         val partes = descomprime(entrada)
 
         if (!partes.containsKey("xl/workbook.xml")) {
-            throw ArchivoInvalido("El archivo no parece un libro de Excel (.xlsx). Si es .xls antiguo, guardalo primero como .xlsx.")
+            throw ArchivoInvalido("El archivo no parece un libro de Excel (.xlsx). Si es .xls antiguo, guárdalo primero como .xlsx.")
         }
 
         val cadenas = partes["xl/sharedStrings.xml"]?.let(::leeSharedStrings) ?: emptyList()
@@ -85,11 +98,8 @@ object XlsxLector {
                     if (!nombre.endsWith(".xml") && !nombre.endsWith(".rels")) {
                         zip.closeEntry(); continue
                     }
-                    val bytes = zip.readBytes()
+                    val bytes = leeAcotado(zip, LIMITE_BYTES - total)
                     total += bytes.size
-                    if (total > LIMITE_BYTES) {
-                        throw ArchivoInvalido("El archivo es demasiado grande para procesarse en el telefono.")
-                    }
                     partes[nombre] = bytes
                     zip.closeEntry()
                 }
@@ -100,11 +110,38 @@ object XlsxLector {
             // La causa se conserva para el diagnostico, pero no viaja en el
             // texto: el mensaje crudo habla de rutas y clases internas.
             throw ArchivoInvalido(
-                "No se pudo abrir el archivo. Puede estar danado o protegido con contrasena.",
+                "No se pudo abrir el archivo. Puede estar dañado o protegido con contraseña.",
                 e
             )
         }
         return partes
+    }
+
+    /**
+     * Lee una entrada del zip sin pasarse de [restante] bytes.
+     *
+     * No se usa `readBytes()` porque descomprime la entrada entera antes de que
+     * nadie pueda mirar cuanto ocupa: un .xlsx de cien kilobytes con una hoja
+     * de relacion 1000:1 —un archivo corrupto, o uno hecho a proposito— agota
+     * la memoria del telefono antes de llegar a la comprobacion. El tope se
+     * aplica mientras se lee, asi que lo peor que pasa es un mensaje.
+     */
+    private fun leeAcotado(zip: ZipInputStream, restante: Long): ByteArray {
+        val salida = ByteArrayOutputStream()
+        val buffer = ByteArray(BYTES_BUFFER)
+        var disponible = restante
+        while (true) {
+            val leidos = zip.read(buffer)
+            if (leidos <= 0) break
+            disponible -= leidos
+            if (disponible < 0) {
+                throw ArchivoInvalido(
+                    "El archivo es demasiado grande para procesarse en el teléfono."
+                )
+            }
+            salida.write(buffer, 0, leidos)
+        }
+        return salida.toByteArray()
     }
 
     private fun normalizaRuta(destino: String): String {
@@ -114,12 +151,33 @@ object XlsxLector {
 
     // ------------------------------------------------------------- parseo
 
+    /**
+     * Parsea una parte del libro con las entidades externas cerradas.
+     *
+     * Un .xlsx es un zip de XML que llega de fuera, y el XML admite declarar
+     * entidades que el parser resuelve solo: unas leen archivos del telefono y
+     * los dejan caer dentro de una celda, otras se expanden en cascada hasta
+     * agotar la memoria. Aqui no hace falta ninguna —las hojas de calculo no
+     * declaran DTD— asi que se apagan todas.
+     *
+     * Las banderas van en `runCatching` porque no toda implementacion las
+     * reconoce y algunas lanzan al pedirlas; el [EntityResolver] vacio es el
+     * cinturon que no depende de que ninguna este disponible: aunque el parser
+     * decida resolver una entidad, lo que recibe es la cadena vacia.
+     */
     private fun parsea(bytes: ByteArray, handler: DefaultHandler) {
         val factory = SAXParserFactory.newInstance().apply {
             isNamespaceAware = false
-            runCatching { setFeature("http://apache.org/xml/features/disallow-doctype-decl", true) }
+            isXIncludeAware = false
+            BANDERAS_CERRADAS.forEach { (bandera, valor) ->
+                runCatching { setFeature(bandera, valor) }
+            }
         }
-        factory.newSAXParser().parse(ByteArrayInputStream(bytes), handler)
+        val lector = factory.newSAXParser().xmlReader
+        lector.contentHandler = handler
+        lector.errorHandler = handler
+        lector.entityResolver = EntityResolver { _, _ -> InputSource(StringReader("")) }
+        lector.parse(InputSource(ByteArrayInputStream(bytes)))
     }
 
     private fun leeSharedStrings(bytes: ByteArray): List<String> {

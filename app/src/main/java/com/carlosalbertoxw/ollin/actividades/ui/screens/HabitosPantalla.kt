@@ -54,14 +54,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 import com.carlosalbertoxw.ollin.actividades.data.db.Categoria
 import com.carlosalbertoxw.ollin.actividades.data.db.Habito
 import com.carlosalbertoxw.ollin.actividades.data.repo.HabitoConAvance
@@ -82,49 +75,9 @@ import com.carlosalbertoxw.ollin.actividades.ui.theme.colorDeCategoria
 import java.time.DayOfWeek
 import java.time.LocalDate
 
-class HabitosVm(contenedor: Contenedor) : ViewModel() {
-
-    private val repo = contenedor.repositorio
-
-    /** Con los pausados incluidos: esta es la pantalla donde se administran. */
-    val habitos: StateFlow<List<HabitoConAvance>> = repo.observaHabitosConAvance(soloActivos = false)
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
-    val categorias: StateFlow<List<Categoria>> = repo.observaCategorias()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
-    /**
-     * Para resolver la categoria de cada habito, no para elegirla. Va sobre
-     * todas y no solo las activas: un habito viejo puede apuntar a una
-     * categoria archivada, y ahi mostrar "sin categoria" seria mentir.
-     */
-    val indiceCategorias: StateFlow<Map<Long, Categoria>> = repo.observaTodasLasCategorias()
-        .map { lista -> lista.associateBy { it.id } }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
-
-    fun guarda(habito: Habito) {
-        viewModelScope.launch { repo.guardaHabito(habito) }
-    }
-
-    fun elimina(habito: Habito) {
-        viewModelScope.launch { repo.eliminaHabito(habito) }
-    }
-
-    fun alterna(avance: HabitoConAvance) {
-        viewModelScope.launch {
-            if (avance.cumplidoHoy) repo.deshaceHabito(avance.habito.id)
-            else repo.registraHabito(avance.habito)
-        }
-    }
-
-    fun reanuda(habito: Habito) {
-        viewModelScope.launch { repo.guardaHabito(habito.copy(activo = true)) }
-    }
-}
-
 @Composable
 fun HabitosPantalla(contenedor: Contenedor) {
-    val vm = recuerdaVm("habitos") { HabitosVm(contenedor) }
+    val vm = recuerdaVm("habitos") { HabitosVm(contenedor.repositorio) }
     val habitos by vm.habitos.collectAsStateWithLifecycle()
     val categorias by vm.categorias.collectAsStateWithLifecycle()
     val indiceCategorias by vm.indiceCategorias.collectAsStateWithLifecycle()
@@ -141,17 +94,17 @@ fun HabitosPantalla(contenedor: Contenedor) {
             // pantalla. Ver la misma nota en OllinRaiz.
             ExtendedFloatingActionButton(
                 onClick = { editando = Habito(nombre = "") },
-                icon = { Icon(Icons.Filled.Add, contentDescription = "Nuevo habito") },
-                text = { Text("Nuevo habito") }
+                icon = { Icon(Icons.Filled.Add, contentDescription = "Nuevo hábito") },
+                text = { Text("Nuevo hábito") }
             )
         }
     ) { relleno ->
         if (habitos.isEmpty()) {
             EstadoVacio(
                 icono = Icons.Filled.Repeat,
-                titulo = "Sin habitos todavia",
-                detalle = "Un habito es algo que quieres repetir: leer, caminar, tomar agua. " +
-                    "Al marcarlo se guarda como una actividad mas.",
+                titulo = "Sin hábitos todavía",
+                detalle = "Un hábito es algo que quieres repetir: leer, caminar, tomar agua. " +
+                    "Al marcarlo se guarda como una actividad más.",
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(relleno)
@@ -306,7 +259,7 @@ private fun TarjetaHabito(
                         else -> Icons.Filled.Check
                     },
                     contentDescription = when {
-                        pausado -> "Reanudar habito"
+                        pausado -> "Reanudar hábito"
                         cumplido -> "Deshacer hoy"
                         else -> "Marcar hoy"
                     },
@@ -343,7 +296,7 @@ private fun EditorIntervalo(
     val atajos = if (enMeses) listOf(1, 2, 3, 6) else listOf(7, 15, 30)
 
     Text(
-        if (enMeses) "Cada cuantos meses" else "Cada cuantos dias",
+        if (enMeses) "Cada cuantos meses" else "Cada cuántos días",
         style = MaterialTheme.typography.labelLarge,
         color = colores.textoTenue
     )
@@ -490,7 +443,7 @@ private fun DialogoHabito(
                 TextButton(onClick = alCerrar) { Text("Cancelar") }
             }
         },
-        title = { Text(if (inicial.id == 0L) "Nuevo habito" else "Editar habito") },
+        title = { Text(if (inicial.id == 0L) "Nuevo hábito" else "Editar hábito") },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 OutlinedTextField(
@@ -547,7 +500,7 @@ private fun DialogoHabito(
                     OutlinedTextField(
                         value = metaSemanal,
                         onValueChange = { metaSemanal = it.filter(Char::isDigit).take(1) },
-                        label = { Text("Dias por semana") },
+                        label = { Text("Días por semana") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
@@ -588,7 +541,7 @@ private fun DialogoHabito(
                     OutlinedTextField(
                         value = metaDiaria,
                         onValueChange = { metaDiaria = it.filter(Char::isDigit).take(2) },
-                        label = { Text("Veces al dia") },
+                        label = { Text("Veces al día") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true,
                         modifier = Modifier.weight(1f)
@@ -623,7 +576,7 @@ private fun DialogoHabito(
                                 "Aparece en Hoy y su racha avanza."
                             } else {
                                 "No aparece en Hoy y su racha no avanza. Conserva su " +
-                                    "historial y lo puedes reanudar desde la lista de habitos."
+                                    "historial y lo puedes reanudar desde la lista de hábitos."
                             },
                             style = MaterialTheme.typography.bodySmall,
                             color = colores.textoTenue

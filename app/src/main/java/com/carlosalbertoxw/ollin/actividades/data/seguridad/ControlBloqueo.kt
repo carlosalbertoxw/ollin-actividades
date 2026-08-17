@@ -33,6 +33,13 @@ class ControlBloqueo(ajustes: AjustesRepositorio) {
     private var modo = ModoBloqueo.NINGUNO
     private var salidaEnMillis: Long? = null
 
+    /**
+     * Cierto mientras Ollin espera que el sistema le devuelva algo —el selector
+     * de archivos, el dialogo de credencial— y por eso su marcha al fondo no
+     * cuenta como salir de la app.
+     */
+    private var vueltaEsperada = false
+
     init {
         ambito.launch {
             ajustes.ajustes.collect { preferencias ->
@@ -45,6 +52,16 @@ class ControlBloqueo(ajustes: AjustesRepositorio) {
     fun desbloquea() {
         _bloqueado.value = false
         salidaEnMillis = null
+        vueltaEsperada = false
+    }
+
+    /**
+     * Avisa de que lo siguiente que va a mandar Ollin al fondo es un dialogo del
+     * sistema del que se espera volver: el selector de archivos al importar o
+     * exportar, o la peticion de credencial. Solo esas salidas tienen gracia.
+     */
+    fun esperaVueltaDelSistema() {
+        vueltaEsperada = true
     }
 
     fun alIrAlFondo() {
@@ -54,20 +71,24 @@ class ControlBloqueo(ajustes: AjustesRepositorio) {
     /**
      * Se usa el reloj monotono y no la hora del sistema: cambiar la hora del
      * telefono no debe poder alargar la gracia.
+     *
+     * Sin una vuelta esperada la gracia es cero y Ollin se cierra en cuanto
+     * sale al fondo, que es justo el caso que el candado quiere cubrir: pulsar
+     * Inicio y pasarle el telefono a alguien. El minuto existe solo porque
+     * elegir un .xlsx en el selector del sistema te expulsaria de la app a
+     * medio camino, y ese permiso se pide expresamente y se gasta al usarlo.
      */
     fun alVolverAlFrente() {
         val salida = salidaEnMillis ?: return
         salidaEnMillis = null
+        val gracia = if (vueltaEsperada) GRACIA_MILLIS else 0L
+        vueltaEsperada = false
         if (modo == ModoBloqueo.NINGUNO) return
-        if (SystemClock.elapsedRealtime() - salida >= GRACIA_MILLIS) _bloqueado.value = true
+        if (SystemClock.elapsedRealtime() - salida >= gracia) _bloqueado.value = true
     }
 
     companion object {
-        /**
-         * Un minuto de gracia. Importar y exportar abren el selector de archivos
-         * del sistema, que manda Ollin al fondo; sin este margen, elegir un
-         * .xlsx te expulsaria de la app a medio camino.
-         */
+        /** Lo que se le concede a un viaje de ida y vuelta al sistema. */
         const val GRACIA_MILLIS = 60_000L
     }
 }

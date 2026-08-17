@@ -16,13 +16,15 @@ Room (OllinDatabase, cifrada con SQLCipher)
 
 ### `ui/`
 
-Una pantalla por archivo en `ui/screens/`, cada una con su `ViewModel` declarado en el mismo archivo. Los estados se exponen como `StateFlow` y se consumen con `collectAsStateWithLifecycle`.
+Una pantalla por archivo en `ui/screens/`, y su `ViewModel` en el archivo de al lado (`AnaliticaPantalla.kt` / `AnaliticaVm.kt`). Los estados se exponen como `StateFlow` y se consumen con `collectAsStateWithLifecycle`.
 
-No hay `Factory` por pantalla: [`recuerdaVm`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/ui/Fabrica.kt) crea el ViewModel pasándole el `Contenedor` a mano.
+No hay `Factory` por pantalla: [`recuerdaVm`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/ui/Fabrica.kt) construye el ViewModel a mano.
 
 ```kotlin
-val vm = recuerdaVm("analitica") { AnaliticaVm(contenedor) }
+val vm = recuerdaVm("analitica") { AnaliticaVm(contenedor.repositorio) }
 ```
+
+**El ViewModel recibe sus colaboradores, no el `Contenedor`.** El contenedor solo se abre en esa línea de la pantalla. Un ViewModel que lo recibiera entero dependería de todo —incluida la base— y montarlo en una prueba o en un `@Preview` exigiría construir SQLCipher para pintar una lista.
 
 La navegación vive en [`OllinRaiz`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/ui/OllinRaiz.kt), con un `NavHost` de Navigation Compose. Las cuatro pestañas inferiores son el enum [`Destino`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/ui/nav/Destinos.kt) —Hoy, Registro, Hábitos, Analítica— y el resto de las rutas (captura, categorías, ajustes, archivo, acerca de) son constantes en `Rutas`. El botón flotante de captura se oculta en Hábitos, que tiene el suyo.
 

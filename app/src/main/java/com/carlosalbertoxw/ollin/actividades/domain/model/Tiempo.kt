@@ -36,6 +36,21 @@ object Tiempo {
 
     fun instante(fechaHora: LocalDateTime): Instant = fechaHora.atZone(zona()).toInstant()
 
+    /**
+     * Minutos entre dos instantes, redondeando al mas cercano. Una sesion de 89
+     * segundos vale mas como "1 min" que como el "1 min" truncado de 119: el
+     * redondeo reparte el error en vez de sesgarlo siempre hacia abajo.
+     *
+     * Un fin anterior al inicio da cero y no un negativo: es dato corrupto, y
+     * restar minutos de la analitica seria peor que ignorarlo.
+     */
+    fun minutosEntre(inicio: Instant, fin: Instant): Int {
+        val millis = (fin.toEpochMilli() - inicio.toEpochMilli()).coerceAtLeast(0L)
+        return ((millis + 30_000L) / 60_000L)
+            .coerceAtMost(Int.MAX_VALUE.toLong())
+            .toInt()
+    }
+
     fun hora(instante: Instant): String = HORA.format(local(instante))
 
     fun fechaCorta(dia: LocalDate): String = FECHA_CORTA.format(dia)
@@ -116,8 +131,8 @@ object DiasSemana {
         mascara xor (1 shl (dia.value - 1))
 
     fun etiqueta(mascara: Int): String = when {
-        mascara and TODOS == TODOS -> "Todos los dias"
-        mascara == 0 -> "Ningun dia"
+        mascara and TODOS == TODOS -> "Todos los días"
+        mascara == 0 -> "Ningún día"
         mascara and 0b0011111 == 0b0011111 && mascara and 0b1100000 == 0 -> "Entre semana"
         mascara and 0b1100000 == 0b1100000 && mascara and 0b0011111 == 0 -> "Fin de semana"
         else -> DayOfWeek.entries

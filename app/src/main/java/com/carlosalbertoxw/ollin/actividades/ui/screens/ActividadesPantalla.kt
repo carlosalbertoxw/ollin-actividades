@@ -24,15 +24,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.stateIn
 import com.carlosalbertoxw.ollin.actividades.data.db.ActividadDetallada
 import com.carlosalbertoxw.ollin.actividades.di.Contenedor
 import com.carlosalbertoxw.ollin.actividades.domain.model.Ambito
@@ -45,57 +37,13 @@ import com.carlosalbertoxw.ollin.actividades.ui.components.Tutorial
 import com.carlosalbertoxw.ollin.actividades.ui.components.iconoDe
 import com.carlosalbertoxw.ollin.actividades.ui.recuerdaVm
 import com.carlosalbertoxw.ollin.actividades.ui.theme.LocalColoresOllin
-import java.time.LocalDate
-
-/** Los rangos que de verdad se consultan. Un selector de fechas libre casi nunca se usa. */
-enum class Rango(val etiqueta: String, val dias: Long?) {
-    HOY("Hoy", 0),
-    SEMANA("7 dias", 6),
-    MES("30 dias", 29),
-    TODO("Todo", null);
-
-    fun desde(hoy: LocalDate): LocalDate? = dias?.let { hoy.minusDays(it) }
-}
-
-data class FiltroActividades(
-    val texto: String = "",
-    val estado: EstadoActividad? = null,
-    val ambito: Ambito? = null,
-    val rango: Rango = Rango.SEMANA
-)
-
-class ActividadesVm(contenedor: Contenedor) : ViewModel() {
-
-    private val repo = contenedor.repositorio
-
-    private val _filtro = MutableStateFlow(FiltroActividades())
-    val filtro: StateFlow<FiltroActividades> = _filtro
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val actividades: StateFlow<List<ActividadDetallada>> = _filtro
-        .flatMapLatest { f ->
-            val hoy = Tiempo.hoy()
-            repo.observaActividades(
-                texto = f.texto,
-                estado = f.estado,
-                ambito = f.ambito,
-                desde = f.rango.desde(hoy),
-                hasta = if (f.rango == Rango.TODO) null else hoy
-            )
-        }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
-    fun actualiza(bloque: (FiltroActividades) -> FiltroActividades) {
-        _filtro.value = bloque(_filtro.value)
-    }
-}
 
 @Composable
 fun ActividadesPantalla(
     contenedor: Contenedor,
     alAbrirActividad: (Long) -> Unit
 ) {
-    val vm = recuerdaVm("actividades") { ActividadesVm(contenedor) }
+    val vm = recuerdaVm("actividades") { ActividadesVm(contenedor.repositorio) }
     val filtro by vm.filtro.collectAsStateWithLifecycle()
     val actividades by vm.actividades.collectAsStateWithLifecycle()
     val colores = LocalColoresOllin.current
@@ -111,7 +59,7 @@ fun ActividadesPantalla(
                 value = filtro.texto,
                 onValueChange = { texto -> vm.actualiza { it.copy(texto = texto) } },
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Buscar por titulo o nota") },
+                placeholder = { Text("Buscar por título o nota") },
                 leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
                 singleLine = true
             )
@@ -183,8 +131,8 @@ fun ActividadesPantalla(
         if (actividades.isEmpty()) {
             EstadoVacio(
                 icono = Icons.AutoMirrored.Filled.ListAlt,
-                titulo = "Nada por aqui",
-                detalle = "Ajusta el filtro o registra una actividad con el boton de abajo.",
+                titulo = "Nada por aquí",
+                detalle = "Ajusta el filtro o registra una actividad con el botón de abajo.",
                 modifier = Modifier.fillMaxWidth()
             )
             return

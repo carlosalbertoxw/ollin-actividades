@@ -24,20 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.stateIn
-import com.carlosalbertoxw.ollin.actividades.data.db.ConteoEstado
-import com.carlosalbertoxw.ollin.actividades.data.db.CumplimientoDia
-import com.carlosalbertoxw.ollin.actividades.data.db.TotalAmbito
-import com.carlosalbertoxw.ollin.actividades.data.db.TotalCategoria
-import com.carlosalbertoxw.ollin.actividades.data.db.TotalDia
 import com.carlosalbertoxw.ollin.actividades.di.Contenedor
 import com.carlosalbertoxw.ollin.actividades.domain.model.Ambito
 import com.carlosalbertoxw.ollin.actividades.domain.model.EstadoActividad
@@ -56,62 +43,9 @@ import com.carlosalbertoxw.ollin.actividades.ui.theme.LocalColoresOllin
 import com.carlosalbertoxw.ollin.actividades.ui.theme.colorDeCategoria
 import java.time.LocalDate
 
-/** Ventanas de analisis. Mas de tres opciones vuelven la pantalla un panel de control. */
-enum class Ventana(val etiqueta: String, val dias: Long) {
-    SEMANA("7 dias", 7),
-    MES("30 dias", 30),
-    TRIMESTRE("90 dias", 90)
-}
-
-class AnaliticaVm(contenedor: Contenedor) : ViewModel() {
-
-    private val repo = contenedor.repositorio
-
-    private val _ventana = MutableStateFlow(Ventana.SEMANA)
-    val ventana: StateFlow<Ventana> = _ventana
-
-    private val rango = _ventana
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val porDia: StateFlow<List<TotalDia>> = rango
-        .flatMapLatest { v -> repo.observaTotalPorDia(desde(v), Tiempo.hoy()) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val porCategoria: StateFlow<List<TotalCategoria>> = rango
-        .flatMapLatest { v -> repo.observaTotalPorCategoria(desde(v), Tiempo.hoy()) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val porAmbito: StateFlow<List<TotalAmbito>> = rango
-        .flatMapLatest { v -> repo.observaTotalPorAmbito(desde(v), Tiempo.hoy()) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val porEstado: StateFlow<List<ConteoEstado>> = rango
-        .flatMapLatest { v -> repo.observaConteoPorEstado(desde(v), Tiempo.hoy()) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val habitos: StateFlow<List<CumplimientoDia>> = rango
-        .flatMapLatest { v -> repo.observaCumplimientoGlobal(desde(v), Tiempo.hoy()) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val kilometros: StateFlow<Double> = rango
-        .flatMapLatest { v -> repo.observaSumaDeUnidad(Unidad.KILOMETROS, desde(v), Tiempo.hoy()) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0.0)
-
-    fun eligeVentana(v: Ventana) {
-        _ventana.value = v
-    }
-
-    private fun desde(v: Ventana): LocalDate = Tiempo.hoy().minusDays(v.dias - 1)
-}
-
 @Composable
 fun AnaliticaPantalla(contenedor: Contenedor) {
-    val vm = recuerdaVm("analitica") { AnaliticaVm(contenedor) }
+    val vm = recuerdaVm("analitica") { AnaliticaVm(contenedor.repositorio) }
     val ventana by vm.ventana.collectAsStateWithLifecycle()
     val porDia by vm.porDia.collectAsStateWithLifecycle()
     val porCategoria by vm.porCategoria.collectAsStateWithLifecycle()
@@ -158,7 +92,7 @@ fun AnaliticaPantalla(contenedor: Contenedor) {
                 EstadoVacio(
                     icono = Icons.Filled.Insights,
                     titulo = "Todavia no hay que graficar",
-                    detalle = "En cuanto completes actividades, aqui aparece en que se te va el tiempo.",
+                    detalle = "En cuanto completes actividades, aquí aparece en qué se te va el tiempo.",
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -174,14 +108,14 @@ fun AnaliticaPantalla(contenedor: Contenedor) {
                     modifier = Modifier.weight(1f)
                 )
                 TarjetaValor(
-                    etiqueta = "Promedio por dia",
+                    etiqueta = "Promedio por día",
                     valor = Tiempo.duracion(
                         // Se divide entre los dias con registro y no entre todos:
                         // promediar contra dias vacios mide la constancia, no el
                         // esfuerzo, y para constancia ya esta la barra de abajo.
                         if (diasConRegistro > 0) totalMinutos / diasConRegistro else 0
                     ),
-                    nota = "$diasConRegistro de ${ventana.dias} dias con registro",
+                    nota = "$diasConRegistro de ${ventana.dias} días con registro",
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -194,7 +128,7 @@ fun AnaliticaPantalla(contenedor: Contenedor) {
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp)
             ) {
                 Column(Modifier.padding(16.dp)) {
-                    SeccionTitulo("Minutos por dia")
+                    SeccionTitulo("Minutos por día")
                     Spacer(Modifier.height(12.dp))
                     BarrasDias(
                         valores = serie,
@@ -217,7 +151,7 @@ fun AnaliticaPantalla(contenedor: Contenedor) {
                         val mayor = porAmbito.maxOf { it.minutos }.coerceAtLeast(1)
                         porAmbito.forEach { total ->
                             RenglonProporcion(
-                                nombre = total.ambito?.etiqueta ?: "Sin categoria",
+                                nombre = total.ambito?.etiqueta ?: "Sin categoría",
                                 minutos = total.minutos,
                                 proporcion = total.minutos.toDouble() / mayor,
                                 color = colores.de(total.ambito),
@@ -241,7 +175,7 @@ fun AnaliticaPantalla(contenedor: Contenedor) {
                         val mayor = porCategoria.maxOf { it.minutos }.coerceAtLeast(1)
                         porCategoria.take(8).forEach { total ->
                             RenglonProporcion(
-                                nombre = total.nombre ?: "Sin categoria",
+                                nombre = total.nombre ?: "Sin categoría",
                                 minutos = total.minutos,
                                 proporcion = total.minutos.toDouble() / mayor,
                                 color = colorDeCategoria(total.colorHex, colores.de(total.ambito)),
@@ -263,9 +197,9 @@ fun AnaliticaPantalla(contenedor: Contenedor) {
                     modifier = Modifier.weight(1f)
                 )
                 TarjetaValor(
-                    etiqueta = "Dias con habitos",
+                    etiqueta = "Días con hábitos",
                     valor = "$diasConHabito",
-                    nota = "de ${ventana.dias} dias",
+                    nota = "de ${ventana.dias} días",
                     acento = colores.habito,
                     modifier = Modifier.weight(1f)
                 )

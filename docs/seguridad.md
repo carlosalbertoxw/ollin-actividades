@@ -37,7 +37,8 @@ Tres modos ([`ModoBloqueo`](../app/src/main/java/com/carlosalbertoxw/ollin/activ
 Detalles del comportamiento:
 
 - **Arranca bloqueada.** Todavía no se sabe si hay candado puesto, y equivocarse hacia el lado cerrado solo cuesta un parpadeo.
-- **Un minuto de gracia** al volver del fondo. Importar y exportar abren el selector de archivos del sistema, que manda Ollin al fondo; sin ese margen, elegir un `.xlsx` te expulsaría a medio camino.
+- **Se cierra en cuanto sale al fondo.** Pulsar Inicio y pasarle el teléfono a alguien es justo el caso que el candado existe para cubrir.
+- **Un minuto de gracia, pero solo para un viaje de ida y vuelta al sistema.** Importar y exportar abren el selector de archivos, que manda Ollin al fondo; sin ese margen, elegir un `.xlsx` te expulsaría a medio camino. La pantalla que va a abrir el selector lo pide antes con `esperaVueltaDelSistema()`, y el permiso **se gasta al usarlo**: el siguiente viaje tiene que volver a pedirlo.
 - Se mide con el **reloj monótono** (`elapsedRealtime`): cambiar la hora del teléfono no debe poder alargar la gracia.
 - Con candado configurado la ventana lleva `FLAG_SECURE`: ni capturas de pantalla ni miniatura en la vista de apps recientes. Mientras no se sabe, se asume que sí.
 
@@ -48,6 +49,17 @@ Las transiciones de bloqueo se escriben de golpe en DataStore. Si el modo y el P
 [`ClavePin`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/data/seguridad/ClavePin.kt) nunca guarda el PIN: guarda **PBKDF2-HMAC-SHA256, 120 000 iteraciones, 256 bits**, con sal aleatoria de 16 bytes distinta por teléfono.
 
 Un PIN de cuatro dígitos tiene diez mil combinaciones; sin un derivado lento bastaría un segundo para probarlas todas contra el archivo de preferencias. La derivación pesa cientos de milisegundos a propósito y corre fuera del hilo principal.
+
+#### Freno a los intentos
+
+PBKDF2 encarece cada intento, pero no lo suficiente: a un par de décimas por derivación, quien tenga el teléfono en la mano y sepa automatizar pulsaciones agota las diez mil combinaciones en menos de una hora. Por eso hay una espera creciente.
+
+- Se perdonan **3 fallos seguidos**. A partir del cuarto, la espera escala 5 s → 15 → 30 → 60 → 120 → 300 y se queda ahí.
+- El contador vive en **DataStore**, y lo único que lo borra es acertar. Matar la app no sirve para saltarse la espera: al volver, la espera empieza de nuevo con el mismo contador.
+- No se guarda ningún instante, solo la cuenta. Así no hay reloj que engañar cambiando la hora ni reiniciando el teléfono, que es lo que pasaría al persistir un "bloqueado hasta".
+- **Las dos puertas comparten el contador**: la pantalla de bloqueo y el diálogo de Ajustes que pide el PIN actual antes de cambiarlo o quitarlo. Frenar solo una equivaldría a no frenar ninguna.
+
+Poner un PIN nuevo estrena contador: quien acaba de demostrar que es el dueño no hereda la espera del anterior.
 
 La comparación es en tiempo constante (`MessageDigest.isEqual`): un `==` normal corta en el primer byte distinto, y ese tiempo de más revela cuánto del PIN se acertó.
 

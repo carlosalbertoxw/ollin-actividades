@@ -1,11 +1,10 @@
 package com.carlosalbertoxw.ollin.actividades.data.excel
 
+import androidx.room.withTransaction
 import com.carlosalbertoxw.ollin.actividades.data.db.Actividad
-import com.carlosalbertoxw.ollin.actividades.data.db.ActividadDao
 import com.carlosalbertoxw.ollin.actividades.data.db.Categoria
-import com.carlosalbertoxw.ollin.actividades.data.db.CategoriaDao
 import com.carlosalbertoxw.ollin.actividades.data.db.Habito
-import com.carlosalbertoxw.ollin.actividades.data.db.HabitoDao
+import com.carlosalbertoxw.ollin.actividades.data.db.OllinDatabase
 import com.carlosalbertoxw.ollin.actividades.domain.model.Ambito
 import com.carlosalbertoxw.ollin.actividades.domain.model.EstadoActividad
 import com.carlosalbertoxw.ollin.actividades.domain.model.Tiempo
@@ -73,11 +72,11 @@ data class ResultadoImportacion(
  * en vez de rechazarse, porque una importacion que falla por una columna
  * ausente obliga a editar el archivo a mano justo cuando menos se quiere.
  */
-class ImportadorExcel(
-    private val categoriaDao: CategoriaDao,
-    private val habitoDao: HabitoDao,
-    private val actividadDao: ActividadDao
-) {
+class ImportadorExcel(private val db: OllinDatabase) {
+
+    private val categoriaDao = db.categoriaDao()
+    private val habitoDao = db.habitoDao()
+    private val actividadDao = db.actividadDao()
 
     private companion object {
         val SINONIMOS: Map<String, List<String>> = mapOf(
@@ -131,11 +130,28 @@ class ImportadorExcel(
         val notas: String?
     )
 
+    /**
+     * Lee el libro y lo aplica.
+     *
+     * El parseo queda deliberadamente **fuera** de la transaccion: es la parte
+     * lenta, no toca la base, y un archivo ilegible no tiene por que llegar
+     * siquiera a abrirla. Dentro de la transaccion solo van las escrituras
+     * —catalogos, borrado y alta de registros—, que asi son un todo o nada:
+     * si algo falla a media importacion, la bitacora anterior sigue donde
+     * estaba en vez de quedar vacia y sin reponer.
+     */
     suspend fun importa(
         entrada: InputStream,
         opciones: OpcionesImportacion = OpcionesImportacion()
     ): ResultadoImportacion {
         val libro = XlsxLector.lee(entrada)
+        return db.withTransaction { aplica(libro, opciones) }
+    }
+
+    private suspend fun aplica(
+        libro: LibroLeido,
+        opciones: OpcionesImportacion
+    ): ResultadoImportacion {
         val catalogos = ImportadorCatalogos(categoriaDao, habitoDao).aplica(libro, opciones)
 
         val datos = eligeHojaDeDatos(libro)
@@ -148,8 +164,8 @@ class ImportadorExcel(
                 return catalogos.aResultado(
                     Diagnostico(
                         Severidad.INFO,
-                        "El libro no traia hoja de Registros. Solo se actualizaron los " +
-                            "catalogos; la bitacora quedo intacta."
+                        "El libro no traía hoja de Registros. Solo se actualizaron los " +
+                            "catálogos; la bitácora quedó intacta."
                     )
                 )
             }
@@ -157,7 +173,7 @@ class ImportadorExcel(
                 diagnosticos = listOf(
                     Diagnostico(
                         Severidad.ERROR,
-                        "No encontre ninguna hoja con columnas de Fecha y Titulo."
+                        "No encontré ninguna hoja con columnas de Fecha y Título."
                     )
                 )
             )
@@ -192,7 +208,7 @@ class ImportadorExcel(
                 omitidas++
                 diagnosticos += Diagnostico(
                     Severidad.AVISO,
-                    "Renglon incompleto (falta la fecha o el titulo). Se omitio.",
+                    "Renglón incompleto (falta la fecha o el título). Se omitió.",
                     renglon.numero
                 )
                 return@forEach
@@ -223,12 +239,12 @@ class ImportadorExcel(
             // Con catalogos leidos esto no es un fracaso: un libro exportado con
             // la bitacora vacia sirve igual para acomodar categorias y habitos.
             val aviso = if (catalogos.hojas.isEmpty()) {
-                Diagnostico(Severidad.ERROR, "No hubo ningun renglon aprovechable.")
+                Diagnostico(Severidad.ERROR, "No hubo ningún renglón aprovechable.")
             } else {
                 Diagnostico(
                     Severidad.AVISO,
-                    "La hoja de Registros no traia renglones aprovechables. Los catalogos " +
-                        "si se actualizaron y la bitacora quedo intacta."
+                    "La hoja de Registros no traía renglones aprovechables. Los catálogos " +
+                        "sí se actualizaron y la bitácora quedó intacta."
                 )
             }
             return catalogos.aResultado().copy(
@@ -304,8 +320,8 @@ class ImportadorExcel(
         if (sinCategoria > 0) {
             diagnosticos += Diagnostico(
                 Severidad.AVISO,
-                "$sinCategoria actividades quedaron sin categoria. Puedes asignarlas " +
-                    "abriendolas desde el registro."
+                "$sinCategoria actividades quedaron sin categoría. Puedes asignarlas " +
+                    "abriéndolas desde el registro."
             )
         }
 
@@ -324,14 +340,21 @@ class ImportadorExcel(
     }
 
     /**
-     * Arma la actividad dejando coherentes inicio, fin y duracion, que es la
-     * misma regla que aplica el repositorio al guardar desde la pantalla: una
+     * Arma la actividad y la pasa por [Actividad.coherente], que es la misma
+     * regla que aplica el repositorio al guardar desde la pantalla: una
      * actividad completada nunca se queda sin minutos, porque toda la analitica
-     * suma esa columna.
+     * suma esa columna. La aritmetica de fin y duracion vive alli y no aqui,
+     * para que no haya dos versiones que puedan separarse.
+     *
+     * Lo unico propio de la importacion es que un renglon que no esta
+     * completado llega **sin** duracion. Del archivo no se sabe si esos minutos
+     * eran un plan o una medicion a medias, y dejarlos escritos como duracion
+     * afirmaria algo que la hoja no dice.
      */
     private fun construye(cruda: FilaCruda, categoriaId: Long?, habitoId: Long?): Actividad {
         val horaInicio = cruda.inicio ?: HORA_NEUTRA
         val inicio = Tiempo.instante(cruda.dia.atTime(horaInicio))
+        val completada = cruda.estado == EstadoActividad.COMPLETADO
 
         // Los minutos capturados mandan sobre el reloj: si el archivo trae los
         // dos y no cuadran, la duracion es el dato que alguien escribio a
@@ -345,37 +368,19 @@ class ImportadorExcel(
             }
             ?: 0
 
-        return when (cruda.estado) {
-            EstadoActividad.COMPLETADO -> Actividad(
-                titulo = cruda.titulo,
-                categoriaId = categoriaId,
-                estado = EstadoActividad.COMPLETADO,
-                inicio = inicio,
-                fin = inicio.plusSeconds(minutos * 60L),
-                dia = cruda.dia,
-                duracionMinutos = minutos.coerceAtLeast(0),
-                cantidad = cruda.cantidad,
-                unidad = cruda.unidad,
-                habitoId = habitoId,
-                notas = cruda.notas
-            )
-
-            // Ni pendiente ni en curso tienen duracion cerrada: dejarles minutos
-            // los haria sumar en la analitica sin haber ocurrido.
-            EstadoActividad.PENDIENTE, EstadoActividad.EN_CURSO -> Actividad(
-                titulo = cruda.titulo,
-                categoriaId = categoriaId,
-                estado = cruda.estado,
-                inicio = inicio,
-                fin = null,
-                dia = cruda.dia,
-                duracionMinutos = null,
-                cantidad = cruda.cantidad,
-                unidad = cruda.unidad,
-                habitoId = habitoId,
-                notas = cruda.notas
-            )
-        }
+        return Actividad(
+            titulo = cruda.titulo,
+            categoriaId = categoriaId,
+            estado = cruda.estado,
+            inicio = inicio,
+            fin = null,
+            dia = cruda.dia,
+            duracionMinutos = if (completada) minutos.coerceAtLeast(0) else null,
+            cantidad = cruda.cantidad,
+            unidad = cruda.unidad,
+            habitoId = habitoId,
+            notas = cruda.notas
+        ).coherente()
     }
 
     // ------------------------------------------------------------- lectura

@@ -33,9 +33,12 @@ import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import kotlinx.coroutines.launch
 import com.carlosalbertoxw.ollin.actividades.data.prefs.Ajustes
+import com.carlosalbertoxw.ollin.actividades.data.prefs.AjustesRepositorio
 import com.carlosalbertoxw.ollin.actividades.data.prefs.ModoBloqueo
 import com.carlosalbertoxw.ollin.actividades.data.seguridad.ClavePin
 import com.carlosalbertoxw.ollin.actividades.ui.seguridad.pedirCredencialDelSistema
+import com.carlosalbertoxw.ollin.actividades.ui.seguridad.segundosDeEsperaPin
+import com.carlosalbertoxw.ollin.actividades.ui.seguridad.textoDeEspera
 import com.carlosalbertoxw.ollin.actividades.ui.theme.LocalColoresOllin
 
 /**
@@ -49,6 +52,7 @@ import com.carlosalbertoxw.ollin.actividades.ui.theme.LocalColoresOllin
 fun BloqueoPantalla(
     actividad: FragmentActivity,
     ajustes: Ajustes,
+    preferencias: AjustesRepositorio,
     alDesbloquear: () -> Unit
 ) {
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
@@ -66,12 +70,12 @@ fun BloqueoPantalla(
                 tint = LocalColoresOllin.current.textoTenue
             )
             Spacer(Modifier.height(16.dp))
-            Text("Ollin esta bloqueada", style = MaterialTheme.typography.titleMedium)
+            Text("Ollin está bloqueada", style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(24.dp))
 
             when (ajustes.modoBloqueo) {
                 ModoBloqueo.SISTEMA -> DesbloqueoSistema(actividad, alDesbloquear)
-                ModoBloqueo.PIN -> DesbloqueoPin(ajustes, alDesbloquear)
+                ModoBloqueo.PIN -> DesbloqueoPin(ajustes, preferencias, alDesbloquear)
                 // Transitorio: aun no se leen las preferencias del disco.
                 ModoBloqueo.NINGUNO -> Unit
             }
@@ -108,22 +112,32 @@ private fun DesbloqueoSistema(actividad: FragmentActivity, alDesbloquear: () -> 
 }
 
 @Composable
-private fun DesbloqueoPin(ajustes: Ajustes, alDesbloquear: () -> Unit) {
+private fun DesbloqueoPin(
+    ajustes: Ajustes,
+    preferencias: AjustesRepositorio,
+    alDesbloquear: () -> Unit
+) {
     var pin by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
     var verificando by remember { mutableStateOf(false) }
     val ambito = rememberCoroutineScope()
 
+    val espera = segundosDeEsperaPin(ajustes.pinFallos)
+
     val verifica: () -> Unit = {
-        if (!verificando && pin.isNotEmpty()) {
+        if (!verificando && espera == 0 && pin.isNotEmpty()) {
             verificando = true
             error = null
             ambito.launch {
                 val correcto = ClavePin.coincide(pin, ajustes.pinHash, ajustes.pinSal)
                 verificando = false
                 if (correcto) {
+                    preferencias.limpiaFallosPin()
                     alDesbloquear()
                 } else {
+                    // El fallo se apunta antes de decirlo: si el proceso muere
+                    // justo aqui, lo que no puede perderse es la cuenta.
+                    preferencias.sumaFalloPin()
                     error = "PIN incorrecto"
                     pin = ""
                 }
@@ -139,6 +153,7 @@ private fun DesbloqueoPin(ajustes: Ajustes, alDesbloquear: () -> Unit) {
         visualTransformation = PasswordVisualTransformation(),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
         isError = error != null,
+        enabled = espera == 0,
         modifier = Modifier.fillMaxWidth()
     )
 
@@ -147,12 +162,28 @@ private fun DesbloqueoPin(ajustes: Ajustes, alDesbloquear: () -> Unit) {
         Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
     }
 
+    if (espera > 0) {
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "Demasiados intentos fallidos. Vuelve a probar en un momento.",
+            style = MaterialTheme.typography.bodySmall,
+            color = LocalColoresOllin.current.textoTenue,
+            textAlign = TextAlign.Center
+        )
+    }
+
     Spacer(Modifier.height(16.dp))
     Button(
         onClick = verifica,
-        enabled = pin.length >= ClavePin.LARGO_MINIMO && !verificando,
+        enabled = pin.length >= ClavePin.LARGO_MINIMO && !verificando && espera == 0,
         modifier = Modifier.fillMaxWidth()
     ) {
-        Text(if (verificando) "Comprobando..." else "Entrar")
+        Text(
+            when {
+                espera > 0 -> textoDeEspera(espera)
+                verificando -> "Comprobando…"
+                else -> "Entrar"
+            }
+        )
     }
 }
