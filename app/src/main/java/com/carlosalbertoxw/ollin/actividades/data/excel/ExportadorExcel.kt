@@ -335,14 +335,17 @@ class ExportadorExcel(
         filas += listOf(
             Celda.Texto(
                 "La racha se calcula como en la app: los dias que el habito no toca " +
-                    "no la rompen, y el dia de hoy es de cortesia hasta que termine.",
+                    "no la rompen, y el dia de hoy es de cortesia hasta que termine. " +
+                    "\"Cuenta desde\" es el dia en que arranca el ciclo de las cadencias " +
+                    "periodicas: si lo cambias, se recorre el calendario del habito.",
                 Estilo.TENUE
             )
         )
         filas += listOf(Celda.Vacia)
         filas += listOf(
-            "Habito", "Categoria", "Cadencia", "Meta diaria", "Minutos sugeridos",
-            "Activo", "Cumplimientos", "Racha actual", "Mejor racha", "Unidad de racha", "Notas"
+            "Habito", "Categoria", "Cadencia", "Cuenta desde", "Meta diaria",
+            "Minutos sugeridos", "Activo", "Cumplimientos", "Racha actual", "Mejor racha",
+            "Unidad de racha", "Notas"
         ).map { Celda.Texto(it, Estilo.ENCABEZADO) }
 
         datos.habitos.forEach { habito ->
@@ -351,6 +354,13 @@ class ExportadorExcel(
                 Celda.Texto(habito.nombre),
                 Celda.Texto(datos.nombreCategoria(habito.categoriaId)),
                 Celda.Texto(habito.cadencia()),
+                // Solo las cadencias periodicas cuentan desde un ancla; para
+                // las demas la columna seria un dato que no gobierna nada.
+                if (habito.frecuencia.esPeriodica) {
+                    Celda.Fecha(habito.anclaEfectiva())
+                } else {
+                    Celda.Vacia
+                },
                 Celda.Numero(habito.metaDiaria.toDouble(), Estilo.ENTERO),
                 habito.minutosSugeridos?.let { Celda.Numero(it.toDouble(), Estilo.ENTERO) }
                     ?: Celda.Vacia,
@@ -368,9 +378,9 @@ class ExportadorExcel(
             filas = filas,
             anchos = listOf(
                 AnchoColumna(1, 26.0), AnchoColumna(2, 22.0), AnchoColumna(3, 22.0),
-                AnchoColumna(4, 12.0), AnchoColumna(5, 16.0), AnchoColumna(6, 9.0),
-                AnchoColumna(7, 14.0), AnchoColumna(8, 13.0), AnchoColumna(9, 13.0),
-                AnchoColumna(10, 15.0), AnchoColumna(11, 30.0)
+                AnchoColumna(4, 14.0), AnchoColumna(5, 12.0), AnchoColumna(6, 16.0),
+                AnchoColumna(7, 9.0), AnchoColumna(8, 14.0), AnchoColumna(9, 13.0),
+                AnchoColumna(10, 13.0), AnchoColumna(11, 15.0), AnchoColumna(12, 30.0)
             ),
             congelarTrasFila = 4
         )

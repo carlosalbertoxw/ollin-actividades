@@ -96,15 +96,6 @@ class ImportadorExcel(private val db: OllinDatabase) {
 
         val REQUERIDAS = listOf("fecha", "titulo")
 
-        val FORMATOS_FECHA = listOf(
-            DateTimeFormatter.ISO_LOCAL_DATE,
-            DateTimeFormatter.ofPattern("dd/MM/yyyy"),
-            DateTimeFormatter.ofPattern("d/M/yyyy"),
-            DateTimeFormatter.ofPattern("MM/dd/yyyy"),
-            DateTimeFormatter.ofPattern("yyyy/MM/dd"),
-            DateTimeFormatter.ofPattern("dd-MM-yyyy")
-        )
-
         /**
          * Hora a la que se ancla lo que no trae hora. El mediodia es la que
          * menos miente cuando ya nadie recuerda a que hora fue, y evita que un
@@ -201,7 +192,7 @@ class ImportadorExcel(private val db: OllinDatabase) {
         var omitidas = 0
 
         hoja.renglones(mapa).forEach { renglon ->
-            val dia = renglon.celda("fecha")?.let(::leeFecha)
+            val dia = renglon.fecha("fecha")
             val titulo = renglon.texto("titulo")
 
             if (dia == null || titulo == null) {
@@ -384,16 +375,6 @@ class ImportadorExcel(private val db: OllinDatabase) {
     }
 
     // ------------------------------------------------------------- lectura
-
-    private fun leeFecha(celda: CeldaLeida): LocalDate? {
-        celda.numero?.let { return Ooxml.desdeSerial(it) }
-        val texto = celda.texto?.trim().orEmpty()
-        if (texto.isEmpty()) return null
-        FORMATOS_FECHA.forEach { formato ->
-            runCatching { return LocalDate.parse(texto, formato) }
-        }
-        return null
-    }
 
     /** Una hora puede venir como fraccion de dia (Excel) o como "08:30". */
     private fun leeHora(celda: CeldaLeida): LocalTime? {

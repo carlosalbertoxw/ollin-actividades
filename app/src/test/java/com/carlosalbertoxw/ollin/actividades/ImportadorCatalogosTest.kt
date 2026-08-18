@@ -392,4 +392,106 @@ class ImportadorCatalogosTest {
         assertEquals(2, guardada.orden)
         assertEquals(guardada.id, db.actividadDao().todas().single().categoriaId)
     }
+
+    // --------------------------------------------------- Ancla de las cadencias
+
+    /**
+     * El caso que motivo la columna "Cuenta desde".
+     *
+     * Un habito cada 15 dias anclado al 1 de agosto toca el 1 y el 16. Al
+     * restaurar el respaldo en un telefono limpio, el habito nacia el dia de la
+     * importacion y su ancla efectiva pasaba a ser ese dia: el calendario
+     * entero se corria y lo que tocaba el 16 dejaba de tocar.
+     */
+    @Test
+    fun `un habito periodico conserva su calendario al reimportarse`() = runTest {
+        val ancla = LocalDate.of(2026, 8, 1)
+        val libro = libroDe(
+            habitos = listOf(
+                Habito(
+                    id = 1,
+                    nombre = "Regar las plantas",
+                    frecuencia = Frecuencia.CADA_DIAS,
+                    intervaloDias = 15,
+                    ancla = ancla
+                )
+            )
+        )
+
+        importador.importa(libro.inputStream())
+
+        val guardado = db.habitoDao().todos().first { it.nombre == "Regar las plantas" }
+        assertEquals(ancla, guardado.anclaEfectiva())
+        // Lo que de verdad importa: los dias que toca no se movieron.
+        assertTrue(guardado.tocaHoy(LocalDate.of(2026, 8, 16)))
+        assertTrue(guardado.tocaHoy(LocalDate.of(2026, 8, 31)))
+        assertFalse(guardado.tocaHoy(LocalDate.of(2026, 8, 17)))
+    }
+
+    /**
+     * El ancla de un habito que ya existe no se pisa si el archivo no la trae:
+     * un libro viejo, exportado antes de que existiera la columna, no tiene por
+     * que recorrerle el calendario a nadie.
+     */
+    @Test
+    fun `sin columna de ancla no se toca la que ya tenia el habito`() = runTest {
+        val ancla = LocalDate.of(2026, 3, 9)
+        db.habitoDao().inserta(
+            Habito(
+                nombre = "Cambiar filtros",
+                frecuencia = Frecuencia.CADA_MESES,
+                intervaloMeses = 3,
+                ancla = ancla
+            )
+        )
+
+        val libro = libroCrudo(
+            Hoja(
+                nombre = "Habitos",
+                filas = listOf(
+                    texto("Habito", "Cadencia"),
+                    texto("Cambiar filtros", "Cada trimestre")
+                )
+            )
+        )
+        importador.importa(libro.inputStream())
+
+        assertEquals(ancla, db.habitoDao().todos().first().ancla)
+    }
+
+    /** Escrita a mano, la fecha se acepta en los formatos de siempre. */
+    @Test
+    fun `el ancla se puede escribir a mano en la hoja`() = runTest {
+        val libro = libroCrudo(
+            Hoja(
+                nombre = "Habitos",
+                filas = listOf(
+                    texto("Habito", "Cadencia", "Cuenta desde"),
+                    texto("Sacar la basura", "Cada 3 dias", "2026-07-04")
+                )
+            )
+        )
+
+        importador.importa(libro.inputStream())
+
+        val guardado = db.habitoDao().todos().first()
+        assertEquals(LocalDate.of(2026, 7, 4), guardado.ancla)
+        assertTrue(guardado.tocaHoy(LocalDate.of(2026, 7, 7)))
+    }
+
+    /**
+     * Una cadencia no periodica no cuenta desde ningun ancla, asi que la
+     * columna sale vacia en vez de ensenar una fecha que no gobierna nada.
+     */
+    @Test
+    fun `un habito diario no arrastra ancla al exportarse`() = runTest {
+        val libro = libroDe(
+            habitos = listOf(Habito(id = 1, nombre = "Leer", frecuencia = Frecuencia.DIARIA))
+        )
+
+        importador.importa(libro.inputStream())
+
+        assertNull(db.habitoDao().todos().first { it.nombre == "Leer" }.ancla)
+    }
+
 }

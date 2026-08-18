@@ -56,6 +56,10 @@ internal class ImportadorCatalogos(
             "nombre" to listOf("habito", "habitos", "nombre", "habit"),
             "categoria" to listOf("categoria", "category", "rubro"),
             "cadencia" to listOf("cadencia", "frecuencia", "periodicidad"),
+            "ancla" to listOf(
+                "cuenta desde", "ancla", "desde", "fecha de inicio", "inicio del ciclo",
+                "fecha ancla", "anchor"
+            ),
             "meta" to listOf("meta diaria", "meta", "veces al dia"),
             "minutos" to listOf("minutos sugeridos", "minutos", "duracion sugerida"),
             "activo" to listOf("activo", "activa", "vigente"),
@@ -231,6 +235,7 @@ internal class ImportadorCatalogos(
             val activo = renglon.booleano("activo")
             val orden = renglon.entero("orden")
             val notas = renglon.texto("notas")
+            val ancla = renglon.fecha("ancla")
 
             val textoCadencia = renglon.texto("cadencia")
             val cadencia = textoCadencia?.let(::leeCadencia)
@@ -251,7 +256,8 @@ internal class ImportadorCatalogos(
                     minutosSugeridos = minutos ?: existente.minutosSugeridos,
                     activo = activo ?: existente.activo,
                     orden = orden ?: existente.orden,
-                    notas = notas ?: existente.notas
+                    notas = notas ?: existente.notas,
+                    ancla = ancla ?: existente.ancla
                 ).con(cadencia)
                 if (actualizado != existente) {
                     habitoDao.actualiza(actualizado)
@@ -269,6 +275,10 @@ internal class ImportadorCatalogos(
                 metaDiaria = meta ?: 1,
                 minutosSugeridos = minutos,
                 activo = activo ?: true,
+                // Sin esta fecha el habito nace hoy y su ciclo se recorre: al
+                // restaurar un respaldo, lo que tocaba el dia 3 pasaria a tocar
+                // el dia de la importacion. Ver "Cuenta desde" en docs/excel.md.
+                ancla = ancla,
                 // Sin columna de orden manda el lugar que ocupa en la hoja: es
                 // el orden que alguien acomodo al editarla.
                 orden = orden ?: posicion,

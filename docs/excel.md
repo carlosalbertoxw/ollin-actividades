@@ -79,7 +79,7 @@ Las cuatro que Ollin sabe reconocer, **cada una si viene en el archivo** y en es
 | Pestaña | Qué entra | Qué se ignora |
 |---|---|---|
 | **Categorias** | Nombre, ámbito, color, si está archivada y orden | — |
-| **Habitos** | Nombre, categoría, cadencia, meta diaria, minutos sugeridos, activo y notas | Cumplimientos, racha actual, mejor racha y unidad de racha |
+| **Habitos** | Nombre, categoría, cadencia, **cuenta desde**, meta diaria, minutos sugeridos, activo y notas | Cumplimientos, racha actual, mejor racha y unidad de racha |
 | **Diccionarios** | Las columnas *Categorias* y *Habitos*, solo para dar de alta lo que falte | Ámbitos, estados y unidades: son enumeraciones fijas de la app |
 | **Registros** | La bitácora | — |
 
@@ -88,6 +88,19 @@ El orden no es casual. `Registros` nombra sus categorías y hábitos por texto y
 Las pestañas se buscan **por nombre**, sin acentos ni mayúsculas —`Categorías` y `categorias` son la misma—. La de `Registros` es la excepción: si no está, se usa la primera hoja que traiga al menos una columna de **fecha** y otra de **título**, para admitir libros que no salieron de aquí.
 
 Un libro que solo trae catálogos es legítimo: sirve para reordenar las categorías o retocar los hábitos desde la computadora. En ese caso la bitácora **no se toca aunque esté marcado "Reemplazar todo"**, porque no hay nada con qué reemplazarla.
+
+### «Cuenta desde»: el ancla de las cadencias periódicas
+
+Un hábito *cada tantos días* o *cada tantos meses* no toca según el calendario, sino contando desde una fecha. Esa fecha es el **ancla**, y cuando no se fija a mano es el día en que se dio de alta el hábito.
+
+Hasta que existió esta columna, el ancla no salía en el `.xlsx`. Al restaurar un respaldo en un teléfono limpio, cada hábito nacía el día de la importación y su ancla efectiva pasaba a ser ese día: **el calendario entero se corría**. Un hábito cada quince días anclado al 1 de agosto tocaba el 1 y el 16; importado el día 9, pasaba a tocar el 9 y el 24.
+
+Cómo se comporta ahora:
+
+- Se exporta **solo para las cadencias periódicas**. Para las demás la celda va vacía, porque el ancla no gobierna nada: un hábito diario toca todos los días vengan de donde vengan.
+- Al importar, la fecha se guarda como ancla explícita. Se admite el serial de Excel o escrita a mano en los formatos de siempre (`2026-07-04`, `04/07/2026`…).
+- **Si la columna no viene, el ancla que ya tenía el hábito no se toca.** Un libro exportado antes de que esta columna existiera no le recorre el calendario a nadie.
+- Cambiar la fecha a mano en la hoja **sí** recorre el calendario del hábito. Es el único uso que tiene editarla, y la nota de la pestaña lo advierte.
 
 ### Cómo se emparejan los catálogos
 

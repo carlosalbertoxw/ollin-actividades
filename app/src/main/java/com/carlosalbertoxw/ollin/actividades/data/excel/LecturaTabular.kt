@@ -1,6 +1,8 @@
 package com.carlosalbertoxw.ollin.actividades.data.excel
 
 import com.carlosalbertoxw.ollin.actividades.domain.model.normalizaClave
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 /**
  * Reconocimiento de encabezados, compartido por todo lo que se importa.
@@ -71,6 +73,37 @@ internal class Renglon(
     fun decimal(clave: String): Double? = celda(clave)?.numero
 
     fun booleano(clave: String): Boolean? = texto(clave)?.let(::leeBooleano)
+
+    /**
+     * Una fecha puede venir como serial de Excel o escrita a mano en cualquiera
+     * de los formatos habituales.
+     *
+     * Vive aqui y no en el importador de registros porque tiene dos clientes:
+     * la hoja de Registros y la columna "Cuenta desde" de Habitos. Dos lectores
+     * de fecha acabarian aceptando formatos distintos, y el usuario no tiene
+     * por que saber cual pestana admite cual.
+     */
+    fun fecha(clave: String): LocalDate? {
+        val celda = celda(clave) ?: return null
+        celda.numero?.let { return Ooxml.desdeSerial(it) }
+        val texto = celda.texto?.trim().orEmpty()
+        if (texto.isEmpty()) return null
+        FORMATOS_FECHA.forEach { formato ->
+            runCatching { return LocalDate.parse(texto, formato) }
+        }
+        return null
+    }
+
+    private companion object {
+        val FORMATOS_FECHA = listOf(
+            DateTimeFormatter.ISO_LOCAL_DATE,
+            DateTimeFormatter.ofPattern("dd/MM/yyyy"),
+            DateTimeFormatter.ofPattern("d/M/yyyy"),
+            DateTimeFormatter.ofPattern("MM/dd/yyyy"),
+            DateTimeFormatter.ofPattern("yyyy/MM/dd"),
+            DateTimeFormatter.ofPattern("dd-MM-yyyy")
+        )
+    }
 }
 
 /** Los renglones que siguen al encabezado, ya sin los que vienen en blanco. */

@@ -7,6 +7,7 @@ import com.carlosalbertoxw.ollin.actividades.data.excel.DatosExportacion
 import com.carlosalbertoxw.ollin.actividades.data.excel.EsquemaExportacion
 import com.carlosalbertoxw.ollin.actividades.data.excel.ExportadorExcel
 import com.carlosalbertoxw.ollin.actividades.data.excel.HojaExportable
+import com.carlosalbertoxw.ollin.actividades.data.excel.HojaLeida
 import com.carlosalbertoxw.ollin.actividades.data.excel.Ooxml
 import com.carlosalbertoxw.ollin.actividades.data.excel.XlsxLector
 import com.carlosalbertoxw.ollin.actividades.domain.model.Ambito
@@ -219,13 +220,22 @@ class ExcelRoundTripTest {
         val libro = XlsxLector.lee(exporta(EsquemaExportacion.EXTENDIDO).inputStream())
         val hoja = libro.hoja("Habitos")!!
         val fila = hoja.filas.first { it.getOrNull(0)?.comoTexto() == "Leer 20 minutos" }
+        // Por encabezado y no por posicion: agregar una columna a la hoja no
+        // tiene por que romper una prueba que habla de la racha.
+        val col = columnasDe(hoja)
 
-        assertEquals("Enfoque profundo", fila[1].comoTexto())
-        assertEquals("Todos los días", fila[2].comoTexto())
-        assertEquals(1.0, fila[6].numero!!, 0.001)   // un cumplimiento
-        assertEquals(1.0, fila[7].numero!!, 0.001)   // racha de un dia
-        assertEquals("días", fila[9].comoTexto())
+        assertEquals("Enfoque profundo", fila[col.getValue("Categoria")].comoTexto())
+        assertEquals("Todos los días", fila[col.getValue("Cadencia")].comoTexto())
+        assertEquals(1.0, fila[col.getValue("Cumplimientos")].numero!!, 0.001)
+        assertEquals(1.0, fila[col.getValue("Racha actual")].numero!!, 0.001)
+        assertEquals("días", fila[col.getValue("Unidad de racha")].comoTexto())
     }
+
+    /** El encabezado de estas hojas no es la fila 1: llevan titulo y nota arriba. */
+    private fun columnasDe(hoja: HojaLeida): Map<String, Int> =
+        hoja.filas.first { it.getOrNull(0)?.comoTexto() == "Habito" }
+            .mapIndexedNotNull { i, celda -> celda.comoTexto()?.let { it to i } }
+            .toMap()
 
     @Test
     fun `los diccionarios llevan los catalogos que alimentan los desplegables`() {
