@@ -168,7 +168,12 @@ object XlsxLector {
     private fun parsea(bytes: ByteArray, handler: DefaultHandler) {
         val factory = SAXParserFactory.newInstance().apply {
             isNamespaceAware = false
-            isXIncludeAware = false
+            // Cada blindaje va suelto y tolerado: ninguno puede tumbar una
+            // importacion por no estar disponible. setXIncludeAware es el caso
+            // real —el SAXParserFactory de Android no lo implementa y la clase
+            // base lanza UnsupportedOperationException— y no se veia en las
+            // pruebas porque en la JVM lo sirve Xerces, que si lo soporta.
+            runCatching { isXIncludeAware = false }
             BANDERAS_CERRADAS.forEach { (bandera, valor) ->
                 runCatching { setFeature(bandera, valor) }
             }
