@@ -70,6 +70,7 @@ import com.carlosalbertoxw.ollin.actividades.ui.theme.LocalColoresOllin
 import com.carlosalbertoxw.ollin.actividades.ui.theme.colorDeCategoria
 import java.time.Instant
 import java.time.LocalDate
+import com.carlosalbertoxw.ollin.actividades.ui.components.DialogoDeshacerHabito
 
 @Composable
 fun HoyPantalla(
@@ -91,6 +92,9 @@ fun HoyPantalla(
     val minutos by vm.minutosPorAmbito.collectAsStateWithLifecycle()
     val ajustes by vm.ajustes.collectAsStateWithLifecycle()
     val colores = LocalColoresOllin.current
+
+    /** El habito cuyo deshacer se esta confirmando. */
+    var deshaciendo by remember { mutableStateOf<HabitoConAvance?>(null) }
 
     // El latido se toma sin `by` a proposito: leerlo aqui haria que cada segundo
     // se recompusiera la pantalla entera —las metas, los habitos, la bitacora—
@@ -206,7 +210,7 @@ fun HoyPantalla(
                     avance = avance,
                     categoria = avance.habito.categoriaId?.let(indiceCategorias::get),
                     alAlternar = {
-                        if (avance.cumplidoHoy) vm.deshace(avance)
+                        if (avance.cumplidoHoy) deshaciendo = avance
                         else alRegistrarHabito(avance.habito.id, dia)
                     },
                     alCronometrar = { vm.cronometraHabito(avance.habito) }
@@ -270,6 +274,15 @@ fun HoyPantalla(
                 HorizontalDivider(color = colores.trazoSuave)
             }
         }
+    }
+
+    deshaciendo?.let { avance ->
+        DialogoDeshacerHabito(
+            nombre = avance.habito.nombre,
+            dia = dia,
+            alConfirmar = { vm.deshace(avance) },
+            alCerrar = { deshaciendo = null }
+        )
     }
 }
 

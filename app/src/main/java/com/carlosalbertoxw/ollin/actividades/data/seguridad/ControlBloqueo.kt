@@ -20,7 +20,18 @@ import com.carlosalbertoxw.ollin.actividades.data.prefs.ModoBloqueo
  */
 class ControlBloqueo(ajustes: AjustesRepositorio) {
 
-    private val ambito = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    /**
+     * `Main` a secas y no `Main.immediate`.
+     *
+     * Con `immediate`, construir el control desde el hilo principal ejecuta el
+     * colector de preferencias **dentro del constructor**, sin llegar a
+     * suspender, siempre que el DataStore pueda servir de cache. Cuando eso
+     * pasa y no hay candado puesto, `bloqueado` ya sale en falso antes de que
+     * el constructor retorne, y "arranca bloqueada" —lo que evita ensenar la
+     * bitacora en el parpadeo previo a saber si hay llave— deja de ser una
+     * garantia para pasar a depender de si la cache estaba caliente.
+     */
+    private val ambito = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     /**
      * Arranca bloqueada a proposito. Todavia no se sabe si hay candado puesto,

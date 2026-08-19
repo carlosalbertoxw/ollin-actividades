@@ -133,7 +133,7 @@ class HabitosPantallaTest {
     }
 
     @Test
-    fun `deshacer_un_habito_ya_cumplido_sigue_siendo_inmediato`() {
+    fun `deshacer_un_habito_pide_confirmacion_antes_de_borrar`() {
         banco.siembra {
             val id = guardaHabito(Habito(nombre = "Meditar", minutosSugeridos = 10))
             registraHabito(habito(id)!!)
@@ -141,7 +141,17 @@ class HabitosPantallaTest {
         monta()
 
         compose.esperaTexto("hecho hoy", subcadena = true)
+
         compose.onNodeWithContentDescription("Deshacer hoy").performClick()
+        compose.esperaTexto("Deshacer «Meditar»")
+        compose.onNodeWithText("Cancelar").performClick()
+
+        compose.esperaTexto("hecho hoy", subcadena = true)
+        assertEquals(1, runBlocking { banco.db.actividadDao().cuenta() })
+
+        compose.onNodeWithContentDescription("Deshacer hoy").performClick()
+        compose.esperaTexto("Deshacer «Meditar»")
+        compose.onNodeWithText("Deshacer").performClick()
 
         compose.esperaTexto("pendiente hoy", subcadena = true)
         assertEquals(0, runBlocking { banco.db.actividadDao().cuenta() })

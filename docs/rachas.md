@@ -57,4 +57,6 @@ La ruta lleva el hábito y el día (`captura?habito=…&dia=…`), porque la pan
 
 `registraHabito()` sigue existiendo y es lo que usan las pruebas y cualquier registro sin formulario: inserta una actividad completada con el nombre del hábito, su categoría y los minutos indicados (o los sugeridos por la plantilla).
 
-`deshaceHabito()` borra el último registro de ese hábito en ese día. **Deshacer sí es inmediato**: no hay nada que revisar, y lo que quita se puede volver a crear.
+`deshaceHabito()` borra el último registro de ese hábito en ese día, y **también pregunta antes**. No abre el formulario —no hay nada que ajustar, solo se quita— pero sí un diálogo de confirmación: la paloma y el deshacer son el mismo control y ocupan el mismo píxel, así que el pulgar que iba a marcar cae sobre el deshacer en cuanto el hábito ya está hecho, y sin confirmación eso borra un registro sin que nadie se entere de que existía.
+
+El diálogo vive en [`DialogoDeshacerHabito`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/ui/components/Comunes.kt) porque las dos pantallas lo enseñan con el mismo texto.

@@ -122,7 +122,7 @@ class HoyPantallaTest {
     }
 
     @Test
-    fun `deshacer_un_habito_ya_cumplido_sigue_siendo_inmediato`() {
+    fun `deshacer_un_habito_pide_confirmacion_antes_de_borrar`() {
         banco.siembra {
             val categoria = guardaCategoria(Categoria(nombre = "Lectura", ambito = Ambito.HABITO))
             val id = guardaHabito(
@@ -134,11 +134,22 @@ class HoyPantallaTest {
 
         compose.esperaTexto("Racha de 1 dias", subcadena = true)
 
+        // Cancelar no borra nada: la paloma y el deshacer comparten pixel, y
+        // pulsarlo de mas no puede costar un registro.
         compose.onNodeWithContentDescription("Deshacer").performClick()
+        compose.esperaTexto("Deshacer «Leer»")
+        compose.onNodeWithText("Cancelar").performClick()
+
+        compose.esperaTexto("Racha de 1 dias", subcadena = true)
+        assertEquals(1, runBlocking { banco.db.actividadDao().todas() }.size)
+
+        // Confirmando si, y sin pasar por ninguna pantalla.
+        compose.onNodeWithContentDescription("Deshacer").performClick()
+        compose.esperaTexto("Deshacer «Leer»")
+        compose.onNodeWithText("Deshacer").performClick()
 
         compose.esperaTexto("Sin racha activa", subcadena = true)
         assertTrue(runBlocking { banco.db.actividadDao().todas() }.isEmpty())
-        // Deshacer no manda a ninguna pantalla: no hay nada que revisar.
         assertNull(capturaDeHabito)
     }
 

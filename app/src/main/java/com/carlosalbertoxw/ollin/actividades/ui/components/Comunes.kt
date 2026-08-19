@@ -44,6 +44,9 @@ import com.carlosalbertoxw.ollin.actividades.domain.model.Tiempo
 import com.carlosalbertoxw.ollin.actividades.ui.theme.EstiloTiempo
 import com.carlosalbertoxw.ollin.actividades.ui.theme.LocalColoresOllin
 import com.carlosalbertoxw.ollin.actividades.ui.theme.colorDeCategoria
+import java.time.LocalDate
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.AlertDialog
 
 /** Cada ambito tiene su icono. Se repite en filtros, chips y renglones. */
 fun iconoDe(ambito: Ambito?): ImageVector = when (ambito) {
@@ -353,4 +356,46 @@ private fun subtitulo(detalle: ActividadDetallada): String {
     detalle.categoriaNombre?.let { partes += it }
     if (detalle.habitoNombre != null) partes += "Habito"
     return partes.joinToString(" · ")
+}
+
+/**
+ * Confirma que se borre el ultimo cumplimiento de un habito.
+ *
+ * Deshacer no abre el formulario —no hay nada que ajustar, solo se quita— pero
+ * si pregunta: la paloma y el deshacer son el mismo control y ocupan el mismo
+ * pixel, asi que el pulgar que iba a marcar cae sobre el deshacer en cuanto el
+ * habito ya esta hecho, y sin confirmacion eso borra un registro sin que nadie
+ * se entere de que existia.
+ *
+ * Vive aqui porque lo usan la pantalla de Hoy y la de Habitos con el mismo
+ * texto, y dos copias de esta frase acabarian contradiciendose.
+ */
+@Composable
+fun DialogoDeshacerHabito(
+    nombre: String,
+    /** El dia que se esta viendo; Hoy sabe mirar otras fechas. */
+    dia: LocalDate,
+    alConfirmar: () -> Unit,
+    alCerrar: () -> Unit
+) {
+    val cuando = if (dia == Tiempo.hoy()) "de hoy" else "del ${Tiempo.fechaCorta(dia)}"
+    AlertDialog(
+        onDismissRequest = alCerrar,
+        confirmButton = {
+            TextButton(onClick = {
+                alCerrar()
+                alConfirmar()
+            }) { Text("Deshacer") }
+        },
+        dismissButton = {
+            TextButton(onClick = alCerrar) { Text("Cancelar") }
+        },
+        title = { Text("Deshacer «$nombre»") },
+        text = {
+            Text(
+                "Se borra el último registro $cuando y la racha vuelve a como " +
+                    "estaba. Puedes volver a marcarlo cuando quieras."
+            )
+        }
+    )
 }

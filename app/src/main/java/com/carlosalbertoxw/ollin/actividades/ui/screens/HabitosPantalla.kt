@@ -74,6 +74,7 @@ import com.carlosalbertoxw.ollin.actividades.ui.theme.LocalColoresOllin
 import com.carlosalbertoxw.ollin.actividades.ui.theme.colorDeCategoria
 import java.time.DayOfWeek
 import java.time.LocalDate
+import com.carlosalbertoxw.ollin.actividades.ui.components.DialogoDeshacerHabito
 
 @Composable
 fun HabitosPantalla(
@@ -86,6 +87,9 @@ fun HabitosPantalla(
     val indiceCategorias by vm.indiceCategorias.collectAsStateWithLifecycle()
 
     var editando by remember { mutableStateOf<Habito?>(null) }
+
+    /** El habito cuyo deshacer se esta confirmando. */
+    var deshaciendo by remember { mutableStateOf<HabitoConAvance?>(null) }
     val colores = LocalColoresOllin.current
 
     val (activos, pausados) = habitos.partition { it.habito.activo }
@@ -130,7 +134,7 @@ fun HabitosPantalla(
                         avance = avance,
                         categoria = avance.habito.categoriaId?.let(indiceCategorias::get),
                         alAlternar = {
-                            if (avance.cumplidoHoy) vm.deshace(avance)
+                            if (avance.cumplidoHoy) deshaciendo = avance
                             else alRegistrarHabito(avance.habito.id)
                         },
                         alEditar = { editando = avance.habito }
@@ -161,6 +165,16 @@ fun HabitosPantalla(
                 }
             }
         }
+    }
+
+    deshaciendo?.let { avance ->
+        DialogoDeshacerHabito(
+            nombre = avance.habito.nombre,
+            // Esta pantalla siempre administra el dia en curso.
+            dia = Tiempo.hoy(),
+            alConfirmar = { vm.deshace(avance) },
+            alCerrar = { deshaciendo = null }
+        )
     }
 
     editando?.let { habito ->
