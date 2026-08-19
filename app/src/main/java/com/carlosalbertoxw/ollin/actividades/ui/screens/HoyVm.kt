@@ -135,12 +135,17 @@ class HoyVm(
         }
     }
 
-    fun alterna(avance: HabitoConAvance) {
+    /**
+     * Borra el ultimo cumplimiento del habito en el dia que se esta viendo.
+     *
+     * Marcar ya no vive aqui: abre el formulario de captura rellenado con la
+     * plantilla del habito, para poder revisar los minutos y la hora antes de
+     * guardar. Deshacer si sigue siendo inmediato, porque no hay nada que
+     * revisar y el registro que quita se puede volver a crear.
+     */
+    fun deshace(avance: HabitoConAvance) {
         val elDia = dia.value
-        viewModelScope.launch {
-            if (avance.cumplidoHoy) repo.deshaceHabito(avance.habito.id, elDia)
-            else repo.registraHabito(avance.habito, dia = elDia)
-        }
+        viewModelScope.launch { repo.deshaceHabito(avance.habito.id, elDia) }
     }
 
     fun cronometraHabito(habito: Habito) {

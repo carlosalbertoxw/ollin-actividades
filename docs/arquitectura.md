@@ -26,7 +26,7 @@ val vm = recuerdaVm("analitica") { AnaliticaVm(contenedor.repositorio) }
 
 **El ViewModel recibe sus colaboradores, no el `Contenedor`.** El contenedor solo se abre en esa línea de la pantalla. Un ViewModel que lo recibiera entero dependería de todo —incluida la base— y montarlo en una prueba o en un `@Preview` exigiría construir SQLCipher para pintar una lista.
 
-La navegación vive en [`OllinRaiz`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/ui/OllinRaiz.kt), con un `NavHost` de Navigation Compose. Las cuatro pestañas inferiores son el enum [`Destino`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/ui/nav/Destinos.kt) —Hoy, Registro, Hábitos, Analítica— y el resto de las rutas (captura, categorías, ajustes, archivo, acerca de) son constantes en `Rutas`. El botón flotante de captura se oculta en Hábitos, que tiene el suyo.
+La navegación vive en [`OllinRaiz`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/ui/OllinRaiz.kt), con un `NavHost` de Navigation Compose. La ruta de captura lleva tres argumentos opcionales y excluyentes entre sí: `id` abre una actividad que ya existe, `habito` + `dia` estrenan una rellenada desde la plantilla de un hábito, y sin ninguno se captura en blanco. Las cuatro pestañas inferiores son el enum [`Destino`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/ui/nav/Destinos.kt) —Hoy, Registro, Hábitos, Analítica— y el resto de las rutas (captura, categorías, ajustes, archivo, acerca de) son constantes en `Rutas`. El botón flotante de captura se oculta en Hábitos, que tiene el suyo.
 
 ### `domain/`
 

@@ -12,6 +12,7 @@ import com.carlosalbertoxw.ollin.actividades.ui.screens.HabitosPantalla
 import com.carlosalbertoxw.ollin.actividades.ui.theme.TemaOllin
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -28,8 +29,18 @@ class HabitosPantallaTest {
     @get:Rule(order = 1)
     val compose = createComposeRule()
 
+    /** El habito con que se pidio abrir la captura, o nulo si no se pidio. */
+    private var capturaDeHabito: Long? = null
+
     private fun monta() {
-        compose.setContent { TemaOllin(oscuro = true) { HabitosPantalla(banco.contenedor) } }
+        compose.setContent {
+            TemaOllin(oscuro = true) {
+                HabitosPantalla(
+                    contenedor = banco.contenedor,
+                    alRegistrarHabito = { capturaDeHabito = it }
+                )
+            }
+        }
         compose.esperaDescripcion("Nuevo habito")
     }
 
@@ -107,18 +118,33 @@ class HabitosPantallaTest {
     }
 
     @Test
-    fun `marcar_un_habito_desde_su_tarjeta_deja_el_cumplimiento_y_lo_puede_deshacer`() {
-        banco.siembra { guardaHabito(Habito(nombre = "Meditar", minutosSugeridos = 10)) }
+    fun `marcar_un_habito_desde_su_tarjeta_abre_la_captura`() {
+        val id = banco.siembra { guardaHabito(Habito(nombre = "Meditar", minutosSugeridos = 10)) }
         monta()
 
         compose.esperaTexto("Meditar")
         compose.onNodeWithContentDescription("Marcar hoy").performClick()
 
-        compose.esperaTexto("hecho hoy", subcadena = true)
-        assertEquals(1, runBlocking { banco.db.actividadDao().cuenta() })
+        // Pide el formulario en vez de escribir: el cumplimiento lo deja el
+        // boton Guardar de la captura, ya con los minutos revisados.
+        assertEquals(id, capturaDeHabito)
+        assertEquals(0, runBlocking { banco.db.actividadDao().cuenta() })
+        compose.esperaTexto("pendiente hoy", subcadena = true)
+    }
 
+    @Test
+    fun `deshacer_un_habito_ya_cumplido_sigue_siendo_inmediato`() {
+        banco.siembra {
+            val id = guardaHabito(Habito(nombre = "Meditar", minutosSugeridos = 10))
+            registraHabito(habito(id)!!)
+        }
+        monta()
+
+        compose.esperaTexto("hecho hoy", subcadena = true)
         compose.onNodeWithContentDescription("Deshacer hoy").performClick()
+
         compose.esperaTexto("pendiente hoy", subcadena = true)
         assertEquals(0, runBlocking { banco.db.actividadDao().cuenta() })
+        assertNull(capturaDeHabito)
     }
 }

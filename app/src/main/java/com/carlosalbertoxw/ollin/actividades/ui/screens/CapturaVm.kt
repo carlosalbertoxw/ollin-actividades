@@ -37,7 +37,11 @@ data class FormularioActividad(
 
 class CapturaVm(
     private val repo: ActividadesRepositorio,
-    private val actividadId: Long?
+    private val actividadId: Long?,
+    /** Cuando llega, el formulario nace rellenado con la plantilla del habito. */
+    private val habitoId: Long? = null,
+    /** El dia que se estaba viendo al marcar. Nulo es hoy. */
+    private val dia: LocalDate? = null
 ) : ViewModel() {
 
     private val _form = MutableStateFlow(FormularioActividad())
@@ -47,6 +51,11 @@ class CapturaVm(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     init {
+        // Los dos caminos se excluyen: o se abre una actividad que ya existe, o
+        // se estrena una desde un habito.
+        if (actividadId == null && habitoId != null) {
+            viewModelScope.launch { rellenaDesde(habitoId, dia ?: Tiempo.hoy()) }
+        }
         if (actividadId != null) {
             viewModelScope.launch {
                 repo.actividad(actividadId)?.let { a ->
@@ -70,6 +79,36 @@ class CapturaVm(
                 }
             }
         }
+    }
+
+    /**
+     * Deja el formulario como quedaria el registro directo del habito, para que
+     * pulsar Guardar sin tocar nada de exactamente lo mismo que antes hacia la
+     * paloma: los minutos sugeridos y una actividad que acaba de terminar.
+     *
+     * La hora se calcula sobre el instante y no sobre el LocalTime porque un
+     * habito largo marcado de madrugada empieza el dia anterior, y restar sobre
+     * la hora suelta daria la vuelta al reloj y lo dejaria esta noche.
+     */
+    private suspend fun rellenaDesde(id: Long, dia: LocalDate) {
+        val habito = repo.habito(id) ?: return
+        val minutos = (habito.minutosSugeridos ?: 0).coerceAtLeast(0)
+        val fin = if (dia == Tiempo.hoy()) {
+            Tiempo.ahora()
+        } else {
+            // El mediodia es la hora que menos miente cuando ya no se sabe.
+            Tiempo.instante(dia.atTime(12, 0))
+        }
+        val inicio = Tiempo.local(fin.minusSeconds(minutos * 60L))
+        _form.value = FormularioActividad(
+            titulo = habito.nombre,
+            categoriaId = habito.categoriaId,
+            estado = EstadoActividad.COMPLETADO,
+            fecha = inicio.toLocalDate(),
+            hora = inicio.toLocalTime().withSecond(0).withNano(0),
+            duracionTexto = minutos.toString(),
+            habitoId = habito.id
+        )
     }
 
     fun actualiza(bloque: (FormularioActividad) -> FormularioActividad) {

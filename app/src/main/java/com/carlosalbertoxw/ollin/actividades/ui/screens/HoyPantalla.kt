@@ -69,11 +69,14 @@ import com.carlosalbertoxw.ollin.actividades.ui.recuerdaVm
 import com.carlosalbertoxw.ollin.actividades.ui.theme.LocalColoresOllin
 import com.carlosalbertoxw.ollin.actividades.ui.theme.colorDeCategoria
 import java.time.Instant
+import java.time.LocalDate
 
 @Composable
 fun HoyPantalla(
     contenedor: Contenedor,
     alAbrirActividad: (Long) -> Unit,
+    /** Abre la captura del habito en el dia que se esta viendo, no siempre hoy. */
+    alRegistrarHabito: (Long, LocalDate) -> Unit,
     alAbrirAjustes: () -> Unit
 ) {
     val vm = recuerdaVm("hoy") { HoyVm(contenedor.repositorio, contenedor.ajustes) }
@@ -202,7 +205,10 @@ fun HoyPantalla(
                 RenglonHabitoHoy(
                     avance = avance,
                     categoria = avance.habito.categoriaId?.let(indiceCategorias::get),
-                    alAlternar = { vm.alterna(avance) },
+                    alAlternar = {
+                        if (avance.cumplidoHoy) vm.deshace(avance)
+                        else alRegistrarHabito(avance.habito.id, dia)
+                    },
                     alCronometrar = { vm.cronometraHabito(avance.habito) }
                 )
             }

@@ -60,8 +60,9 @@ enum class Tutorial(
         "habitos",
         "Lo que quieres repetir",
         "Un hábito puede tocar todos los días, ciertos días de la semana, un número " +
-            "de veces por semana, o cada tantos días o meses. Al marcarlo se guarda " +
-            "como una actividad más, así que suma en la analítica."
+            "de veces por semana, o cada tantos días o meses. La paloma abre el " +
+            "formulario ya lleno, para ajustar los minutos y la hora antes de " +
+            "guardarlo como una actividad más."
     ),
     ANALITICA(
         "analitica",

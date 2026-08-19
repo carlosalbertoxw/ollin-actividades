@@ -76,7 +76,10 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 
 @Composable
-fun HabitosPantalla(contenedor: Contenedor) {
+fun HabitosPantalla(
+    contenedor: Contenedor,
+    alRegistrarHabito: (Long) -> Unit
+) {
     val vm = recuerdaVm("habitos") { HabitosVm(contenedor.repositorio) }
     val habitos by vm.habitos.collectAsStateWithLifecycle()
     val categorias by vm.categorias.collectAsStateWithLifecycle()
@@ -104,7 +107,8 @@ fun HabitosPantalla(contenedor: Contenedor) {
                 icono = Icons.Filled.Repeat,
                 titulo = "Sin hábitos todavía",
                 detalle = "Un hábito es algo que quieres repetir: leer, caminar, tomar agua. " +
-                    "Al marcarlo se guarda como una actividad más.",
+                    "Al marcarlo se guarda como una actividad más, y antes puedes " +
+                    "ajustarle los minutos.",
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(relleno)
@@ -125,7 +129,10 @@ fun HabitosPantalla(contenedor: Contenedor) {
                     TarjetaHabito(
                         avance = avance,
                         categoria = avance.habito.categoriaId?.let(indiceCategorias::get),
-                        alAlternar = { vm.alterna(avance) },
+                        alAlternar = {
+                            if (avance.cumplidoHoy) vm.deshace(avance)
+                            else alRegistrarHabito(avance.habito.id)
+                        },
                         alEditar = { editando = avance.habito }
                     )
                 }

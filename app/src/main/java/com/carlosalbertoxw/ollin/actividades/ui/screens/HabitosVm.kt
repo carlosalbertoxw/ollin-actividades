@@ -38,11 +38,12 @@ class HabitosVm(private val repo: ActividadesRepositorio) : ViewModel() {
         viewModelScope.launch { repo.eliminaHabito(habito) }
     }
 
-    fun alterna(avance: HabitoConAvance) {
-        viewModelScope.launch {
-            if (avance.cumplidoHoy) repo.deshaceHabito(avance.habito.id)
-            else repo.registraHabito(avance.habito)
-        }
+    /**
+     * Borra el ultimo cumplimiento de hoy. Marcar abre el formulario de captura
+     * en vez de registrar a ciegas; deshacer no tiene nada que revisar.
+     */
+    fun deshace(avance: HabitoConAvance) {
+        viewModelScope.launch { repo.deshaceHabito(avance.habito.id) }
     }
 
     fun reanuda(habito: Habito) {

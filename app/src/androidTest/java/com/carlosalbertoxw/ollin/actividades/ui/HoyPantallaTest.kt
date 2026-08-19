@@ -23,6 +23,7 @@ import org.junit.Rule
 import org.junit.Test
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.runner.RunWith
+import java.time.LocalDate
 
 /**
  * La pantalla del dia es por donde entra casi todo lo que se registra, asi que
@@ -41,12 +42,16 @@ class HoyPantallaTest {
     private var abierta: Long? = null
     private var ajustesAbiertos = false
 
+    /** El habito y el dia con que se pidio abrir la captura, o nulo si no se pidio. */
+    private var capturaDeHabito: Pair<Long, LocalDate>? = null
+
     private fun monta() {
         compose.setContent {
             TemaOllin(oscuro = true) {
                 HoyPantalla(
                     contenedor = banco.contenedor,
                     alAbrirActividad = { abierta = it },
+                    alRegistrarHabito = { id, dia -> capturaDeHabito = id to dia },
                     alAbrirAjustes = { ajustesAbiertos = true }
                 )
             }
@@ -97,8 +102,8 @@ class HoyPantallaTest {
     }
 
     @Test
-    fun `marcar_un_habito_lo_deja_hecho_y_el_boton_pasa_a_deshacer`() {
-        banco.siembra {
+    fun `marcar_un_habito_abre_la_captura_en_vez_de_registrar`() {
+        val id = banco.siembra {
             val categoria = guardaCategoria(Categoria(nombre = "Lectura", ambito = Ambito.HABITO))
             guardaHabito(Habito(nombre = "Leer", categoriaId = categoria, minutosSugeridos = 20))
         }
@@ -109,17 +114,32 @@ class HoyPantallaTest {
 
         compose.onNodeWithContentDescription("Marcar").performClick()
 
-        compose.esperaDescripcion("Deshacer")
+        // La paloma ya no escribe: pide el formulario, con el habito y el dia
+        // que se esta viendo. Nada se registro todavia.
+        assertEquals(id to Tiempo.hoy(), capturaDeHabito)
+        assertTrue(runBlocking { banco.db.actividadDao().todas() }.isEmpty())
+        compose.esperaTexto("Sin racha activa", subcadena = true)
+    }
+
+    @Test
+    fun `deshacer_un_habito_ya_cumplido_sigue_siendo_inmediato`() {
+        banco.siembra {
+            val categoria = guardaCategoria(Categoria(nombre = "Lectura", ambito = Ambito.HABITO))
+            val id = guardaHabito(
+                Habito(nombre = "Leer", categoriaId = categoria, minutosSugeridos = 20)
+            )
+            registraHabito(habito(id)!!)
+        }
+        monta()
+
         compose.esperaTexto("Racha de 1 dias", subcadena = true)
 
-        val cumplimientos = runBlocking { banco.db.actividadDao().todas() }
-        assertEquals(1, cumplimientos.size)
-        assertEquals(20, cumplimientos.first().duracionMinutos)
-
-        // Y se puede desandar: marcar de mas no debe ser irreversible.
         compose.onNodeWithContentDescription("Deshacer").performClick()
+
         compose.esperaTexto("Sin racha activa", subcadena = true)
         assertTrue(runBlocking { banco.db.actividadDao().todas() }.isEmpty())
+        // Deshacer no manda a ninguna pantalla: no hay nada que revisar.
+        assertNull(capturaDeHabito)
     }
 
     /**

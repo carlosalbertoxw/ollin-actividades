@@ -56,6 +56,7 @@ import com.carlosalbertoxw.ollin.actividades.ui.components.iconoDe
 import com.carlosalbertoxw.ollin.actividades.ui.recuerdaVm
 import com.carlosalbertoxw.ollin.actividades.ui.theme.LocalColoresOllin
 import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneOffset
 
@@ -64,9 +65,15 @@ import java.time.ZoneOffset
 fun CapturaPantalla(
     contenedor: Contenedor,
     actividadId: Long?,
+    habitoId: Long? = null,
+    dia: LocalDate? = null,
     alCerrar: () -> Unit
 ) {
-    val vm = recuerdaVm("captura-$actividadId") { CapturaVm(contenedor.repositorio, actividadId) }
+    // La clave lleva las tres cosas: marcar dos habitos distintos, o el mismo
+    // en dos dias, tiene que estrenar formulario y no reusar el anterior.
+    val vm = recuerdaVm("captura-$actividadId-$habitoId-$dia") {
+        CapturaVm(contenedor.repositorio, actividadId, habitoId, dia)
+    }
     val form by vm.form.collectAsStateWithLifecycle()
     val categorias by vm.categorias.collectAsStateWithLifecycle()
     val colores = LocalColoresOllin.current

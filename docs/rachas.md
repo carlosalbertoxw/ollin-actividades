@@ -51,6 +51,10 @@ Para no recorrer el calendario entero: 1500 días hacia atrás en las rachas por
 
 ## Registro de un cumplimiento
 
-`registraHabito()` inserta una actividad completada con el nombre del hábito, su categoría y los minutos indicados (o los sugeridos por la plantilla). Un hábito marcado para un día pasado se ancla al mediodía: es la hora que menos miente cuando ya no se sabe a qué hora fue.
+La paloma de Hoy y la de Hábitos **no escriben**: abren el formulario de captura ya relleno con la plantilla del hábito —nombre, categoría, minutos sugeridos y una actividad que acaba de terminar— y el cumplimiento lo deja el botón Guardar. Así se puede corregir la duración real o la hora antes de que entre en la analítica, que era lo que obligaba a registrar primero y editar después. Pulsar Guardar sin tocar nada deja exactamente el mismo registro que dejaba el marcado directo.
 
-`deshaceHabito()` borra el último registro de ese hábito en ese día.
+La ruta lleva el hábito y el día (`captura?habito=…&dia=…`), porque la pantalla de Hoy sabe mirar otras fechas y marcar ahí tiene que registrar en la que se está viendo. Un hábito marcado para un día pasado se ancla al mediodía: es la hora que menos miente cuando ya no se sabe a qué hora fue.
+
+`registraHabito()` sigue existiendo y es lo que usan las pruebas y cualquier registro sin formulario: inserta una actividad completada con el nombre del hábito, su categoría y los minutos indicados (o los sugeridos por la plantilla).
+
+`deshaceHabito()` borra el último registro de ese hábito en ese día. **Deshacer sí es inmediato**: no hay nada que revisar, y lo que quita se puede volver a crear.

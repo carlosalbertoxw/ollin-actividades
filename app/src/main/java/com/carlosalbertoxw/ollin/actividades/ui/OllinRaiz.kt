@@ -29,6 +29,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.carlosalbertoxw.ollin.actividades.di.Contenedor
+import com.carlosalbertoxw.ollin.actividades.domain.model.Tiempo
 import com.carlosalbertoxw.ollin.actividades.ui.nav.Destino
 import com.carlosalbertoxw.ollin.actividades.ui.nav.Rutas
 import com.carlosalbertoxw.ollin.actividades.ui.screens.AcercaDePantalla
@@ -40,6 +41,7 @@ import com.carlosalbertoxw.ollin.actividades.ui.screens.CapturaPantalla
 import com.carlosalbertoxw.ollin.actividades.ui.screens.CategoriasPantalla
 import com.carlosalbertoxw.ollin.actividades.ui.screens.HabitosPantalla
 import com.carlosalbertoxw.ollin.actividades.ui.screens.HoyPantalla
+import java.time.LocalDate
 
 @Composable
 fun OllinRaiz(contenedor: Contenedor) {
@@ -107,6 +109,9 @@ fun OllinRaiz(contenedor: Contenedor) {
                     HoyPantalla(
                         contenedor = contenedor,
                         alAbrirActividad = { id -> nav.navigate(Rutas.captura(id)) },
+                        alRegistrarHabito = { habitoId, dia ->
+                            nav.navigate(Rutas.capturaDeHabito(habitoId, dia))
+                        },
                         alAbrirAjustes = { nav.navigate(Rutas.AJUSTES) }
                     )
                 }
@@ -119,7 +124,12 @@ fun OllinRaiz(contenedor: Contenedor) {
                 }
 
                 composable(Destino.HABITOS.ruta) {
-                    HabitosPantalla(contenedor)
+                    HabitosPantalla(
+                        contenedor = contenedor,
+                        alRegistrarHabito = { habitoId ->
+                            nav.navigate(Rutas.capturaDeHabito(habitoId, Tiempo.hoy()))
+                        }
+                    )
                 }
 
                 composable(Destino.ANALITICA.ruta) {
@@ -127,14 +137,24 @@ fun OllinRaiz(contenedor: Contenedor) {
                 }
 
                 composable(
-                    route = Rutas.CAPTURA_CON_ID,
+                    route = Rutas.CAPTURA,
                     arguments = listOf(
-                        navArgument("id") { type = NavType.LongType; defaultValue = 0L }
+                        navArgument("id") { type = NavType.LongType; defaultValue = 0L },
+                        navArgument("habito") { type = NavType.LongType; defaultValue = 0L },
+                        navArgument("dia") {
+                            type = NavType.LongType
+                            defaultValue = Rutas.SIN_DIA
+                        }
                     )
                 ) { destino ->
+                    val argumentos = destino.arguments
                     CapturaPantalla(
                         contenedor = contenedor,
-                        actividadId = destino.arguments?.getLong("id")?.takeIf { it > 0L },
+                        actividadId = argumentos?.getLong("id")?.takeIf { it > 0L },
+                        habitoId = argumentos?.getLong("habito")?.takeIf { it > 0L },
+                        dia = argumentos?.getLong("dia")
+                            ?.takeIf { it != Rutas.SIN_DIA }
+                            ?.let(LocalDate::ofEpochDay),
                         alCerrar = { nav.popBackStack() }
                     )
                 }
