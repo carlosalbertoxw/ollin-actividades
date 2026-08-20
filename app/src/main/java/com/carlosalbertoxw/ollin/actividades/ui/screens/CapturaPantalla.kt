@@ -21,8 +21,6 @@ import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -34,7 +32,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -55,10 +52,9 @@ import com.carlosalbertoxw.ollin.actividades.domain.model.Unidad
 import com.carlosalbertoxw.ollin.actividades.ui.components.iconoDe
 import com.carlosalbertoxw.ollin.actividades.ui.recuerdaVm
 import com.carlosalbertoxw.ollin.actividades.ui.theme.LocalColoresOllin
-import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
-import java.time.ZoneOffset
+import com.carlosalbertoxw.ollin.actividades.ui.components.DialogoFecha
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -267,28 +263,11 @@ fun CapturaPantalla(
     }
 
     if (pidiendoFecha) {
-        // El selector trabaja en UTC a medianoche; se convierte con el mismo
-        // huso para no perder un dia al cruzar la frontera de la fecha.
-        val estado = rememberDatePickerState(
-            initialSelectedDateMillis = form.fecha.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+        DialogoFecha(
+            inicial = form.fecha,
+            alElegir = { dia -> vm.actualiza { it.copy(fecha = dia) } },
+            alCerrar = { pidiendoFecha = false }
         )
-        DatePickerDialog(
-            onDismissRequest = { pidiendoFecha = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    estado.selectedDateMillis?.let { millis ->
-                        val dia = Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate()
-                        vm.actualiza { it.copy(fecha = dia) }
-                    }
-                    pidiendoFecha = false
-                }) { Text("Aceptar") }
-            },
-            dismissButton = {
-                TextButton(onClick = { pidiendoFecha = false }) { Text("Cancelar") }
-            }
-        ) {
-            DatePicker(state = estado)
-        }
     }
 
     if (pidiendoHora) {

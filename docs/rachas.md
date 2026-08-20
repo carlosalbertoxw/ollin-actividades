@@ -18,7 +18,7 @@ Las tres primeras se apoyan en el calendario semanal. Las dos últimas cuentan d
 
 Las ocurrencias periódicas se calculan **siempre desde el ancla**, no encadenando saltos, porque `plusMonths` recorta al último día del mes: un hábito anclado al 31 cae en el 28 de febrero, pero el de marzo debe volver al 31 y no quedarse en el 28 para siempre.
 
-El ancla es opcional: `anclaEfectiva()` devuelve la fijada a mano o, si no hay, el día en que se dio de alta el hábito. Por eso viaja en el `.xlsx` como la columna **Cuenta desde** de la pestaña *Habitos* —ver [Excel](excel.md#cuenta-desde-el-ancla-de-las-cadencias-periódicas)—: sin ella, restaurar un respaldo hacía nacer el hábito el día de la importación y le corría el calendario.
+El ancla es opcional: `anclaEfectiva()` devuelve la fijada a mano o, si no hay, el día en que se dio de alta el hábito. En el diálogo del hábito se fija con **Seleccionar fecha**, que abre el calendario del sistema sobre el ancla vigente —así se corrige desde donde está, no desde hoy— y **Quitar la fecha** la suelta para volver al día de alta. El selector es [`DialogoFecha`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/ui/components/Comunes.kt), compartido con la captura de una actividad: su estado habla en UTC a medianoche, y convertir eso con el huso local pierde un día cada vez que se cruza la frontera de la fecha. Por eso viaja en el `.xlsx` como la columna **Cuenta desde** de la pestaña *Habitos* —ver [Excel](excel.md#cuenta-desde-el-ancla-de-las-cadencias-periódicas)—: sin ella, restaurar un respaldo hacía nacer el hábito el día de la importación y le corría el calendario.
 
 ## Las dos reglas de la racha
 

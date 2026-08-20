@@ -47,6 +47,12 @@ import com.carlosalbertoxw.ollin.actividades.ui.theme.colorDeCategoria
 import java.time.LocalDate
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.AlertDialog
+import java.time.ZoneOffset
+import java.time.Instant
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DatePicker
 
 /** Cada ambito tiene su icono. Se repite en filtros, chips y renglones. */
 fun iconoDe(ambito: Ambito?): ImageVector = when (ambito) {
@@ -398,4 +404,44 @@ fun DialogoDeshacerHabito(
             )
         }
     )
+}
+
+/**
+ * El selector de fecha del sistema, devolviendo un [LocalDate].
+ *
+ * El estado del DatePicker de Material habla en milisegundos epoch **en UTC a
+ * medianoche**, no en la zona del telefono. Convertirlo con el huso local
+ * pierde un dia cada vez que se cruza la frontera de la fecha —al este de
+ * Greenwich por la manana, al oeste por la tarde— asi que la ida y la vuelta
+ * usan las dos UTC y la fecha elegida es exactamente la que se toco.
+ *
+ * Vive aqui porque lo usan la captura de una actividad y el ancla de un habito
+ * periodico, y esa conversion escrita dos veces es un error esperando su turno.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DialogoFecha(
+    inicial: LocalDate,
+    alElegir: (LocalDate) -> Unit,
+    alCerrar: () -> Unit
+) {
+    val estado = rememberDatePickerState(
+        initialSelectedDateMillis = inicial.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+    )
+    DatePickerDialog(
+        onDismissRequest = alCerrar,
+        confirmButton = {
+            TextButton(onClick = {
+                estado.selectedDateMillis?.let { millis ->
+                    alElegir(Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate())
+                }
+                alCerrar()
+            }) { Text("Aceptar") }
+        },
+        dismissButton = {
+            TextButton(onClick = alCerrar) { Text("Cancelar") }
+        }
+    ) {
+        DatePicker(state = estado)
+    }
 }

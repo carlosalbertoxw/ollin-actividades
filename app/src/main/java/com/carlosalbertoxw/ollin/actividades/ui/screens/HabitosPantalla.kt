@@ -75,6 +75,7 @@ import com.carlosalbertoxw.ollin.actividades.ui.theme.colorDeCategoria
 import java.time.DayOfWeek
 import java.time.LocalDate
 import com.carlosalbertoxw.ollin.actividades.ui.components.DialogoDeshacerHabito
+import com.carlosalbertoxw.ollin.actividades.ui.components.DialogoFecha
 
 @Composable
 fun HabitosPantalla(
@@ -310,14 +311,15 @@ private fun EditorIntervalo(
     alCambiar: (String) -> Unit,
     ancla: LocalDate,
     anclaFijada: Boolean,
-    alAnclarHoy: () -> Unit,
+    alElegirAncla: (LocalDate) -> Unit,
     alSoltarAncla: () -> Unit
 ) {
+    var pidiendoFecha by remember { mutableStateOf(false) }
     val colores = LocalColoresOllin.current
     val atajos = if (enMeses) listOf(1, 2, 3, 6) else listOf(7, 15, 30)
 
     Text(
-        if (enMeses) "Cada cuantos meses" else "Cada cuántos días",
+        if (enMeses) "Cada cuántos meses" else "Cada cuántos días",
         style = MaterialTheme.typography.labelLarge,
         color = colores.textoTenue
     )
@@ -348,15 +350,25 @@ private fun EditorIntervalo(
     Spacer(Modifier.height(8.dp))
     Text(
         "Se cuenta desde el ${Tiempo.fechaCorta(ancla)}" +
-            if (anclaFijada) "." else ", el dia en que diste de alta el habito.",
+            if (anclaFijada) "." else ", el día en que diste de alta el hábito.",
         style = MaterialTheme.typography.bodySmall,
         color = colores.textoTenue
     )
     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        TextButton(onClick = alAnclarHoy) { Text("Empezar hoy") }
+        TextButton(onClick = { pidiendoFecha = true }) { Text("Seleccionar fecha") }
         if (anclaFijada) {
             TextButton(onClick = alSoltarAncla) { Text("Quitar la fecha") }
         }
+    }
+
+    if (pidiendoFecha) {
+        DialogoFecha(
+            // Se abre sobre el ancla vigente, que si nadie la fijo es el dia en
+            // que nacio el habito: se corrige desde ahi en vez de desde hoy.
+            inicial = ancla,
+            alElegir = alElegirAncla,
+            alCerrar = { pidiendoFecha = false }
+        )
     }
 }
 
@@ -537,7 +549,7 @@ private fun DialogoHabito(
                         alCambiar = { if (enMeses) intervaloMeses = it else intervaloDias = it },
                         ancla = ancla ?: inicial.anclaEfectiva(),
                         anclaFijada = ancla != null,
-                        alAnclarHoy = { ancla = Tiempo.hoy() },
+                        alElegirAncla = { ancla = it },
                         alSoltarAncla = { ancla = null }
                     )
                 }
