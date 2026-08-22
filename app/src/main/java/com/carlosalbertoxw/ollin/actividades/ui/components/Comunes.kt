@@ -53,6 +53,9 @@ import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DatePicker
+import java.time.LocalTime
+import androidx.compose.material3.rememberTimePickerState
+import androidx.compose.material3.TimePicker
 
 /** Cada ambito tiene su icono. Se repite en filtros, chips y renglones. */
 fun iconoDe(ambito: Ambito?): ImageVector = when (ambito) {
@@ -444,4 +447,40 @@ fun DialogoFecha(
     ) {
         DatePicker(state = estado)
     }
+}
+
+/**
+ * El selector de hora del sistema, devolviendo un [LocalTime].
+ *
+ * Va en reloj de 24 horas siempre: la app esta en espanol de Mexico y toda la
+ * bitacora —el cronometro, la hora de inicio, la exportacion— ya se escribe
+ * asi. Mezclar am/pm aqui obligaria a leer dos formatos en la misma pantalla.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DialogoHora(
+    inicial: LocalTime,
+    titulo: String,
+    alElegir: (LocalTime) -> Unit,
+    alCerrar: () -> Unit
+) {
+    val estado = rememberTimePickerState(
+        initialHour = inicial.hour,
+        initialMinute = inicial.minute,
+        is24Hour = true
+    )
+    AlertDialog(
+        onDismissRequest = alCerrar,
+        confirmButton = {
+            TextButton(onClick = {
+                alElegir(LocalTime.of(estado.hour, estado.minute))
+                alCerrar()
+            }) { Text("Aceptar") }
+        },
+        dismissButton = {
+            TextButton(onClick = alCerrar) { Text("Cancelar") }
+        },
+        title = { Text(titulo) },
+        text = { TimePicker(state = estado) }
+    )
 }

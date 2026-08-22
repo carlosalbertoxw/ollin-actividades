@@ -42,6 +42,8 @@ Detalles del comportamiento:
 - Se mide con el **reloj monótono** (`elapsedRealtime`): cambiar la hora del teléfono no debe poder alargar la gracia.
 - Con candado configurado la ventana lleva `FLAG_SECURE`: ni capturas de pantalla ni miniatura en la vista de apps recientes. Mientras no se sabe, se asume que sí.
 
+Con candado configurado, los **recordatorios** también salen discretos: `VISIBILITY_PRIVATE`, así que en la pantalla de bloqueo se ve que hay un aviso de Ollin pero no de qué. Marcar la ventana con `FLAG_SECURE` y a la vez anunciar «Terapia, te toca hoy» a quien mire el teléfono encima de la mesa sería incoherente. Ver [Recordatorios](recordatorios.md).
+
 Las transiciones de bloqueo se escriben de golpe en DataStore. Si el modo y el PIN se guardaran por separado podría quedar un "modo PIN" sin PIN, y eso deja la app cerrada sin llave.
 
 ### El PIN propio

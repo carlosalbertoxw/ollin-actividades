@@ -55,6 +55,7 @@ import com.carlosalbertoxw.ollin.actividades.ui.theme.LocalColoresOllin
 import java.time.LocalDate
 import java.time.LocalTime
 import com.carlosalbertoxw.ollin.actividades.ui.components.DialogoFecha
+import com.carlosalbertoxw.ollin.actividades.ui.components.DialogoHora
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -271,24 +272,11 @@ fun CapturaPantalla(
     }
 
     if (pidiendoHora) {
-        val estado = rememberTimePickerState(
-            initialHour = form.hora.hour,
-            initialMinute = form.hora.minute,
-            is24Hour = true
-        )
-        AlertDialog(
-            onDismissRequest = { pidiendoHora = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    vm.actualiza { it.copy(hora = LocalTime.of(estado.hour, estado.minute)) }
-                    pidiendoHora = false
-                }) { Text("Aceptar") }
-            },
-            dismissButton = {
-                TextButton(onClick = { pidiendoHora = false }) { Text("Cancelar") }
-            },
-            title = { Text("Hora de inicio") },
-            text = { TimePicker(state = estado) }
+        DialogoHora(
+            inicial = form.hora,
+            titulo = "Hora de inicio",
+            alElegir = { hora -> vm.actualiza { it.copy(hora = hora) } },
+            alCerrar = { pidiendoHora = false }
         )
     }
 

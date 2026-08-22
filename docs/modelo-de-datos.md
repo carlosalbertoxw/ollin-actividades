@@ -38,6 +38,7 @@ La plantilla de un hábito. **No guarda cumplimientos**: un hábito cumplido es 
 | `intervaloDias` / `intervaloMeses` | Solo para las cadencias periódicas |
 | `ancla` | Día desde el que se cuenta el ciclo. Nulo = el día en que se creó |
 | `minutosSugeridos` | Duración que propone la pantalla de hoy |
+| `horaRecordatorio` | Hora local a la que avisar los días que toca. Nulo = no avisa |
 | `activo`, `orden`, `notas`, `creadoEn` | |
 
 La entidad resuelve por sí misma `tocaHoy()`, `ocurrencia()` y `cadencia()` (el texto legible). La cadencia vive en la entidad porque la lista de hábitos y la exportación a Excel la escriben igual, y dos copias acabarían contradiciéndose.
@@ -86,19 +87,24 @@ Solo puede haber una actividad `EN_CURSO`. Arrancar el cronómetro cierra la ant
 
 ## Convertidores
 
-[`Convertidores.kt`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/data/db/Convertidores.kt) traduce `Instant` (milisegundos epoch), `LocalDate` (día epoch) y los enums (por nombre) a columnas de SQLite.
+[`Convertidores.kt`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/data/db/Convertidores.kt) traduce `Instant` (milisegundos epoch), `LocalDate` (día epoch), `LocalTime` (segundo del día) y los enums (por nombre) a columnas de SQLite.
+
+`horaRecordatorio` es una hora suelta y no un instante a propósito: «a las ocho» son las ocho de donde estés. Guardar el instante ataría el recordatorio al huso en que se creó y sonaría a las tres de la madrugada después de un vuelo.
 
 ## Migraciones
 
 | Versión | Cambio |
 |---|---|
 | 1 | Esquema inicial |
+| 2 | `habito.horaRecordatorio`: la hora del aviso |
 
-La app todavía no se ha publicado, así que no hay ninguna instalación allá afuera de la que migrar: el esquema arranca limpio en la versión 1 y `OllinDatabase` no registra ninguna `Migration`. El esquema real vive en [`app/schemas/…/1.json`](../app/schemas/), que lo genera KSP y sí se versiona.
+Los esquemas reales viven en [`app/schemas/`](../app/schemas/), los genera KSP y sí se versionan: son la referencia contra la que se prueban las migraciones.
 
-`ancla` admite nulos a propósito: significa "cuenta desde el día en que di de alta el hábito", que es lo que resuelve `Habito.anclaEfectiva()` sin inventarle una fecha.
+`MIGRACION_1_2` es un `ALTER TABLE ... ADD COLUMN horaRecordatorio INTEGER`. Nullable y sin valor por omisión: **un hábito que ya existía no empieza a avisar porque la app se actualice.** Avisar es una decisión de quien lo creó, no un efecto de instalar una versión.
 
-**A partir de la primera publicación esto cambia.** En cuanto haya bitácoras reales, cualquier cambio de entidad exige:
+`ancla` admite nulos por la misma clase de razón: significa "cuenta desde el día en que di de alta el hábito", que es lo que resuelve `Habito.anclaEfectiva()` sin inventarle una fecha.
+
+**No hay `fallbackToDestructiveMigration` en ningún lado, y no debe haberlo.** La base va cifrada con una llave del Keystore que no se respalda, así que borrarla y empezar de cero no es un inconveniente: es perder la bitácora entera. Cualquier cambio de entidad exige:
 
 1. Modificar las entidades.
 2. Subir `version` en `OllinDatabase`.

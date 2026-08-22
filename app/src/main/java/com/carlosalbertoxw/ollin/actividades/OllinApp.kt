@@ -5,6 +5,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import com.carlosalbertoxw.ollin.actividades.data.recordatorios.Notificaciones
 import com.carlosalbertoxw.ollin.actividades.di.Contenedor
 
 class OllinApp : Application() {

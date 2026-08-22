@@ -12,6 +12,7 @@ import com.carlosalbertoxw.ollin.actividades.domain.model.Tiempo
 import com.carlosalbertoxw.ollin.actividades.domain.model.Unidad
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.temporal.ChronoUnit
 
 /**
@@ -202,6 +203,14 @@ data class Habito(
     val ancla: LocalDate? = null,
     /** Duracion sugerida al marcarlo desde la pantalla de hoy. */
     val minutosSugeridos: Int? = null,
+    /**
+     * A que hora avisar los dias que el habito toca. Nulo es no avisar.
+     *
+     * Es una hora local suelta y no un instante a proposito: "a las ocho" son
+     * las ocho de donde estes. Guardar el instante ataria el recordatorio al
+     * huso en que se creo y sonaria a las tres de la madrugada tras un vuelo.
+     */
+    val horaRecordatorio: LocalTime? = null,
     val activo: Boolean = true,
     val orden: Int = 0,
     val notas: String? = null,

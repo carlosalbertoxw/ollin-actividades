@@ -62,6 +62,7 @@ internal class ImportadorCatalogos(
             ),
             "meta" to listOf("meta diaria", "meta", "veces al dia"),
             "minutos" to listOf("minutos sugeridos", "minutos", "duracion sugerida"),
+            "recordatorio" to listOf("recordatorio", "aviso", "hora", "hora del recordatorio", "avisar"),
             "activo" to listOf("activo", "activa", "vigente"),
             "orden" to listOf("orden", "posicion", "order"),
             "notas" to listOf("notas", "nota", "comentario", "comentarios", "observaciones")
@@ -236,6 +237,7 @@ internal class ImportadorCatalogos(
             val orden = renglon.entero("orden")
             val notas = renglon.texto("notas")
             val ancla = renglon.fecha("ancla")
+            val recordatorio = renglon.hora("recordatorio")
 
             val textoCadencia = renglon.texto("cadencia")
             val cadencia = textoCadencia?.let(::leeCadencia)
@@ -257,7 +259,8 @@ internal class ImportadorCatalogos(
                     activo = activo ?: existente.activo,
                     orden = orden ?: existente.orden,
                     notas = notas ?: existente.notas,
-                    ancla = ancla ?: existente.ancla
+                    ancla = ancla ?: existente.ancla,
+                    horaRecordatorio = recordatorio ?: existente.horaRecordatorio
                 ).con(cadencia)
                 if (actualizado != existente) {
                     habitoDao.actualiza(actualizado)
@@ -279,6 +282,7 @@ internal class ImportadorCatalogos(
                 // restaurar un respaldo, lo que tocaba el dia 3 pasaria a tocar
                 // el dia de la importacion. Ver "Cuenta desde" en docs/excel.md.
                 ancla = ancla,
+                horaRecordatorio = recordatorio,
                 // Sin columna de orden manda el lugar que ocupa en la hoja: es
                 // el orden que alguien acomodo al editarla.
                 orden = orden ?: posicion,

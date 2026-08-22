@@ -4,6 +4,7 @@ import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -52,6 +53,9 @@ object Tiempo {
     }
 
     fun hora(instante: Instant): String = HORA.format(local(instante))
+
+    /** Una hora suelta, sin dia ni zona: la del recordatorio de un habito. */
+    fun horaLocal(hora: LocalTime): String = HORA.format(hora)
 
     fun fechaCorta(dia: LocalDate): String = FECHA_CORTA.format(dia)
 

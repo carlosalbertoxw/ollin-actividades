@@ -62,6 +62,19 @@ import com.carlosalbertoxw.ollin.actividades.ui.seguridad.segundosDeEsperaPin
 import com.carlosalbertoxw.ollin.actividades.ui.seguridad.textoDeEspera
 import com.carlosalbertoxw.ollin.actividades.ui.seguridad.telefonoAsegurado
 import com.carlosalbertoxw.ollin.actividades.ui.theme.LocalColoresOllin
+import com.carlosalbertoxw.ollin.actividades.data.recordatorios.Notificaciones
+import com.carlosalbertoxw.ollin.actividades.data.recordatorios.AlarmaRecordatorios
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.lifecycle.Lifecycle
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.compose.rememberLauncherForActivityResult
+import android.provider.Settings
+import android.os.Build
+import android.net.Uri
+import android.content.Intent
+import android.content.Context
+import android.Manifest
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -75,6 +88,24 @@ fun AjustesPantalla(
     val vm = recuerdaVm("ajustes") { AjustesVm(contenedor.ajustes) }
     val ajustes by vm.ajustes.collectAsStateWithLifecycle()
     val colores = LocalColoresOllin.current
+    val contexto = LocalContext.current
+
+    // Encender los avisos y conceder el permiso son la misma intencion, asi que
+    // van en el mismo gesto: si el sistema lo niega, el interruptor no se
+    // enciende, porque quedaria prometiendo algo que no puede cumplir.
+    val permisoNotificaciones = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { concedido -> vm.recordatorios(concedido) }
+
+    val pidePermisoNotificaciones = {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            !Notificaciones.sePuedeAvisar(contexto)
+        ) {
+            permisoNotificaciones.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            vm.recordatorios(true)
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -188,6 +219,44 @@ fun AjustesPantalla(
                     onCheckedChange = vm::completadasEnHoy
                 )
             }
+
+            Spacer(Modifier.height(20.dp))
+            Text("Recordatorios", style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(4.dp))
+
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text("Avisarme", style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        "Un aviso por cada hábito que toque y no hayas cumplido, a la hora " +
+                            "que le pusiste, y por cada tarea pendiente a su hora de inicio.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colores.textoTenue
+                    )
+                }
+                Switch(
+                    checked = ajustes.recordatorios,
+                    onCheckedChange = { quiere ->
+                        // El permiso se pide solo al encenderlo: preguntarlo al
+                        // abrir Ajustes seria pedir algo que quiza nadie quiere.
+                        if (quiere) pidePermisoNotificaciones() else vm.recordatorios(false)
+                    }
+                )
+            }
+
+            if (ajustes.recordatorios) {
+                RecordatoriosEnRiesgo(contexto)
+            }
+
+            Spacer(Modifier.height(20.dp))
+            Text("Ayuda", style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(4.dp))
 
             Row(
                 Modifier
@@ -574,4 +643,70 @@ private fun CampoMinutos(
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         singleLine = true
     )
+}
+
+/**
+ * Avisa de las dos cosas que pueden dejar un recordatorio sin sonar.
+ *
+ * Se ensena solo cuando pasa, y no como texto fijo: una advertencia permanente
+ * sobre algo que casi siempre esta bien se deja de leer a la tercera vez.
+ */
+@Composable
+private fun RecordatoriosEnRiesgo(contexto: Context) {
+    val colores = LocalColoresOllin.current
+
+    // El estado se relee al volver al frente: los dos permisos se conceden en
+    // los ajustes del sistema, o sea saliendo de Ollin y regresando.
+    val ciclo = LocalLifecycleOwner.current.lifecycle
+    var puedeAvisar by remember { mutableStateOf(Notificaciones.sePuedeAvisar(contexto)) }
+    var exactas by remember { mutableStateOf(AlarmaRecordatorios.puedeSerExacta(contexto)) }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        puedeAvisar = Notificaciones.sePuedeAvisar(contexto)
+        exactas = AlarmaRecordatorios.puedeSerExacta(contexto)
+    }
+
+    if (!puedeAvisar) {
+        Text(
+            "Las notificaciones de Ollin están apagadas en los ajustes del teléfono, " +
+                "así que no vas a ver ningún aviso.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.error
+        )
+        TextButton(onClick = { contexto.abreAjustesDeLaApp() }) {
+            Text("Abrir los ajustes de notificaciones")
+        }
+    }
+
+    if (!exactas) {
+        Text(
+            "Sin permiso de alarmas exactas los avisos pueden llegar con unos minutos " +
+                "de retraso, sobre todo con la pantalla apagada.",
+            style = MaterialTheme.typography.bodySmall,
+            color = colores.textoTenue
+        )
+        TextButton(onClick = { contexto.abrePermisoDeAlarmas() }) {
+            Text("Permitir alarmas exactas")
+        }
+    }
+}
+
+private fun Context.abreAjustesDeLaApp() {
+    runCatching {
+        startActivity(
+            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                .setData(Uri.fromParts("package", packageName, null))
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        )
+    }
+}
+
+private fun Context.abrePermisoDeAlarmas() {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
+    runCatching {
+        startActivity(
+            Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                .setData(Uri.fromParts("package", packageName, null))
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        )
+    }
 }

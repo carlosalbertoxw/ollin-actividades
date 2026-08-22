@@ -45,6 +45,14 @@ En las cadencias periódicas, un ciclo se da por cumplido si hay algún registro
 
 Para no recorrer el calendario entero: 1500 días hacia atrás en las rachas por día y 600 repeticiones en las periódicas. El repositorio, además, solo lee 400 días de historia (`VENTANA_RACHA`) al pintar la lista de hábitos con su avance.
 
+## Recordatorios
+
+Un hábito puede llevar `horaRecordatorio`. Si la tiene, Ollin avisa **los días que el hábito toca y todavía no se ha cumplido**; si ya se cumplió, no avisa, porque recordar lo hecho es la forma más rápida de que alguien apague los avisos enteros. Un hábito con meta diaria de tres sigue avisando hasta la tercera.
+
+Las tareas —actividades pendientes— avisan a su hora de inicio, que es la que ya tenían: una pendiente es justamente algo agendado para un momento.
+
+El interruptor maestro está en `Ajustes → Recordatorios` y **nace apagado**. Ver [Recordatorios](recordatorios.md) para cómo se programan y qué puede impedir que suenen.
+
 ## Activos y pausados
 
 `observaHabitosConAvance(soloActivos = ...)` separa dos usos: la pantalla de Hoy solo quiere lo que toca hacer; la de Hábitos los administra y necesita ver también los pausados. Si no, pausar uno equivaldría a perderlo: la app no volvería a enseñarlo por ningún lado y nadie podría reactivarlo.

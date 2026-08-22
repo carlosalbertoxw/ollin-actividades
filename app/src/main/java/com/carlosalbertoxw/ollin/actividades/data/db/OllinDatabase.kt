@@ -5,16 +5,19 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.carlosalbertoxw.ollin.actividades.data.seguridad.LlaveBase
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 
 /**
- * Version 1: la primera que se publica. Todavia no hay ninguna instalacion alla
- * afuera, asi que no hay nada de donde migrar y el esquema arranca limpio.
+ * Version 2: los habitos ganan hora de recordatorio.
  *
- * En cuanto la app llegue a manos de alguien esto cambia: cualquier cambio de
- * entidad exige subir la version y escribir su [androidx.room.migration.Migration],
- * porque a partir de ahi hay bitacoras reales que no se pueden perder.
+ * Ya hay bitacoras reales en telefonos, asi que a partir de aqui cada cambio de
+ * entidad sube la version y trae su [androidx.room.migration.Migration]. No hay
+ * `fallbackToDestructiveMigration` en ningun lado: la base va cifrada con una
+ * llave del Keystore que no se respalda, asi que borrarla y empezar de cero no
+ * es un inconveniente, es perder la bitacora entera.
  */
 @Database(
     entities = [
@@ -22,7 +25,7 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         Habito::class,
         Actividad::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = true
 )
 @TypeConverters(Convertidores::class)
@@ -34,6 +37,19 @@ abstract class OllinDatabase : RoomDatabase() {
 
     companion object {
         private const val NOMBRE = "ollin_actividades.db"
+
+        /**
+         * Añade la hora del recordatorio del habito.
+         *
+         * Nullable y sin valor por omision: un habito que ya existia no
+         * empieza a avisar solo porque la app se actualice. Avisar es una
+         * decision de quien lo creo, no un efecto de instalar una version.
+         */
+        val MIGRACION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE habito ADD COLUMN horaRecordatorio INTEGER")
+            }
+        }
 
         @Volatile private var instancia: OllinDatabase? = null
 
@@ -58,6 +74,7 @@ abstract class OllinDatabase : RoomDatabase() {
             return Room.databaseBuilder(app, OllinDatabase::class.java, NOMBRE)
                 .openHelperFactory(SupportOpenHelperFactory(frase.toByteArray(Charsets.UTF_8)))
                 .setJournalMode(JournalMode.WRITE_AHEAD_LOGGING)
+                .addMigrations(MIGRACION_1_2)
                 .build()
         }
     }

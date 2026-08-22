@@ -343,7 +343,7 @@ class ExportadorExcel(
         )
         filas += listOf(Celda.Vacia)
         filas += listOf(
-            "Habito", "Categoria", "Cadencia", "Cuenta desde", "Meta diaria",
+            "Habito", "Categoria", "Cadencia", "Cuenta desde", "Recordatorio", "Meta diaria",
             "Minutos sugeridos", "Activo", "Cumplimientos", "Racha actual", "Mejor racha",
             "Unidad de racha", "Notas"
         ).map { Celda.Texto(it, Estilo.ENCABEZADO) }
@@ -361,6 +361,13 @@ class ExportadorExcel(
                 } else {
                     Celda.Vacia
                 },
+                // Como texto y no como hora de Excel: la columna se lee y se
+                // edita a mano, y "08:00" no deja lugar a dudas. Una hora
+                // serializada como fraccion de dia sale como 0.333 en cualquier
+                // visor que no herede el formato.
+                habito.horaRecordatorio
+                    ?.let { Celda.Texto(Tiempo.horaLocal(it)) }
+                    ?: Celda.Vacia,
                 Celda.Numero(habito.metaDiaria.toDouble(), Estilo.ENTERO),
                 habito.minutosSugeridos?.let { Celda.Numero(it.toDouble(), Estilo.ENTERO) }
                     ?: Celda.Vacia,
@@ -378,9 +385,10 @@ class ExportadorExcel(
             filas = filas,
             anchos = listOf(
                 AnchoColumna(1, 26.0), AnchoColumna(2, 22.0), AnchoColumna(3, 22.0),
-                AnchoColumna(4, 14.0), AnchoColumna(5, 12.0), AnchoColumna(6, 16.0),
-                AnchoColumna(7, 9.0), AnchoColumna(8, 14.0), AnchoColumna(9, 13.0),
-                AnchoColumna(10, 13.0), AnchoColumna(11, 15.0), AnchoColumna(12, 30.0)
+                AnchoColumna(4, 14.0), AnchoColumna(5, 13.0), AnchoColumna(6, 12.0),
+                AnchoColumna(7, 16.0), AnchoColumna(8, 9.0), AnchoColumna(9, 14.0),
+                AnchoColumna(10, 13.0), AnchoColumna(11, 13.0), AnchoColumna(12, 15.0),
+                AnchoColumna(13, 30.0)
             ),
             congelarTrasFila = 4
         )

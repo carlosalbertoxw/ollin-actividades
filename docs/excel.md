@@ -79,7 +79,7 @@ Las cuatro que Ollin sabe reconocer, **cada una si viene en el archivo** y en es
 | Pestaña | Qué entra | Qué se ignora |
 |---|---|---|
 | **Categorias** | Nombre, ámbito, color, si está archivada y orden | — |
-| **Habitos** | Nombre, categoría, cadencia, **cuenta desde**, meta diaria, minutos sugeridos, activo y notas | Cumplimientos, racha actual, mejor racha y unidad de racha |
+| **Habitos** | Nombre, categoría, cadencia, **cuenta desde**, **recordatorio**, meta diaria, minutos sugeridos, activo y notas | Cumplimientos, racha actual, mejor racha y unidad de racha |
 | **Diccionarios** | Las columnas *Categorias* y *Habitos*, solo para dar de alta lo que falte | Ámbitos, estados y unidades: son enumeraciones fijas de la app |
 | **Registros** | La bitácora | — |
 
@@ -88,6 +88,12 @@ El orden no es casual. `Registros` nombra sus categorías y hábitos por texto y
 Las pestañas se buscan **por nombre**, sin acentos ni mayúsculas —`Categorías` y `categorias` son la misma—. La de `Registros` es la excepción: si no está, se usa la primera hoja que traiga al menos una columna de **fecha** y otra de **título**, para admitir libros que no salieron de aquí.
 
 Un libro que solo trae catálogos es legítimo: sirve para reordenar las categorías o retocar los hábitos desde la computadora. En ese caso la bitácora **no se toca aunque esté marcado "Reemplazar todo"**, porque no hay nada con qué reemplazarla.
+
+### «Recordatorio»: la hora del aviso
+
+La hora a la que el hábito avisa viaja en el libro, escrita como texto (`08:00`) y no como hora de Excel: la columna se lee y se edita a mano, y una hora serializada como fracción de día sale como `0.333` en cualquier visor que no herede el formato. Al importar se acepta cualquiera de las dos.
+
+Vacía significa que el hábito no avisa. Si la columna no viene —un libro exportado antes de que existiera— la hora que ya tuviera el hábito no se toca. Ver [Recordatorios](recordatorios.md).
 
 ### «Cuenta desde»: el ancla de las cadencias periódicas
 

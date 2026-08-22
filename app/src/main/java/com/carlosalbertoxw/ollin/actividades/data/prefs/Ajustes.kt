@@ -39,6 +39,12 @@ data class Ajustes(
     /** Duracion que propone el boton rapido al registrar sin cronometro. */
     val duracionRapidaMinutos: Int = 25,
     val muestraCompletadasEnHoy: Boolean = true,
+    /**
+     * Interruptor maestro de los avisos. Nace apagado: una app de bitacora que
+     * empieza a mandar notificaciones sin que nadie se lo pida acaba silenciada
+     * entera, y con ella los avisos que si se querian.
+     */
+    val recordatorios: Boolean = false,
     /** Interruptor maestro de las tarjetas de ayuda de cada pantalla. */
     val muestraTutoriales: Boolean = true,
     /** Claves de [com.carlosalbertoxw.ollin.actividades.ui.components.Tutorial] ya descartadas. */
@@ -79,6 +85,7 @@ class AjustesRepositorio(private val contexto: Context) {
         val PIN_HASH = stringPreferencesKey("pin_hash")
         val PIN_SAL = stringPreferencesKey("pin_sal")
         val PIN_FALLOS = intPreferencesKey("pin_fallos")
+        val RECORDATORIOS = booleanPreferencesKey("recordatorios")
     }
 
     val ajustes: Flow<Ajustes> = contexto.almacen.data.map(::mapea)
@@ -111,7 +118,8 @@ class AjustesRepositorio(private val contexto: Context) {
             ?: ModoBloqueo.NINGUNO,
         pinHash = p[Claves.PIN_HASH],
         pinSal = p[Claves.PIN_SAL],
-        pinFallos = p[Claves.PIN_FALLOS] ?: 0
+        pinFallos = p[Claves.PIN_FALLOS] ?: 0,
+        recordatorios = p[Claves.RECORDATORIOS] ?: false
     )
 
     suspend fun guardaTema(oscuro: Boolean?) {
@@ -219,6 +227,10 @@ class AjustesRepositorio(private val contexto: Context) {
             it.remove(Claves.PIN_SAL)
             it.remove(Claves.PIN_FALLOS)
         }
+    }
+
+    suspend fun guardaRecordatorios(valor: Boolean) {
+        contexto.almacen.edit { it[Claves.RECORDATORIOS] = valor }
     }
 
     /** Suma un fallo. El contador no tiene techo; la espera si. */

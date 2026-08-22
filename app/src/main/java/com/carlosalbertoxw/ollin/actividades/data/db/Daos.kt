@@ -9,6 +9,7 @@ import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 import com.carlosalbertoxw.ollin.actividades.domain.model.Ambito
 import com.carlosalbertoxw.ollin.actividades.domain.model.EstadoActividad
+import java.time.Instant
 import java.time.LocalDate
 
 /**
@@ -324,4 +325,30 @@ interface ActividadDao {
         """
     )
     suspend fun ultimoCumplimiento(habitoId: Long, dia: LocalDate): Actividad?
+
+    /**
+     * Cuantas veces se cumplio el habito ese dia. Hace falta el conteo y no un
+     * "hay alguno": un habito con meta diaria de tres sigue pendiente tras el
+     * primero, y el recordatorio tiene que saberlo.
+     */
+    @Query(
+        """
+        SELECT COUNT(*) FROM actividad
+        WHERE habitoId = :habitoId AND dia = :dia AND estado = 'COMPLETADO'
+        """
+    )
+    suspend fun cuentaCumplimientos(habitoId: Long, dia: LocalDate): Int
+
+    /**
+     * Las tareas agendadas en una ventana de tiempo, para planificar avisos.
+     * Solo pendientes: lo completado no tiene nada que recordar.
+     */
+    @Query(
+        """
+        SELECT * FROM actividad
+        WHERE estado = 'PENDIENTE' AND inicio >= :desde AND inicio <= :hasta
+        ORDER BY inicio
+        """
+    )
+    suspend fun pendientesEntre(desde: Instant, hasta: Instant): List<Actividad>
 }

@@ -22,6 +22,8 @@ class AjustesVm(private val repo: AjustesRepositorio) : ViewModel() {
     fun duracionRapida(minutos: Int) = viewModelScope.launch { repo.guardaDuracionRapida(minutos) }
     fun completadasEnHoy(valor: Boolean) = viewModelScope.launch { repo.guardaMuestraCompletadas(valor) }
 
+    fun recordatorios(valor: Boolean) = viewModelScope.launch { repo.guardaRecordatorios(valor) }
+
     fun tutoriales(valor: Boolean) = viewModelScope.launch { repo.guardaMuestraTutoriales(valor) }
 
     fun reiniciaTutoriales() = viewModelScope.launch { repo.reiniciaTutoriales() }

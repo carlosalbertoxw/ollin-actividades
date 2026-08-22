@@ -74,8 +74,10 @@ import com.carlosalbertoxw.ollin.actividades.ui.theme.LocalColoresOllin
 import com.carlosalbertoxw.ollin.actividades.ui.theme.colorDeCategoria
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.LocalTime
 import com.carlosalbertoxw.ollin.actividades.ui.components.DialogoDeshacerHabito
 import com.carlosalbertoxw.ollin.actividades.ui.components.DialogoFecha
+import com.carlosalbertoxw.ollin.actividades.ui.components.DialogoHora
 
 @Composable
 fun HabitosPantalla(
@@ -296,6 +298,22 @@ private fun TarjetaHabito(
     }
 }
 
+@Composable
+private fun SelectorHoraRecordatorio(
+    actual: LocalTime?,
+    alElegir: (LocalTime) -> Unit,
+    alCerrar: () -> Unit
+) {
+    DialogoHora(
+        // Las ocho de la manana es la hora por omision de un recordatorio que
+        // todavia no tiene ninguna: temprano, pero no de madrugada.
+        inicial = actual ?: LocalTime.of(8, 0),
+        titulo = "Hora del recordatorio",
+        alElegir = alElegir,
+        alCerrar = alCerrar
+    )
+}
+
 /**
  * El cada-cuanto de una frecuencia periodica: el numero y desde cuando se
  * cuenta.
@@ -436,6 +454,8 @@ private fun DialogoHabito(
     var ancla by remember { mutableStateOf(inicial.ancla) }
     var minutos by remember { mutableStateOf(inicial.minutosSugeridos?.toString() ?: "") }
     var activo by remember { mutableStateOf(inicial.activo) }
+    var recordatorio by remember { mutableStateOf(inicial.horaRecordatorio) }
+    var pidiendoHora by remember { mutableStateOf(false) }
     val colores = LocalColoresOllin.current
 
     AlertDialog(
@@ -455,7 +475,8 @@ private fun DialogoHabito(
                             intervaloMeses = intervaloMeses.toIntOrNull()?.coerceIn(1, 24) ?: 1,
                             ancla = ancla,
                             minutosSugeridos = minutos.toIntOrNull()?.takeIf { it > 0 },
-                            activo = activo
+                            activo = activo,
+                            horaRecordatorio = recordatorio
                         )
                     )
                 },
@@ -590,6 +611,28 @@ private fun DialogoHabito(
                 }
 
                 Spacer(Modifier.height(16.dp))
+                Text("Recordatorio", style = MaterialTheme.typography.labelLarge, color = colores.textoTenue)
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    if (recordatorio != null) {
+                        "Avisa a las ${Tiempo.horaLocal(recordatorio!!)} los días que toca, " +
+                            "salvo que ya lo hayas cumplido."
+                    } else {
+                        "Sin aviso. Ponle una hora y Ollin te lo recuerda los días que toca."
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colores.textoTenue
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    TextButton(onClick = { pidiendoHora = true }) {
+                        Text(if (recordatorio != null) "Cambiar la hora" else "Poner una hora")
+                    }
+                    if (recordatorio != null) {
+                        TextButton(onClick = { recordatorio = null }) { Text("Quitar el aviso") }
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
                 // El texto lleva weight y el Switch se queda con su ancho: sin
                 // esto la descripcion se extiende por debajo del control y
                 // termina cortada.
@@ -620,4 +663,12 @@ private fun DialogoHabito(
             }
         }
     )
+
+    if (pidiendoHora) {
+        SelectorHoraRecordatorio(
+            actual = recordatorio,
+            alElegir = { recordatorio = it },
+            alCerrar = { pidiendoHora = false }
+        )
+    }
 }

@@ -1,0 +1,78 @@
+# Recordatorios
+
+Ollin puede avisar de lo que tienes pendiente: **un hábito** a la hora que le pusiste, los días que toca, y **una tarea** a su hora de inicio.
+
+El interruptor maestro está en `Ajustes → Recordatorios` y **nace apagado**. Una app de bitácora que empieza a mandar notificaciones sin que nadie se lo pida acaba silenciada entera, y con ella los avisos que sí se querían.
+
+## Qué avisa y qué no
+
+| | Cuándo avisa | Cuándo no |
+|---|---|---|
+| **Hábito** | Los días que toca según su cadencia, a `horaRecordatorio` | Sin hora puesta · pausado · ya cumplido ese día |
+| **Tarea** | A su `inicio` | Si ya está completada o en curso |
+
+Un hábito con meta diaria de tres sigue avisando hasta la tercera: el planificador cuenta los cumplimientos del día, no se conforma con que haya alguno.
+
+La hora del hábito es una **hora local suelta**, no un instante. «A las ocho» son las ocho de donde estés: guardar el instante ataría el recordatorio al huso en que se creó y sonaría a las tres de la madrugada después de un vuelo.
+
+## Cómo funciona por dentro
+
+Tres piezas, en `data/recordatorios/`:
+
+| Pieza | Qué hace |
+|---|---|
+| [`PlanificadorRecordatorios`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/data/recordatorios/Recordatorio.kt) | Dice qué hay que recordar en una ventana de tiempo |
+| [`AlarmaRecordatorios`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/data/recordatorios/AlarmaRecordatorios.kt) | Programa el despertador del sistema |
+| [`CoordinadorRecordatorios`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/data/recordatorios/CoordinadorRecordatorios.kt) | Une las dos: notifica lo vencido y arma la siguiente alarma |
+
+### Se calcula al vuelo, no se guarda
+
+No hay tabla de avisos programados. Lo que toca depende del calendario del hábito y de lo que ya se cumplió hoy, y las dos cosas cambian sin avisar —al marcar, al editar la cadencia, al cruzar la medianoche—. Una tabla habría que invalidarla en todos esos momentos, y el primero que se olvidara dejaría avisos fantasma.
+
+### Una sola alarma viva
+
+Se programa **una** alarma: la del recordatorio más próximo. Al sonar se vuelve a planificar y se arma la siguiente.
+
+La alternativa —una alarma por recordatorio— obliga a llevar la cuenta de cuáles están puestas para poder cancelarlas cuando un hábito cambia de hora o se cumple, y esa contabilidad es justo donde aparecen los avisos duplicados y los fantasma.
+
+### Cuándo se replanifica
+
+`CoordinadorRecordatorios.despacha()` es el único punto por el que se replanifica, y se le llama desde todos los sitios donde el plan puede haber quedado viejo:
+
+- Al abrir la app.
+- Cuando cambia cualquier hábito o actividad (`vigila()` observa la base, con un respiro de 700 ms para no recalcular con cada fila de una importación).
+- Al encender o apagar el interruptor.
+- Al sonar la alarma.
+- Al arrancar el teléfono (`BOOT_COMPLETED`) y tras actualizar la app (`MY_PACKAGE_REPLACED`): las dos cosas borran las alarmas puestas.
+
+### Lo vencido se rescata
+
+Al despachar se miran también las **6 horas hacia atrás**. El teléfono apagado, una alarma diferida en doze o una actualización dejan huecos, y un hábito de esta mañana todavía se puede cumplir. Más atrás no: sería ruido por algo que ya no se puede hacer.
+
+Hacia adelante el horizonte es de **120 días**, porque un hábito «cada tres meses» puede no tocar en mucho tiempo y sin margen su alarma no se programaría nunca.
+
+## Permisos
+
+| Permiso | Desde | Si falta |
+|---|---|---|
+| `POST_NOTIFICATIONS` | Android 13 | No se ve ningún aviso. Se pide al encender el interruptor |
+| `SCHEDULE_EXACT_ALARM` | Android 12 | Los avisos llegan con minutos de retraso, no dejan de llegar |
+| `RECEIVE_BOOT_COMPLETED` | — | Tras reiniciar, Ollin queda muda hasta que alguien la abra |
+
+El permiso de notificaciones y el interruptor son la misma intención, así que van en el mismo gesto: si el sistema lo niega, el interruptor no se enciende, porque quedaría prometiendo algo que no puede cumplir.
+
+**La alarma exacta no se da por concedida.** Desde Android 12 hay que autorizarla a mano, y una app de bitácora no puede asumirla: si no está, el aviso sale aproximado (`setAndAllowWhileIdle`) en vez de no salir. Un aviso con unos minutos de retraso sigue sirviendo; uno que no llega, no. No se declara `USE_EXACT_ALARM`, que la tienda reserva a despertadores y calendarios.
+
+Ajustes enseña una advertencia **solo cuando alguno de los dos falta**, con el atajo para concederlo. Un texto fijo sobre algo que casi siempre está bien se deja de leer a la tercera vez.
+
+## Privacidad
+
+Con candado configurado, los avisos van con `VISIBILITY_PRIVATE`: en la pantalla de bloqueo se ve que hay una notificación de Ollin, no de qué.
+
+Sería incoherente marcar la ventana con `FLAG_SECURE` para que la bitácora no salga ni en las apps recientes y a la vez anunciar «Terapia, te toca hoy» a quien mire el teléfono encima de la mesa. Ver [seguridad](seguridad.md).
+
+## Límites conocidos
+
+- **Forzar la detención** de la app desde los ajustes del sistema cancela las alarmas y Android no las restaura hasta que alguien vuelve a abrir Ollin. Es comportamiento del sistema, no hay forma de sortearlo.
+- Los fabricantes con gestión agresiva de batería (Xiaomi, Huawei, Samsung en modo estricto) pueden retrasar o suprimir las alarmas. Si los avisos no llegan, el sitio donde mirar es la lista de apps con restricción de batería del teléfono.
+- La hora del recordatorio **viaja en el `.xlsx`**, en la columna `Recordatorio` de la pestaña *Habitos*, para que restaurar un respaldo no la pierda. Ver [Excel](excel.md).

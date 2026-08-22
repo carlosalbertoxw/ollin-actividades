@@ -2,6 +2,7 @@ package com.carlosalbertoxw.ollin.actividades.data.excel
 
 import com.carlosalbertoxw.ollin.actividades.domain.model.normalizaClave
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
 /**
@@ -94,7 +95,28 @@ internal class Renglon(
         return null
     }
 
+    /**
+     * Una hora puede venir como fraccion de dia (lo que escribe Excel al dar
+     * formato de hora) o escrita a mano, que es lo habitual en esta columna.
+     */
+    fun hora(clave: String): LocalTime? {
+        val celda = celda(clave) ?: return null
+        celda.numero?.let { return Ooxml.horaDesdeSerial(it) }
+        val texto = celda.texto?.trim().orEmpty()
+        if (texto.isEmpty()) return null
+        FORMATOS_HORA.forEach { formato ->
+            runCatching { return LocalTime.parse(texto, formato) }
+        }
+        return null
+    }
+
     private companion object {
+        val FORMATOS_HORA = listOf(
+            DateTimeFormatter.ofPattern("HH:mm"),
+            DateTimeFormatter.ofPattern("H:mm"),
+            DateTimeFormatter.ISO_LOCAL_TIME
+        )
+
         val FORMATOS_FECHA = listOf(
             DateTimeFormatter.ISO_LOCAL_DATE,
             DateTimeFormatter.ofPattern("dd/MM/yyyy"),

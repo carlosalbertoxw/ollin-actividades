@@ -4,6 +4,8 @@ import android.content.Context
 import com.carlosalbertoxw.ollin.actividades.data.db.OllinDatabase
 import com.carlosalbertoxw.ollin.actividades.data.db.Sembrador
 import com.carlosalbertoxw.ollin.actividades.data.prefs.AjustesRepositorio
+import com.carlosalbertoxw.ollin.actividades.data.recordatorios.CoordinadorRecordatorios
+import com.carlosalbertoxw.ollin.actividades.data.recordatorios.PlanificadorRecordatorios
 import com.carlosalbertoxw.ollin.actividades.data.repo.ActividadesRepositorio
 import com.carlosalbertoxw.ollin.actividades.data.seguridad.ControlBloqueo
 
@@ -37,4 +39,15 @@ class Contenedor(
     val controlBloqueo: ControlBloqueo by lazy { ControlBloqueo(ajustes) }
 
     val sembrador: Sembrador by lazy { Sembrador(baseDeDatos.categoriaDao()) }
+
+    val recordatorios: CoordinadorRecordatorios by lazy {
+        CoordinadorRecordatorios(
+            contexto = app,
+            planificador = PlanificadorRecordatorios(
+                baseDeDatos.habitoDao(),
+                baseDeDatos.actividadDao()
+            ),
+            ajustes = ajustes
+        )
+    }
 }

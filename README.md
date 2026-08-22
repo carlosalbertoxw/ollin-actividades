@@ -10,6 +10,7 @@ Bitácora personal de tiempo para Android: cronometra o captura a mano lo que ha
 - **Hábitos con rachas.** Diarios, en días elegidos de la semana, cierto número de veces por semana, o cada tantos días o meses. La racha del día en curso es de cortesía: un hábito sin marcar está pendiente, no fallado.
 - **Analítica sobre lo completado.** Minutos por día, por categoría y por ámbito en ventanas de 7, 30 o 90 días. Lo pendiente no infla ninguna cifra.
 - **Exportación e importación en Excel.** Un `.xlsx` con fórmulas vivas (SUMIFS, COUNTIFS), escrito y leído sin dependencias externas. Lo que sale puede volver a entrar.
+- **Recordatorios.** Un aviso por cada hábito que toque y no hayas cumplido, a la hora que le pongas, y por cada tarea pendiente a su hora de inicio. Nacen apagados.
 - **Bloqueo opcional.** Con la credencial del teléfono (patrón, PIN, huella) o con un PIN propio de Ollin.
 
 ## Requisitos
@@ -78,6 +79,7 @@ app/src/main/java/com/carlosalbertoxw/ollin/actividades/
 - [Arquitectura](docs/arquitectura.md) — capas, flujo de datos, navegación y por qué no hay framework de inyección.
 - [Modelo de datos](docs/modelo-de-datos.md) — tablas, invariantes de las marcas de tiempo, migraciones.
 - [Rachas y hábitos](docs/rachas.md) — cadencias soportadas y cómo se cuenta cada tipo de racha.
+- [Recordatorios](docs/recordatorios.md) — qué avisa, cómo se programan las alarmas y qué permisos hacen falta.
 - [Excel](docs/excel.md) — formato del libro exportado, hojas, esquemas y reglas de importación.
 - [Seguridad y privacidad](docs/seguridad.md) — cifrado de la base, Keystore, PIN, bloqueo y respaldos.
 - [Desarrollo](docs/desarrollo.md) — entorno, comandos, pruebas y convenciones del código.
