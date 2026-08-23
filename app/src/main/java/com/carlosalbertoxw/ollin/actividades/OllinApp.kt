@@ -28,6 +28,18 @@ class OllinApp : Application() {
             // lento, el suficiente para que Android se queje—.
             contenedor.baseDeDatos
             contenedor.sembrador.sembrarSiHaceFalta()
+
+            // El canal se crea al arrancar y no al primer aviso: asi los
+            // ajustes de notificaciones del sistema ensenan "Recordatorios"
+            // desde el principio, y no solo despues de que suene el primero.
+            Notificaciones.creaCanal(this@OllinApp)
+
+            // Aqui se enciende el motor. La alarma del siguiente aviso se
+            // programa dentro de despacha(), y despacha() solo corre si algo
+            // observa: sin esta linea no hay primera alarma, el receptor no
+            // despierta nunca y no suena nada por muy encendido que este el
+            // interruptor de Ajustes.
+            contenedor.recordatorios.vigila(alcance)
         }
     }
 }

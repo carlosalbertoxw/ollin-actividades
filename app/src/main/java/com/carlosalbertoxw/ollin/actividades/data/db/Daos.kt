@@ -67,6 +67,14 @@ interface HabitoDao {
     @Query("SELECT COUNT(*) FROM habito")
     suspend fun cuenta(): Int
 
+    /**
+     * El conteo importa poco; lo que se aprovecha es que Room reemite ante
+     * cualquier escritura de la tabla. Es la senal de "algo cambio en los
+     * habitos" que necesitan los recordatorios para replanificar.
+     */
+    @Query("SELECT COUNT(*) FROM habito")
+    fun observaConteo(): Flow<Int>
+
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun inserta(habito: Habito): Long
 

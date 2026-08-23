@@ -68,11 +68,15 @@ class CoordinadorRecordatorios(
      * que tocan habitos y actividades son muchos —captura, importacion,
      * deshacer, editar la cadencia— y el primero que se olvidara dejaria la
      * alarma apuntando a algo que ya no toca.
+     *
+     * Se llama una sola vez, al arrancar la aplicacion. El `combine` emite de
+     * entrada, asi que abrir la app tambien replanifica: hace falta, porque la
+     * alarma siguiente solo se arma dentro de [despacha].
      */
-    fun vigila(alcance: CoroutineScope, habitos: kotlinx.coroutines.flow.Flow<Int>) {
+    fun vigila(alcance: CoroutineScope) {
         alcance.launch {
             combine(
-                habitos,
+                planificador.cambios,
                 ajustes.ajustes.map { it.recordatorios }.distinctUntilChanged()
             ) { _, _ -> Unit }
                 .collectLatest {

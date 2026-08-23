@@ -4,6 +4,8 @@ import com.carlosalbertoxw.ollin.actividades.data.db.ActividadDao
 import com.carlosalbertoxw.ollin.actividades.data.db.Habito
 import com.carlosalbertoxw.ollin.actividades.data.db.HabitoDao
 import com.carlosalbertoxw.ollin.actividades.domain.model.Tiempo
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import java.time.Instant
 import java.time.LocalDate
 
@@ -42,6 +44,19 @@ class PlanificadorRecordatorios(
     private val habitos: HabitoDao,
     private val actividades: ActividadDao
 ) {
+
+    /**
+     * Emite cada vez que cambia algo de lo que depende el plan.
+     *
+     * Las dos tablas y no solo la bitacora: cumplir un habito escribe en
+     * `actividad`, pero moverle la hora o la cadencia escribe en `habito`, y
+     * ese es justo el cambio que dejaria la alarma apuntando a la hora vieja.
+     *
+     * Se observa el conteo porque Room reemite ante cualquier escritura de la
+     * tabla, valga o no lo mismo el numero. El valor sobra; interesa el aviso.
+     */
+    val cambios: Flow<Unit> =
+        combine(habitos.observaConteo(), actividades.observaConteo()) { _, _ -> Unit }
 
     /**
      * Los avisos que caen dentro de la ventana, del mas proximo al mas lejano.
