@@ -12,9 +12,9 @@ import com.carlosalbertoxw.ollin.actividades.data.seguridad.ControlBloqueo
 /**
  * Inyeccion de dependencias a mano.
  *
- * Con un solo modulo y tres objetos compartidos, Hilt aportaria anotaciones y
- * tiempo de compilacion sin resolver ningun problema real. Esto se lee de
- * arriba a abajo y no tiene magia.
+ * Con un solo modulo y media docena de objetos compartidos, Hilt aportaria
+ * anotaciones y tiempo de compilacion sin resolver ningun problema real. Esto
+ * se lee de arriba a abajo y no tiene magia.
  */
 class Contenedor(
     contexto: Context,

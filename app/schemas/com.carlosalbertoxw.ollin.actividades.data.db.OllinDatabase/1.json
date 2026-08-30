@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "6f7390bcd939bf9c40a9f3569cf23b6b",
+    "identityHash": "cc3cd97f94296b5baabe7ee78f790407",
     "entities": [
       {
         "tableName": "categoria",
@@ -73,7 +73,7 @@
       },
       {
         "tableName": "habito",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `nombre` TEXT NOT NULL, `categoriaId` INTEGER, `frecuencia` TEXT NOT NULL, `metaDiaria` INTEGER NOT NULL, `metaSemanal` INTEGER NOT NULL, `diasSemana` INTEGER NOT NULL, `intervaloDias` INTEGER NOT NULL, `intervaloMeses` INTEGER NOT NULL, `ancla` INTEGER, `minutosSugeridos` INTEGER, `activo` INTEGER NOT NULL, `orden` INTEGER NOT NULL, `notas` TEXT, `creadoEn` INTEGER NOT NULL, FOREIGN KEY(`categoriaId`) REFERENCES `categoria`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `nombre` TEXT NOT NULL, `categoriaId` INTEGER, `frecuencia` TEXT NOT NULL, `metaDiaria` INTEGER NOT NULL, `metaSemanal` INTEGER NOT NULL, `diasSemana` INTEGER NOT NULL, `intervaloDias` INTEGER NOT NULL, `intervaloMeses` INTEGER NOT NULL, `ancla` INTEGER, `minutosSugeridos` INTEGER, `horaRecordatorio` INTEGER, `activo` INTEGER NOT NULL, `orden` INTEGER NOT NULL, `notas` TEXT, `creadoEn` INTEGER NOT NULL, FOREIGN KEY(`categoriaId`) REFERENCES `categoria`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
         "fields": [
           {
             "fieldPath": "id",
@@ -136,6 +136,11 @@
           {
             "fieldPath": "minutosSugeridos",
             "columnName": "minutosSugeridos",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "horaRecordatorio",
+            "columnName": "horaRecordatorio",
             "affinity": "INTEGER"
           },
           {
@@ -375,7 +380,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '6f7390bcd939bf9c40a9f3569cf23b6b')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'cc3cd97f94296b5baabe7ee78f790407')"
     ]
   }
 }

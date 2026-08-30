@@ -93,19 +93,19 @@ Un libro que solo trae catálogos es legítimo: sirve para reordenar las categor
 
 La hora a la que el hábito avisa viaja en el libro, escrita como texto (`08:00`) y no como hora de Excel: la columna se lee y se edita a mano, y una hora serializada como fracción de día sale como `0.333` en cualquier visor que no herede el formato. Al importar se acepta cualquiera de las dos.
 
-Vacía significa que el hábito no avisa. Si la columna no viene —un libro exportado antes de que existiera— la hora que ya tuviera el hábito no se toca. Ver [Recordatorios](recordatorios.md).
+Vacía significa que el hábito no avisa. Si la columna no viene del todo —un libro escrito a mano, o recortado— la hora que ya tuviera el hábito no se toca: una columna ausente no es una orden de borrar. Ver [Recordatorios](recordatorios.md).
 
 ### «Cuenta desde»: el ancla de las cadencias periódicas
 
 Un hábito *cada tantos días* o *cada tantos meses* no toca según el calendario, sino contando desde una fecha. Esa fecha es el **ancla**, y cuando no se fija a mano es el día en que se dio de alta el hábito.
 
-Hasta que existió esta columna, el ancla no salía en el `.xlsx`. Al restaurar un respaldo en un teléfono limpio, cada hábito nacía el día de la importación y su ancla efectiva pasaba a ser ese día: **el calendario entero se corría**. Un hábito cada quince días anclado al 1 de agosto tocaba el 1 y el 16; importado el día 9, pasaba a tocar el 9 y el 24.
+Por eso viaja en el libro. Si no saliera, al restaurar un respaldo en un teléfono limpio cada hábito nacería el día de la importación y su ancla efectiva pasaría a ser ese día: **el calendario entero se correría**. Un hábito cada quince días anclado al 1 de agosto toca el 1 y el 16; importado el día 9 sin su ancla, pasaría a tocar el 9 y el 24.
 
-Cómo se comporta ahora:
+Cómo se comporta:
 
 - Se exporta **solo para las cadencias periódicas**. Para las demás la celda va vacía, porque el ancla no gobierna nada: un hábito diario toca todos los días vengan de donde vengan.
 - Al importar, la fecha se guarda como ancla explícita. Se admite el serial de Excel o escrita a mano en los formatos de siempre (`2026-07-04`, `04/07/2026`…).
-- **Si la columna no viene, el ancla que ya tenía el hábito no se toca.** Un libro exportado antes de que esta columna existiera no le recorre el calendario a nadie.
+- **Si la columna no viene, el ancla que ya tenía el hábito no se toca.** Un libro recortado a mano no le recorre el calendario a nadie.
 - Cambiar la fecha a mano en la hoja **sí** recorre el calendario del hábito. Es el único uso que tiene editarla, y la nota de la pestaña lo advierte.
 
 ### Cómo se emparejan los catálogos

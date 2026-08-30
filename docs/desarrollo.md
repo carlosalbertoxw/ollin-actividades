@@ -48,7 +48,7 @@ sdk.dir=C\:\\Users\\<usuario>\\AppData\\Local\\Android\\Sdk
 
 - **`localeFilters += listOf("es")`** — la app está escrita en español; no se empaquetan los recursos de las bibliotecas en los otros ochenta idiomas.
 - **`buildConfig = true`** — la pantalla de Acerca de enseña `BuildConfig.VERSION_NAME`.
-- **`room.schemaLocation`** — KSP escribe los esquemas en `app/schemas/`, que sí se versionan: son la referencia contra la que se probarán las migraciones futuras.
+- **`room.schemaLocation`** — KSP escribe los esquemas en `app/schemas/`, que sí se versionan. Hoy solo hay `1.json`: es la referencia contra la que se probará la primera migración.
 - **`androidx.fragment` fijado a mano** — `biometric` 1.1.0 arrastra `fragment` 1.2.5, anterior a la API de `ActivityResult`: su `FragmentActivity` rechaza los request codes de más de 16 bits que genera `activity` 1.10.1 y cualquier launcher revienta al abrirse.
 - **`release`** con `isMinifyEnabled` e `isShrinkResources`, y firmado con las credenciales de [`keystore.properties`](publicacion.md). Sin ese archivo el APK sale sin firmar en vez de fallar la compilación.
 
@@ -76,6 +76,8 @@ Sin emulador. Robolectric para lo que necesita `Context`.
 | [`ExcelRoundTripTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/ExcelRoundTripTest.kt) | Escritor y lector de `.xlsx` |
 | [`ImportadorTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/ImportadorTest.kt) | La hoja de Registros: exportar e importar deja los datos iguales |
 | [`ImportadorCatalogosTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/ImportadorCatalogosTest.kt) | Las pestañas de Categorias, Habitos y Diccionarios, y la cadencia de ida y vuelta |
+| [`XlsxLectorBlindajeTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/XlsxLectorBlindajeTest.kt) | Que el lector siga abriendo libros aunque el SAX del sistema rechace las banderas de seguridad |
+| [`RecordatoriosTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/RecordatoriosTest.kt) | Qué avisa el planificador y qué no: hora, cadencia, meta diaria, hábito cumplido o pausado, tareas pendientes |
 
 Las pruebas con Room arrancan con una `Application` pelona en vez de `OllinApp`: la de verdad siembra el catálogo contra la base cifrada, y SQLCipher es una biblioteca nativa de Android que en la JVM no existe.
 
@@ -124,7 +126,7 @@ Viven en `app/src/androidTest/java/com/carlosalbertoxw/ollin/actividades/ui/`, *
 
 ## Añadir una versión de la base
 
-Ver el final de [modelo de datos](modelo-de-datos.md#migraciones).
+La base va por la versión 1 y todavía no hay migraciones. Los pasos para la primera, al final de [modelo de datos](modelo-de-datos.md#versiones-del-esquema).
 
 ## Publicar
 

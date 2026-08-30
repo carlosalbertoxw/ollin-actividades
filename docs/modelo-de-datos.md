@@ -1,6 +1,6 @@
 # Modelo de datos
 
-Room sobre SQLite cifrado. Tres tablas, versión de esquema **2**, esquemas exportados en `app/schemas/`.
+Room sobre SQLite cifrado. Tres tablas, versión de esquema **1**, esquema exportado en `app/schemas/`.
 
 Las entidades de Room son también el modelo de dominio: [`Entidades.kt`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/data/db/Entidades.kt).
 
@@ -91,20 +91,15 @@ Solo puede haber una actividad `EN_CURSO`. Arrancar el cronómetro cierra la ant
 
 `horaRecordatorio` es una hora suelta y no un instante a propósito: «a las ocho» son las ocho de donde estés. Guardar el instante ataría el recordatorio al huso en que se creó y sonaría a las tres de la madrugada después de un vuelo.
 
-## Migraciones
+## Versiones del esquema
 
-| Versión | Cambio |
-|---|---|
-| 1 | Esquema inicial |
-| 2 | `habito.horaRecordatorio`: la hora del aviso |
+La base va por la **versión 1**: el esquema con el que la app se publica. Todavía no hay ninguna migración escrita, porque no hay ninguna bitácora allá afuera que migrar.
 
-Los esquemas reales viven en [`app/schemas/`](../app/schemas/), los genera KSP y sí se versionan: son la referencia contra la que se prueban las migraciones.
+El esquema real vive en [`app/schemas/`](../app/schemas/), lo genera KSP y sí se versiona: es la referencia contra la que se probará la primera migración que haga falta.
 
-`MIGRACION_1_2` es un `ALTER TABLE ... ADD COLUMN horaRecordatorio INTEGER`. Nullable y sin valor por omisión: **un hábito que ya existía no empieza a avisar porque la app se actualice.** Avisar es una decisión de quien lo creó, no un efecto de instalar una versión.
+Dos columnas admiten nulos y no por descuido: en las dos, nulo es una respuesta y no un dato que falta. `horaRecordatorio` nula significa que el hábito no avisa —avisar es una decisión de quien lo creó, no algo que se dé por hecho—, y `ancla` nula significa «cuenta desde el día en que di de alta el hábito», que es lo que resuelve `Habito.anclaEfectiva()` sin inventarle una fecha.
 
-`ancla` admite nulos por la misma clase de razón: significa "cuenta desde el día en que di de alta el hábito", que es lo que resuelve `Habito.anclaEfectiva()` sin inventarle una fecha.
-
-**No hay `fallbackToDestructiveMigration` en ningún lado, y no debe haberlo.** La base va cifrada con una llave del Keystore que no se respalda, así que borrarla y empezar de cero no es un inconveniente: es perder la bitácora entera. Cualquier cambio de entidad exige:
+**No hay `fallbackToDestructiveMigration` en ningún lado, y no debe haberlo.** La base va cifrada con una llave del Keystore que no se respalda, así que borrarla y empezar de cero no es un inconveniente: es perder la bitácora entera. En cuanto exista la primera instalación fuera de este equipo, cualquier cambio de entidad exige:
 
 1. Modificar las entidades.
 2. Subir `version` en `OllinDatabase`.

@@ -49,7 +49,7 @@ Las pruebas unitarias corren en la JVM con Robolectric, sin emulador ni disposit
 JAVA_HOME="$HOME/.jdks/jbr-21.0.11" ./gradlew testDebugUnitTest
 ```
 
-Cubren el cálculo de rachas, las reglas del repositorio, el formateo de tiempo, el candado y el PIN, el catálogo semilla y el viaje de ida y vuelta a Excel. El reporte HTML queda en `app/build/reports/tests/`.
+Cubren el cálculo de rachas, las reglas del repositorio, el formateo de tiempo, el candado y el PIN, el catálogo semilla, el planificador de recordatorios y el viaje de ida y vuelta a Excel. El reporte HTML queda en `app/build/reports/tests/`.
 
 Las de interfaz, hechas con Compose UI Test, recorren las pantallas de principio a fin y sí necesitan un teléfono o un emulador conectado:
 
@@ -62,22 +62,23 @@ JAVA_HOME="$HOME/.jdks/jbr-21.0.11" ./gradlew connectedDebugAndroidTest
 ```
 app/src/main/java/com/carlosalbertoxw/ollin/actividades/
 ├── data/
-│   ├── db/          Room: entidades, DAOs, proyecciones, catálogo semilla
-│   ├── excel/       Lector y escritor de .xlsx propios, exportador e importador
-│   ├── prefs/       Preferencias en DataStore
-│   ├── repo/        ActividadesRepositorio: toda la escritura pasa por aquí
-│   └── seguridad/   Llave de la base, PIN, control de bloqueo
-├── di/              Contenedor de dependencias, a mano
+│   ├── db/             Room: entidades, DAOs, proyecciones, catálogo semilla
+│   ├── excel/          Lector y escritor de .xlsx propios, exportador e importador
+│   ├── prefs/          Preferencias en DataStore
+│   ├── recordatorios/  Planificador de avisos, alarma del sistema y notificaciones
+│   ├── repo/           ActividadesRepositorio: toda la escritura pasa por aquí
+│   └── seguridad/      Llave de la base, PIN, control de bloqueo
+├── di/                 Contenedor de dependencias, a mano
 ├── domain/
-│   ├── model/       Enums, utilidades de tiempo y días de la semana
-│   └── usecase/     Cálculo de rachas
-└── ui/              Compose: pantallas y sus ViewModels, navegación, tema, componentes
+│   ├── model/          Enums, utilidades de tiempo y días de la semana
+│   └── usecase/        Cálculo de rachas
+└── ui/                 Compose: pantallas y sus ViewModels, navegación, tema, componentes
 ```
 
 ## Documentación
 
 - [Arquitectura](docs/arquitectura.md) — capas, flujo de datos, navegación y por qué no hay framework de inyección.
-- [Modelo de datos](docs/modelo-de-datos.md) — tablas, invariantes de las marcas de tiempo, migraciones.
+- [Modelo de datos](docs/modelo-de-datos.md) — tablas, invariantes de las marcas de tiempo, versiones del esquema.
 - [Rachas y hábitos](docs/rachas.md) — cadencias soportadas y cómo se cuenta cada tipo de racha.
 - [Recordatorios](docs/recordatorios.md) — qué avisa, cómo se programan las alarmas y qué permisos hacen falta.
 - [Excel](docs/excel.md) — formato del libro exportado, hojas, esquemas y reglas de importación.

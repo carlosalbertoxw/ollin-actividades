@@ -38,15 +38,16 @@ Sin dependencias de Android. Contiene los enums del modelo ([`Ambito`, `EstadoAc
 - `repo/` — [`ActividadesRepositorio`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/data/repo/ActividadesRepositorio.kt). Único punto de escritura; ahí viven las reglas que mantienen coherentes inicio, fin, día y duración.
 - `excel/` — lector y escritor de `.xlsx` propios, más el exportador e importador de la bitácora. Ver [Excel](excel.md).
 - `prefs/` — preferencias en DataStore, expuestas como un `Flow<Ajustes>`.
+- `recordatorios/` — qué toca avisar, la alarma del sistema y las notificaciones. Ver [recordatorios](recordatorios.md).
 - `seguridad/` — llave de la base, derivación del PIN y control de bloqueo. Ver [seguridad](seguridad.md).
 
 ## Inyección de dependencias
 
-Manual, en [`Contenedor`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/di/Contenedor.kt): base de datos, repositorio, ajustes, control de bloqueo y sembrador, todos `by lazy`. Se construye una vez en [`OllinApp`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/OllinApp.kt) y se pasa por parámetro a las pantallas.
+Manual, en [`Contenedor`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/di/Contenedor.kt): base de datos, repositorio, ajustes, control de bloqueo, sembrador y coordinador de recordatorios, todos `by lazy`. Se construye una vez en [`OllinApp`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/OllinApp.kt) y se pasa por parámetro a las pantallas.
 
-Con tres objetos compartidos, Hilt aportaría anotaciones y tiempo de compilación sin resolver ningún problema real.
+Con media docena de objetos compartidos, Hilt aportaría anotaciones y tiempo de compilación sin resolver ningún problema real.
 
-`OllinApp` también siembra el catálogo inicial de categorías en un `CoroutineScope` de IO. El sembrador es idempotente: si ya hay categorías, no toca nada.
+`OllinApp` también siembra el catálogo inicial de categorías en un `CoroutineScope` de IO. El sembrador es idempotente: si ya hay categorías, no toca nada. En ese mismo arranque se crea el canal de notificaciones y se enciende `CoordinadorRecordatorios.vigila(...)`, que es quien arma la primera alarma; sin esa llamada el receptor no despierta nunca y no suena nada, por muy encendido que esté el interruptor de Ajustes.
 
 ## Arranque y bloqueo
 

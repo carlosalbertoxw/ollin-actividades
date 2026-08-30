@@ -1,6 +1,6 @@
 # Seguridad y privacidad
 
-Ollin no manda nada a ningún servidor: no hay cuenta, no hay nube y no hay publicidad. El único permiso que declara la app es `USE_BIOMETRIC`.
+Ollin no manda nada a ningún servidor: no hay cuenta, no hay nube y no hay publicidad. Tampoco declara ningún permiso de red. Los cuatro que sí pide son `USE_BIOMETRIC`, para el candado, y `POST_NOTIFICATIONS`, `RECEIVE_BOOT_COMPLETED` y `SCHEDULE_EXACT_ALARM`, los tres para los [recordatorios](recordatorios.md).
 
 ## Cifrado de la base
 
