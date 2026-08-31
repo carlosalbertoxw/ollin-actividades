@@ -1,13 +1,13 @@
 {
   "name": "ollin-actividades-sitio",
-  "version": "0.0.0",
   "private": true,
+  "version": "0.0.0",
   "type": "module",
-  "description": "Sitio de descarga de Ollin Actividades. Publica el APK y el version.json que la app consulta.",
+  "description": "Sitio de descarga de Ollin Actividades. Se publica en GitHub Pages.",
   "scripts": {
-    "datos": "node scripts/genera-datos.mjs",
-    "dev": "npm run datos && vite",
-    "build": "npm run datos && vite build",
+    "version:genera": "node scripts/genera-version.mjs",
+    "dev": "npm run version:genera && vite",
+    "build": "npm run version:genera && vite build",
     "preview": "vite preview"
   },
   "devDependencies": {

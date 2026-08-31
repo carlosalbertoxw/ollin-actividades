@@ -1,288 +1,246 @@
 /*
- * La paleta es la de la app: obsidiana, jade y cempasuchil. Estan declaradas
- * en app/src/main/res/values/colors.xml y en ui/theme/Color.kt; aqui se
- * repiten porque un sitio estatico no puede leer los recursos de un APK, y son
- * tres constantes que cambian una vez cada nunca.
- *
- * El tema sigue al del sistema. No hay interruptor: quien prefiere el modo
- * oscuro ya lo eligio en su telefono, y una pagina de descarga no es sitio para
- * volver a preguntarselo.
- */
+  La paleta es la misma de la app (ui/theme/Color.kt): obsidiana de fondo, y un
+  pigmento por ambito —anil para el trabajo, jade para el cuerpo, cempasuchil
+  para los habitos, grana para lo personal—. Quien baje el APK debe reconocer la
+  pantalla que va a abrir.
+*/
 
 :root {
-  --obsidiana: #12181B;
-  --jade: #2F9E6E;
-  --cempasuchil: #E9A13B;
+  --obsidiana: #12181b;
+  --obsidiana-suave: #1a2226;
+  --obsidiana-clara: #242e33;
+  --jade: #2f9e6e;
+  --jade-claro: #6fcfa1;
+  --grana: #c4453f;
+  --cempasuchil: #e9a13b;
+  --anil: #3d6db5;
+  --papel: #f7f5f0;
+  --papel-sombra: #e7e3da;
+  --tinta: #1a1a18;
+  --tinta-suave: #5b615e;
 
-  --fondo: #FBFAF7;
-  --superficie: #FFFFFF;
-  --superficie-alta: #F2F0EA;
-  --texto: #1A1F22;
-  --texto-tenue: #5C6569;
-  --trazo: #E2DED4;
-  --sombra: 0 1px 2px rgb(18 24 27 / 6%), 0 8px 24px rgb(18 24 27 / 6%);
+  --fondo: var(--papel);
+  --fondo-elevado: #ffffff;
+  --texto: var(--tinta);
+  --texto-tenue: var(--tinta-suave);
+  --trazo: var(--papel-sombra);
+  --acento: var(--jade);
+
+  --ancho: 62rem;
+  --radio: 14px;
+
+  color-scheme: light dark;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --fondo: #0E1315;
-    --superficie: #161D20;
-    --superficie-alta: #1D262A;
-    --texto: #E8EDEE;
-    --texto-tenue: #94A1A6;
-    --trazo: #263238;
-    --sombra: none;
+    --fondo: var(--obsidiana);
+    --fondo-elevado: var(--obsidiana-suave);
+    --texto: var(--papel);
+    --texto-tenue: #9aa5a1;
+    --trazo: #2e3a3f;
+    --acento: var(--jade-claro);
   }
 }
 
-*, *::before, *::after { box-sizing: border-box; }
-
-/*
- * `hidden` tiene que ganarle a cualquier `display` que se declare mas abajo.
- * La regla del navegador es `[hidden] { display: none }`, y cualquier selector
- * de clase la pisa por especificidad: sin esto, el boton de descarga se ve
- * incluso cuando el script lo dejo oculto porque no supo que version ofrecer.
- */
-[hidden] { display: none !important; }
+* {
+  box-sizing: border-box;
+}
 
 body {
   margin: 0;
   background: var(--fondo);
   color: var(--texto);
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
-    "Helvetica Neue", Arial, sans-serif;
-  font-size: 17px;
-  line-height: 1.65;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
+    Arial, sans-serif;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
 }
 
-a { color: var(--jade); text-decoration-thickness: 1px; text-underline-offset: 3px; }
-a:hover { color: var(--cempasuchil); }
-
-code, pre {
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-  font-size: 0.88em;
-}
-
-code {
-  background: var(--superficie-alta);
-  border-radius: 5px;
-  padding: 0.1em 0.38em;
-}
-
-/* Para quien navega con teclado: el primer tabulador salta a lo que se vino a
-   hacer, en vez de recorrer el encabezado entero. */
-.salto {
-  position: absolute;
-  left: -9999px;
-  background: var(--jade);
-  color: #fff;
-  padding: 0.7rem 1.2rem;
-  border-radius: 0 0 10px 0;
-  z-index: 10;
-}
-.salto:focus { left: 0; top: 0; color: #fff; }
-
 .envoltura {
-  width: min(100% - 2.5rem, 62rem);
-  margin-inline: auto;
+  max-width: var(--ancho);
+  margin: 0 auto;
+  padding: 0 1.25rem;
 }
 
 /* ------------------------------------------------------------- portada */
 
 .portada {
+  /* El degradado imita el glifo: el arco de cempasuchil abierto sobre el jade
+     de la manecilla, que es el tiempo ya cumplido. */
   background:
-    radial-gradient(120% 90% at 50% -10%, rgb(47 158 110 / 14%), transparent 60%),
-    var(--superficie);
+    radial-gradient(80rem 32rem at 15% -20%, rgba(233, 161, 59, 0.16), transparent 60%),
+    radial-gradient(70rem 30rem at 85% -10%, rgba(47, 158, 110, 0.16), transparent 60%);
   border-bottom: 1px solid var(--trazo);
-  padding: clamp(3rem, 9vw, 5.5rem) 0 clamp(2.5rem, 6vw, 4rem);
+  padding: 4rem 0 3.5rem;
   text-align: center;
 }
 
-.portada__contenido { max-width: 44rem; }
+.portada__contenido {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
 
-.glifo { width: 84px; height: 84px; }
+.glifo {
+  width: 96px;
+  height: 96px;
+}
 
 h1 {
-  font-size: clamp(2.1rem, 6vw, 3rem);
-  line-height: 1.1;
+  font-size: clamp(2.2rem, 6vw, 3.2rem);
+  margin: 1rem 0 0.25rem;
   letter-spacing: -0.02em;
-  margin: 0.6rem 0 0;
 }
 
 .lema {
-  margin: 0.35rem 0 0;
+  margin: 0;
   color: var(--cempasuchil);
-  font-size: 1.05rem;
-  letter-spacing: 0.04em;
+  font-size: 1.15rem;
+  font-weight: 600;
 }
 
 .entrada {
-  margin: 1.6rem auto 0;
+  max-width: 44rem;
   color: var(--texto-tenue);
-  text-wrap: pretty;
+  font-size: 1.05rem;
 }
 
 /* ------------------------------------------------------------ descarga */
 
-.descarga { margin-top: 2.2rem; }
+.descarga {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.85rem;
+  margin: 1.5rem 0 0.5rem;
+}
 
 .boton {
   display: inline-flex;
   flex-direction: column;
   align-items: center;
   gap: 0.15rem;
-  padding: 0.95rem 2.2rem;
-  border-radius: 14px;
-  font-weight: 600;
-  text-decoration: none;
-  transition: transform 120ms ease, box-shadow 120ms ease;
-}
-
-.boton--principal {
   background: var(--jade);
-  color: #fff;
-  box-shadow: 0 6px 20px rgb(47 158 110 / 28%);
+  color: #ffffff;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 1.1rem;
+  padding: 0.9rem 2.4rem;
+  border-radius: var(--radio);
+  box-shadow: 0 10px 24px rgba(47, 158, 110, 0.28);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-.boton--principal:hover {
-  color: #fff;
-  transform: translateY(-1px);
-  box-shadow: 0 10px 26px rgb(47 158 110 / 34%);
+.boton:hover,
+.boton:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(47, 158, 110, 0.36);
 }
 
-.boton__detalle {
-  font-weight: 400;
+.boton__nota {
   font-size: 0.8rem;
-  opacity: 0.9;
+  font-weight: 500;
+  opacity: 0.85;
 }
 
-.descarga__espera, .descarga__fallo {
+.enlace-suave,
+a {
+  color: var(--acento);
+}
+
+.enlace-suave {
+  font-size: 0.95rem;
+}
+
+.requisitos {
+  margin: 0.5rem 0 0;
   color: var(--texto-tenue);
   font-size: 0.9rem;
-  margin: 0.5rem 0 0;
 }
 
-.descarga__nota {
-  margin: 0.9rem 0 0;
-  color: var(--texto-tenue);
-  font-size: 0.85rem;
+/* -------------------------------------------------------------- cuerpo */
+
+main section {
+  padding: 3rem 1.25rem 0;
 }
-
-/* ------------------------------------------------------------ secciones */
-
-.seccion { padding: clamp(2.5rem, 7vw, 4rem) 0; }
 
 h2 {
-  font-size: clamp(1.4rem, 3.5vw, 1.8rem);
-  letter-spacing: -0.01em;
-  margin: 0 0 1.4rem;
+  font-size: 1.6rem;
+  margin: 0 0 1rem;
 }
 
-h3 { font-size: 1.05rem; margin: 2rem 0 0.6rem; }
-
-.parrafo {
-  max-width: 46rem;
-  color: var(--texto-tenue);
-  text-wrap: pretty;
+h3 {
+  font-size: 1.05rem;
+  margin: 0 0 0.4rem;
+  color: var(--acento);
 }
-
-.apunte { font-size: 0.9rem; }
 
 .rejilla {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
   gap: 1rem;
 }
 
 .tarjeta {
-  background: var(--superficie);
+  background: var(--fondo-elevado);
   border: 1px solid var(--trazo);
-  border-radius: 16px;
-  padding: 1.4rem;
-  box-shadow: var(--sombra);
+  border-radius: var(--radio);
+  padding: 1.25rem;
 }
 
-.tarjeta h3 { margin: 0 0 0.5rem; font-size: 1rem; }
-.tarjeta p { margin: 0; color: var(--texto-tenue); font-size: 0.95rem; }
-
-.pasos { max-width: 46rem; color: var(--texto-tenue); padding-left: 1.2rem; }
-.pasos li { margin-bottom: 0.5rem; }
-
-.codigo {
-  background: var(--superficie-alta);
-  border: 1px solid var(--trazo);
-  border-radius: 12px;
-  padding: 0.9rem 1.1rem;
-  overflow-x: auto;
-  max-width: 46rem;
-}
-.codigo code { background: none; padding: 0; }
-
-.huella {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 0.78rem;
+.tarjeta p {
+  margin: 0;
   color: var(--texto-tenue);
-  word-break: break-all;
-  max-width: 46rem;
+  font-size: 0.95rem;
 }
 
-/* ------------------------------------------------------------ historial */
+.pasos,
+.lista {
+  color: var(--texto-tenue);
+  padding-left: 1.2rem;
+  max-width: 48rem;
+}
 
-.historial { display: grid; gap: 1rem; }
+.pasos li,
+.lista li {
+  margin-bottom: 0.6rem;
+}
 
-.version {
-  background: var(--superficie);
+.lista strong {
+  color: var(--texto);
+}
+
+code {
+  background: var(--fondo-elevado);
   border: 1px solid var(--trazo);
-  border-radius: 16px;
-  padding: 1.2rem 1.4rem;
-  box-shadow: var(--sombra);
+  border-radius: 5px;
+  padding: 0.05rem 0.35rem;
+  font-size: 0.9em;
 }
 
-.version__titulo {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.7rem;
-  margin: 0 0 0.4rem;
-  font-size: 1.05rem;
-}
-
-.version__fecha { color: var(--texto-tenue); font-size: 0.85rem; font-weight: 400; }
-
-.version__insignia {
-  background: var(--jade);
-  color: #fff;
-  border-radius: 999px;
-  padding: 0.1rem 0.6rem;
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-}
-
-.version h4 {
-  margin: 1rem 0 0.3rem;
-  font-size: 0.82rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--cempasuchil);
-}
-
-.version ul { margin: 0.3rem 0; padding-left: 1.2rem; color: var(--texto-tenue); }
-.version li { margin-bottom: 0.35rem; font-size: 0.95rem; }
-.version p { color: var(--texto-tenue); font-size: 0.95rem; }
-
-/* ------------------------------------------------------------------ pie */
-
-.pie {
-  border-top: 1px solid var(--trazo);
-  padding: 2rem 0 3rem;
+.nota {
   color: var(--texto-tenue);
   font-size: 0.9rem;
 }
-.pie p { margin: 0.3rem 0; }
 
-@media (prefers-reduced-motion: reduce) {
-  * { transition: none !important; }
+.nota strong {
+  color: var(--texto);
+}
+
+/* ----------------------------------------------------------------- pie */
+
+.pie {
+  margin-top: 3.5rem;
+  padding-top: 1.5rem;
+  padding-bottom: 3rem;
+  border-top: 1px solid var(--trazo);
+  color: var(--texto-tenue);
+  font-size: 0.9rem;
+}
+
+.pie em {
+  color: var(--cempasuchil);
+  font-style: normal;
+  font-weight: 600;
 }

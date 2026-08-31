@@ -1,8 +1,8 @@
 node_modules/
 dist/
 
-# Los genera scripts/genera-datos.mjs en cada compilacion a partir de
-# CHANGELOG.md y de la release publicada. Versionarlos garantizaria que tarde o
-# temprano digan una version distinta de la que hay publicada.
+# Los genera scripts/genera-version.mjs desde CHANGELOG.md y de la release
+# publicada. Versionarlos seria tener la version en dos lugares y uno de ellos
+# siempre atrasado.
 public/version.json
-public/historial.json
+src/version.js

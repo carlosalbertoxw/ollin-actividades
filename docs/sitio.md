@@ -4,8 +4,12 @@
 
 Una sola página, en [`web/`](../web/), construida con Vite y publicada en GitHub Pages desde este mismo repositorio. Hace dos cosas:
 
-1. **Reparte el APK.** Ollin no está en ninguna tienda, así que este es el único sitio de descarga oficial. Lleva la versión, su tamaño, su huella SHA-256 y las instrucciones para instalar fuera de la tienda.
+1. **Reparte el APK.** Ollin no está en ninguna tienda, así que este es el único sitio de descarga oficial. Lleva la versión, su tamaño y las instrucciones para instalar fuera de la tienda.
 2. **Publica `version.json`**, que es lo que la app consulta una vez al día para saber si hay algo más nuevo. Ver [actualizaciones](actualizaciones.md).
+
+La estructura, la paleta y el vocabulario de clases son los de [Ollin Finanzas](https://github.com/carlosalbertoxw/ollin-finanzas), que se publica igual y desde el mismo dominio. Son dos apps de la misma casa: quien llega a una y luego a la otra debe reconocer que salieron del mismo sitio.
+
+**El historial de cambios no se pinta aquí.** Vive en el `CHANGELOG.md` y en las notas de cada release, que es donde GitHub ya lo enseña bien y con enlaces permanentes. Duplicarlo en la página obligaba a mantener un renderizador de Markdown propio para algo que nadie lee antes de descargar; la página enlaza a la de lanzamientos, que además lleva las sumas SHA-256.
 
 ## Por qué Vite y no un HTML suelto
 
@@ -17,25 +21,37 @@ Lo que **no** hay es framework. Es una página de descarga: el DOM lo toca un ar
 
 ```
 web/
-├── index.html               La página entera, con el texto ya escrito
+├── index.html                La página entera, con el texto ya escrito
 ├── src/
-│   ├── main.js              Pide los dos JSON y rellena los huecos
-│   └── estilo.css           Paleta de la app, tema claro y oscuro
+│   ├── main.js               Rellena los huecos por id con la versión horneada
+│   ├── version.js            Generado. La versión, para la página
+│   └── estilo.css            Paleta de la app, tema claro y oscuro
 ├── scripts/
-│   └── genera-datos.mjs     Genera los JSON desde CHANGELOG.md
-├── public/                  Lo que se copia tal cual (los JSON generados)
+│   └── genera-version.mjs    Escribe los dos archivos de versión
+├── public/
+│   ├── glifo.svg             El mismo glifo que el icono de la app
+│   └── version.json          Generado. La versión, para la app
 └── vite.config.js
 ```
 
-### Los dos JSON no se versionan
+### Los dos archivos de versión no se versionan
 
-`public/version.json` y `public/historial.json` los escribe [`genera-datos.mjs`](../web/scripts/genera-datos.mjs) en cada compilación, y están en el `.gitignore`. Tenerlos en git garantizaría que tarde o temprano anunciaran una versión distinta de la que hay publicada, y ese desajuste es justo el que rompe el aviso de la app.
+`public/version.json` y `src/version.js` los escribe [`genera-version.mjs`](../web/scripts/genera-version.mjs) en cada compilación, y están en el `.gitignore`. Tenerlos en git sería tener la versión en dos lugares y uno de ellos siempre atrasado, y ese desajuste es justo el que rompe el aviso de la app.
+
+Son dos porque tienen dos lectores con necesidades distintas:
+
+| Archivo | Quién lo lee | Cómo |
+|---|---|---|
+| `public/version.json` | La app, una vez al día | Petición HTTP. Sus nombres de campo son un contrato: se agregan, no se renombran |
+| `src/version.js` | La página | Importado en el build, ya horneado |
+
+La página **no** pide su propia versión por `fetch`. El sitio se reconstruye en cada release, así que el dato ya es el bueno cuando se sirve el HTML: pedirlo otra vez solo añadiría un parpadeo de «cargando» y un modo de fallo —red lenta, JSON caído— para algo que ya se sabía.
 
 ### De dónde salen los datos
 
 | Dato | Origen |
 |---|---|
-| Versión, fecha, notas, historial | `CHANGELOG.md` |
+| Versión, fecha y resumen | `CHANGELOG.md` |
 | Dirección del APK, tamaño, SHA-256 | La release de GitHub, consultada con `gh` durante el despliegue |
 | Dirección base del sitio | `actions/configure-pages`, que sabe dónde va a quedar publicado |
 
@@ -86,16 +102,14 @@ Para probarlo en la raíz (otro alojamiento, un dominio propio):
 OLLIN_BASE=/ npm run build
 ```
 
-## El renderizador de Markdown
+## El resumen de la versión
 
-`genera-datos.mjs` convierte cada sección del `CHANGELOG` a HTML con unas pocas expresiones regulares: encabezados de tercer nivel, listas, negrita, cursiva, código y enlaces. Es todo el vocabulario que aparece en un historial de cambios.
+`version.json` lleva un campo `notas` con una frase, que es lo que la app enseña en la tarjeta de *Acerca de*. Sale del `CHANGELOG`: el párrafo con el que abre la versión si lo tiene, y si no, su primer punto.
 
-**Escapa primero y marca después.** El contenido sale de un archivo del repositorio, pero lo redacta una persona, y una etiqueta suelta en unas notas de versión no tiene por qué acabar ejecutándose en el navegador de quien las lee.
-
-El orden de las sustituciones importa: los enlaces antes que nada, para que su texto no se reinterprete, y la negrita antes que la cursiva, porque `**` empieza por `*` y el patrón de la cursiva se comería la mitad de cada marca.
+Se toma el primer punto y no la sección aplanada porque aplanarla pega el título del apartado a la primera frase —*«Arreglado El aviso no llegaba…»*— y encadena cambios sin relación en un párrafo ilegible. La tarjeta tiene sitio para dos o tres renglones; quien quiera el detalle tiene el enlace a la release.
 
 ## Privacidad del sitio
 
-Sin analítica, sin cookies, sin rastreadores, sin fuentes remotas —la tipografía es la del sistema—. La única petición que hace la página además de sus propios assets son los dos JSON, que están en el mismo origen.
+Sin analítica, sin cookies, sin rastreadores, sin fuentes remotas —la tipografía es la del sistema— y sin peticiones más allá de sus propios assets: la versión viene horneada en el build.
 
 Lo sirve GitHub Pages, que como cualquier servidor ve la dirección IP de quien pide una página. Está dicho en la propia página, en la sección de privacidad: sería incoherente prometer que la bitácora no sale del teléfono y callar lo que sí se puede saber por visitar el sitio.

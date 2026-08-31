@@ -58,7 +58,7 @@ En los dos sentidos, por razones distintas. Al **apagarlo**, porque si no quedar
 
 ## El contrato: `version.json`
 
-Lo publica el sitio en `https://carlosalbertoxw.github.io/ollin-actividades/version.json` y lo genera [`genera-datos.mjs`](../web/scripts/genera-datos.mjs). Ver [el sitio](sitio.md).
+Lo publica el sitio en `https://carlosalbertoxw.com/ollin-actividades/version.json` —la dirección de `github.io` redirige ahí— y lo genera [`genera-version.mjs`](../web/scripts/genera-version.mjs). Ver [el sitio](sitio.md).
 
 ```json
 {

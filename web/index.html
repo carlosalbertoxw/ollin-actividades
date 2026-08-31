@@ -1,154 +1,163 @@
 <!doctype html>
-<html lang="es">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Ollin Actividades — Tu tiempo, anotado</title>
-  <meta name="description" content="Bitácora personal de tiempo para Android. Cronómetro, hábitos con rachas y exportación a Excel. Todo en el teléfono, en una base cifrada: sin cuenta, sin nube y sin publicidad." />
-  <meta name="color-scheme" content="light dark" />
-  <meta name="theme-color" content="#12181B" />
+<html lang="es-MX">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ollin Actividades — Tu tiempo, anotado</title>
+    <meta
+      name="description"
+      content="App Android de bitácora personal de tiempo. Cronometra o captura a mano lo que haces, lleva hábitos con la cadencia que quieras y exporta todo a Excel. Sin cuentas, sin servidor, sin publicidad."
+    />
+    <meta name="theme-color" content="#12181B" />
+    <link rel="icon" href="glifo.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/src/estilo.css" />
+  </head>
+  <body>
+    <header class="portada">
+      <div class="envoltura portada__contenido">
+        <img class="glifo" src="glifo.svg" alt="" width="96" height="96" />
+        <h1>Ollin Actividades</h1>
+        <p class="lema">Tu tiempo, anotado</p>
+        <p class="entrada">
+          Cronometra o captura a mano lo que haces, lleva hábitos con la cadencia que quieras
+          y mira en qué se te fue la semana. Todo vive en tu teléfono, en una base cifrada:
+          sin cuentas, sin servidor y sin publicidad.
+        </p>
 
-  <meta property="og:type" content="website" />
-  <meta property="og:title" content="Ollin Actividades" />
-  <meta property="og:description" content="Bitácora personal de tiempo para Android. Todo vive en el teléfono, en una base cifrada." />
+        <div class="descarga">
+          <a class="boton" id="descarga" href="#instalar" download>
+            Descargar el APK
+            <span class="boton__nota" id="version">versión —</span>
+          </a>
+          <a class="enlace-suave" id="notas" href="#instalar">Ver las notas de esta versión</a>
+        </div>
 
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 108 108'%3E%3Cpath d='M54,32 A22,22 0 1 1 34.7,43.5' fill='none' stroke='%23E9A13B' stroke-width='6' stroke-linecap='round'/%3E%3Cpath d='M54,42 L54,54 L63,59' fill='none' stroke='%232F9E6E' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="/src/estilo.css" />
-</head>
-<body>
+        <p class="requisitos">
+          Android 8.0 o superior · <span id="fecha">—</span> · se instala fuera de Google Play
+        </p>
+      </div>
+    </header>
 
-<a class="salto" href="#descarga">Ir a la descarga</a>
+    <main>
+      <section class="envoltura">
+        <h2>Qué hace</h2>
+        <div class="rejilla">
+          <article class="tarjeta">
+            <h3>Cronómetro o captura a mano</h3>
+            <p>
+              Mide una actividad mientras pasa, o anótala después con los minutos que
+              recuerdes. Solo puede haber un cronómetro corriendo: arrancar otro cierra el
+              anterior, así que el día nunca suma más horas de las que tiene.
+            </p>
+          </article>
+          <article class="tarjeta">
+            <h3>Hábitos con la cadencia real</h3>
+            <p>
+              Diarios, en días elegidos de la semana, tantas veces por semana, o cada tantos
+              días o meses contando desde una fecha. No todo lo que se repite cabe en una
+              semana.
+            </p>
+          </article>
+          <article class="tarjeta">
+            <h3>Rachas que no castigan de más</h3>
+            <p>
+              El día en curso es de cortesía: un hábito sin marcar a las nueve de la mañana
+              está pendiente, no fallado. Y los días que no toca se saltan sin romper nada.
+            </p>
+          </article>
+          <article class="tarjeta">
+            <h3>Analítica de lo completado</h3>
+            <p>
+              Minutos por día, por categoría y por ámbito en ventanas de 7, 30 o 90 días. Lo
+              pendiente no infla ninguna cifra: solo cuenta lo que cerraste.
+            </p>
+          </article>
+          <article class="tarjeta">
+            <h3>Recordatorios de lo que falta</h3>
+            <p>
+              Un aviso por cada hábito que toque y todavía no hayas cumplido, a la hora que le
+              pongas, y por cada tarea pendiente a su hora de inicio. Nacen apagados.
+            </p>
+          </article>
+          <article class="tarjeta">
+            <h3>Tu respaldo es un Excel</h3>
+            <p>
+              Exporta la bitácora completa a <code>.xlsx</code> con fórmulas vivas que se
+              recalculan solas en Excel, WPS, LibreOffice y Sheets. Y la vuelve a importar,
+              catálogos incluidos.
+            </p>
+          </article>
+        </div>
+      </section>
 
-<header class="portada">
-  <div class="envoltura portada__contenido">
-    <svg class="glifo" viewBox="0 0 108 108" role="img" aria-label="Glifo de Ollin: un reloj abierto">
-      <path d="M54,32 A22,22 0 1 1 34.7,43.5" fill="none" stroke="var(--cempasuchil)" stroke-width="6" stroke-linecap="round"/>
-      <path d="M54,42 L54,54 L63,59" fill="none" stroke="var(--jade)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
+      <section class="envoltura" id="instalar">
+        <h2>Cómo se instala</h2>
+        <p class="entrada">
+          Ollin Actividades no está en Google Play, así que el APK se instala a mano. Android
+          pide permiso una vez y es normal: es el mismo aviso para cualquier app que no venga
+          de la tienda.
+        </p>
+        <ol class="pasos">
+          <li>Descarga el APK con el botón de arriba.</li>
+          <li>Ábrelo desde la notificación de descarga o desde tu gestor de archivos.</li>
+          <li>
+            Android preguntará si permites instalar desde esa app (tu navegador). Acepta y
+            vuelve a abrir el archivo.
+          </li>
+          <li>
+            Listo. Al abrirla, la app siembra un catálogo de categorías de ejemplo que puedes
+            renombrar o borrar.
+          </li>
+        </ol>
+        <p class="nota">
+          Cada versión publica la suma <strong>SHA-256</strong> de su APK, para comprobar que
+          lo que bajaste es lo que salió de la compilación. Esa suma, las notas de cada
+          versión y las anteriores están en
+          <a id="lanzamientos" href="#">la página de lanzamientos</a>.
+        </p>
+      </section>
 
-    <h1>Ollin Actividades</h1>
-    <p class="lema">Tu tiempo, anotado</p>
+      <section class="envoltura">
+        <h2>Privacidad</h2>
+        <p class="entrada">
+          Tu bitácora no sale de tu teléfono. No hay cuentas de usuario, ni servidor, ni
+          analítica, ni publicidad.
+        </p>
+        <ul class="lista">
+          <li>
+            La base de datos va cifrada con <strong>AES-256</strong> y su llave vive en el
+            Keystore del teléfono: copiar el archivo por USB no revela un solo registro.
+          </li>
+          <li>
+            Puedes ponerle candado con la huella, el patrón del teléfono o un PIN propio de
+            Ollin.
+          </li>
+          <li>
+            El respaldo automático de Android está <strong>desactivado</strong> para la base a
+            propósito: una llave del Keystore no se puede restaurar, así que la copia llegaría
+            ilegible. Tu respaldo real es el <code>.xlsx</code> que tú exportas.
+          </li>
+          <li>
+            La app hace <strong>una sola</strong> llamada a internet: preguntarle a este sitio,
+            una vez al día, si hay una versión más nueva. Es una petición a un archivo fijo que
+            no manda ningún dato tuyo —ni siquiera qué versión traes— y se apaga desde
+            <em>Ajustes</em>. Nunca descarga ni instala nada por su cuenta.
+          </li>
+        </ul>
+      </section>
+    </main>
 
-    <p class="entrada">
-      Bitácora personal de tiempo para Android. Cronometra o captura a mano lo que haces,
-      lleva hábitos con la cadencia que quieras y mira en qué se te fue la semana.
-      <strong>Todo vive en el teléfono</strong>, en una base cifrada: no hay cuenta, ni nube, ni publicidad.
-    </p>
-
-    <div id="descarga" class="descarga">
-      <a class="boton boton--principal" data-apk href="#" hidden>
-        Descargar el APK
-        <span class="boton__detalle" data-apk-detalle></span>
-      </a>
-      <p class="descarga__espera" data-espera>Buscando la última versión…</p>
-      <p class="descarga__fallo" data-fallo hidden>
-        No pude leer la información de la última versión.
-        <a data-releases href="#">Míralas en GitHub</a>.
+    <footer class="envoltura pie">
+      <p>
+        <em>Ollin</em> es «movimiento» en náhuatl, y es el glifo del calendario mexica que
+        representa el cambio — que es exactamente lo que registra una bitácora de tu tiempo.
       </p>
-      <p class="descarga__nota">
-        Android 8.0 o posterior · Se instala fuera de la tienda, <a href="#instalar">así</a>
+      <p class="nota">
+        <a id="repo" href="#">Código y documentación en GitHub</a>
+        · <span id="version-pie">versión —</span>
       </p>
-    </div>
-  </div>
-</header>
+    </footer>
 
-<main>
-
-  <section class="envoltura seccion">
-    <h2>Qué hace</h2>
-    <div class="rejilla">
-      <article class="tarjeta">
-        <h3>Cronómetro o captura a mano</h3>
-        <p>Mide una actividad mientras pasa, o anótala después con los minutos que recuerdes. Solo puede haber un cronómetro corriendo: arrancar otro cierra el anterior.</p>
-      </article>
-      <article class="tarjeta">
-        <h3>Hábitos con rachas</h3>
-        <p>Diarios, en días elegidos de la semana, cierto número de veces por semana, o cada tantos días o meses. El día en curso es de cortesía: un hábito sin marcar está pendiente, no fallado.</p>
-      </article>
-      <article class="tarjeta">
-        <h3>Analítica de lo completado</h3>
-        <p>Minutos por día, por categoría y por ámbito en ventanas de 7, 30 o 90 días. Lo pendiente no infla ninguna cifra.</p>
-      </article>
-      <article class="tarjeta">
-        <h3>Tus datos salen en Excel</h3>
-        <p>Un <code>.xlsx</code> con fórmulas vivas que se puede volver a importar. Es el respaldo real: la base cifrada no se restaura en otro teléfono.</p>
-      </article>
-      <article class="tarjeta">
-        <h3>Recordatorios</h3>
-        <p>Un aviso por cada hábito que toque y no hayas cumplido, y por cada tarea pendiente a su hora. Nacen apagados.</p>
-      </article>
-      <article class="tarjeta">
-        <h3>Bajo llave si quieres</h3>
-        <p>Con la credencial del teléfono —patrón, PIN, huella— o con un PIN propio de Ollin, con espera creciente ante los intentos fallidos.</p>
-      </article>
-    </div>
-  </section>
-
-  <section id="instalar" class="envoltura seccion">
-    <h2>Cómo se instala</h2>
-    <p class="parrafo">
-      Ollin no está en ninguna tienda, así que Android pedirá permiso para instalar un archivo
-      descargado. Es un aviso razonable: conviene saber de dónde viene lo que se instala.
-    </p>
-
-    <ol class="pasos">
-      <li>Descarga el <code>.apk</code> desde el botón de arriba.</li>
-      <li>Ábrelo. Android preguntará si permites instalar desde el navegador o el gestor de archivos; concédelo solo para esa app.</li>
-      <li>Instala. Al terminar puedes retirar el permiso: solo hace falta durante la instalación.</li>
-    </ol>
-
-    <h3>Comprobar que es el archivo que se publicó</h3>
-    <p class="parrafo">
-      Cada versión publica la huella SHA-256 de su APK. Si la del archivo que bajaste coincide,
-      es byte por byte el que salió de la compilación:
-    </p>
-    <pre class="codigo"><code data-huella-comando>sha256sum ollin-actividades.apk</code></pre>
-    <p class="huella" data-huella hidden></p>
-
-    <p class="parrafo apunte">
-      Todas las versiones van firmadas con la misma llave. Android lo comprueba solo: si un archivo
-      viniera firmado con otra, se negaría a instalarlo encima del que ya tienes.
-    </p>
-  </section>
-
-  <section id="historial" class="envoltura seccion">
-    <h2>Historial de cambios</h2>
-    <div data-historial class="historial">
-      <p class="descarga__espera">Cargando el historial…</p>
-    </div>
-  </section>
-
-  <section class="envoltura seccion">
-    <h2>Privacidad</h2>
-    <p class="parrafo">
-      La bitácora no sale del teléfono. La base va cifrada con AES-256 (SQLCipher) y la frase se
-      guarda envuelta con una llave del Keystore de Android, así que el archivo <code>.db</code> no
-      dice nada fuera de ese dispositivo. Por lo mismo el respaldo automático del sistema está
-      desactivado para la base: una llave del Keystore no se restaura en otro teléfono.
-      <strong>El respaldo real es la exportación a <code>.xlsx</code>.</strong>
-    </p>
-    <p class="parrafo">
-      Lo único que Ollin le pide a la red es preguntar una vez al día a este sitio si hay una versión
-      más nueva. Esa petición no lleva nada tuyo dentro —ni siquiera qué versión tienes: la
-      comparación ocurre en el teléfono— y se apaga en <em>Ajustes → Actualizaciones</em>. Ollin
-      nunca descarga ni instala nada por su cuenta.
-    </p>
-    <p class="parrafo apunte">
-      Este sitio no lleva analítica, ni cookies, ni rastreadores. Lo sirve GitHub Pages, que como
-      cualquier servidor ve la dirección IP de quien pide una página.
-    </p>
-  </section>
-
-</main>
-
-<footer class="envoltura pie">
-  <p>
-    <a data-repo href="https://github.com/carlosalbertoxw/ollin-actividades">Código en GitHub</a> ·
-    <a data-releases-pie href="https://github.com/carlosalbertoxw/ollin-actividades/releases">Todas las versiones</a>
-  </p>
-  <p class="apunte">Hecho en México, sin prisa. <em>Ollin</em> es «movimiento» en náhuatl.</p>
-</footer>
-
-<script type="module" src="/src/main.js"></script>
-</body>
+    <script type="module" src="/src/main.js"></script>
+  </body>
 </html>

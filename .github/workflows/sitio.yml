@@ -73,7 +73,7 @@ jobs:
           cache-dependency-path: web/package-lock.json
 
       # Si todavia no hay ninguna release, el paso no falla: deja las variables
-      # vacias y genera-datos.mjs se apoya en el CHANGELOG. El sitio sale con el
+      # vacias y genera-version.mjs se apoya en el CHANGELOG. El sitio sale con el
       # boton apuntando a la direccion que *tendra* la descarga, que es lo mejor
       # que se puede decir antes de publicar la primera.
       - name: Averiguar cual es la ultima version publicada
