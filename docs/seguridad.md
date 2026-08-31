@@ -92,7 +92,7 @@ Ollin se instala fuera de la tienda, así que nadie avisa de una corrección: si
 Tres cierres, porque el enlace acaba abriéndose en el navegador de alguien y viene de fuera:
 
 - **Solo `https`.** Si la dirección del APK no lo es, se ignora; si no queda ninguna válida, el archivo se descarta entero.
-- **Sin redirecciones automáticas** (`instanceFollowRedirects = false`): una redirección desde `https` puede terminar en `http`, y entonces la respuesta viaja en claro.
+- **Las redirecciones se siguen a mano** (`instanceFollowRedirects = false`), un solo salto y solo si el destino también es `https`. A mano y no automáticas justamente para poder exigirlo: una que se quedara en `http` dejaría la respuesta viajando en claro. Y se sigue una porque la dirección va compilada dentro de cada APK —mudar el sitio no puede apagar el aviso en todas las instalaciones a la vez—.
 - **`usesCleartextTraffic="false"`** en el manifiesto, que lo prohíbe a nivel de plataforma por si lo anterior fallara.
 
 La respuesta tiene un tope de 64 KB. El archivo real ronda los 400 bytes; el tope está porque es lo único que entra a la app desde la red, y sin límite un servidor que nunca cierra la respuesta agota la memoria del teléfono.

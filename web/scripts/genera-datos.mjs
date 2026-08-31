@@ -24,7 +24,17 @@ const raiz = resolve(aqui, '../..')
 const publico = resolve(aqui, '../public')
 
 const REPOSITORIO = process.env.OLLIN_REPO ?? 'carlosalbertoxw/ollin-actividades'
-const SITIO = process.env.OLLIN_SITIO ?? 'https://carlosalbertoxw.github.io/ollin-actividades/'
+/**
+ * Siempre https, aunque `configure-pages` diga otra cosa.
+ *
+ * Con un dominio propio y "Enforce HTTPS" todavia sin activar, GitHub reporta
+ * la direccion como `http://`. Publicarla asi haria que la app rechazara el
+ * campo `sitio` —solo acepta https, y con razon— y que la pagina ofreciera un
+ * enlace en claro. El certificado ya existe en cuanto el dominio resuelve; lo
+ * que falta es la casilla, no el cifrado.
+ */
+const SITIO = (process.env.OLLIN_SITIO ?? 'https://carlosalbertoxw.github.io/ollin-actividades/')
+  .replace(/^http:\/\//i, 'https://')
 
 // ---------------------------------------------------------------- CHANGELOG
 

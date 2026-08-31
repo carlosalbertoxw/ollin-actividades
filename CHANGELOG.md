@@ -16,6 +16,11 @@ Los enlaces van con dirección completa: el mismo texto se lee en GitHub, en el 
 
 ## [Sin publicar]
 
+### Arreglado
+
+- **El aviso de actualizaciones no llegaba a preguntar nada.** La dirección que la app consulta va compilada dentro del APK, y al poner un dominio propio delante de GitHub Pages el `.github.io` empezó a responder con un 301. La app no seguía redirecciones —para que un salto no pudiera acabar en `http`— y trataba cualquier respuesta que no fuera 200 como un fallo, así que la 1.0.0 nunca se entera de que hay versión nueva. Ahora se sigue **un** salto, y solo si el destino también es `https`.
+- El campo `sitio` del `version.json` salía como `http://` mientras «Enforce HTTPS» estuviera sin activar en Pages. Se fuerza a `https` al generarlo.
+
 ## [1.0.0] - 2026-08-30
 
 Primera versión pública.

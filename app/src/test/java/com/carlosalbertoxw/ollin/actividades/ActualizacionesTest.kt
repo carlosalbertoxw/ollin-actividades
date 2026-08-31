@@ -4,6 +4,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.carlosalbertoxw.ollin.actividades.data.actualizaciones.ComprobadorActualizaciones
 import com.carlosalbertoxw.ollin.actividades.data.actualizaciones.Resultado
 import com.carlosalbertoxw.ollin.actividades.data.actualizaciones.Version
+import com.carlosalbertoxw.ollin.actividades.data.actualizaciones.siguienteSalto
 import com.carlosalbertoxw.ollin.actividades.data.prefs.AjustesRepositorio
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -112,6 +113,55 @@ class ActualizacionesTest {
     fun `si no hay apk sirve el sitio, que es a donde se manda al usuario`() {
         val soloSitio = """{"version":"1.2.0","sitio":"https://ejemplo.invalido/"}"""
         assertEquals("https://ejemplo.invalido/", ComprobadorActualizaciones.lee(soloSitio)!!.url)
+    }
+
+    // ------------------------------------------------------- redirecciones
+
+    /**
+     * El caso real que lo hizo falta: poner un dominio propio delante de GitHub
+     * Pages deja el `.github.io` devolviendo un 301 para siempre. La direccion
+     * va compilada dentro de cada APK y no se puede corregir en los que ya
+     * estan instalados, asi que tiene que sobrevivir a la mudanza.
+     */
+    @Test
+    fun `un 301 a https se sigue`() {
+        assertEquals(
+            "https://ollin.ejemplo/version.json",
+            siguienteSalto(301, "https://ollin.ejemplo/version.json")
+        )
+    }
+
+    @Test
+    fun `todos los codigos de redireccion valen, no solo el 301`() {
+        listOf(301, 302, 303, 307, 308).forEach { codigo ->
+            assertEquals(
+                "El $codigo tambien es una mudanza",
+                "https://ollin.ejemplo/x.json",
+                siguienteSalto(codigo, "https://ollin.ejemplo/x.json")
+            )
+        }
+    }
+
+    /**
+     * Es la unica razon por la que las redirecciones se siguen a mano en vez de
+     * dejarselas a HttpURLConnection: un salto que acabe en claro deja la
+     * respuesta a merced de quien este en medio de la red, y con ella el enlace
+     * de descarga que la app va a ofrecer.
+     */
+    @Test
+    fun `un salto que sale de https no se sigue`() {
+        assertNull(siguienteSalto(301, "http://ollin.ejemplo/version.json"))
+        assertNull(siguienteSalto(302, "ftp://ollin.ejemplo/version.json"))
+        assertNull(siguienteSalto(301, "/version.json"))
+        assertNull(siguienteSalto(301, null))
+        assertNull(siguienteSalto(301, ""))
+    }
+
+    @Test
+    fun `una respuesta que no es 3xx no es una mudanza`() {
+        assertNull(siguienteSalto(200, "https://ollin.ejemplo/x.json"))
+        assertNull(siguienteSalto(404, "https://ollin.ejemplo/x.json"))
+        assertNull(siguienteSalto(500, null))
     }
 
     // --------------------------------------------------------- comparaciones

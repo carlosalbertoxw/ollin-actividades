@@ -80,6 +80,13 @@ val codigoDeVersion = versionPublicada.let { (mayor, menor, parche) ->
  * peticiones anonimas por IP —una red compartida las agota entre todos— y
  * devuelve un objeto enorme del que solo se usan tres campos. Un JSON estatico
  * detras de un CDN no se cae, no se limita y se puede mirar con el navegador.
+ *
+ * Y es la direccion de `github.io` y no la del dominio propio aunque hoy la
+ * primera redirija a la segunda. Esta va atada al repositorio y dura lo que el
+ * repositorio; un dominio se renueva cada ano y se puede perder, y esta cadena
+ * queda compilada dentro de cada APK: los que ya estan instalados no se pueden
+ * corregir. El salto lo sigue el propio comprobador, exigiendo que el destino
+ * tambien sea https.
  */
 val urlDeActualizaciones = providers
     .gradleProperty("ollin.urlActualizaciones")

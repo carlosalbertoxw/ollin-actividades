@@ -151,45 +151,95 @@ class ComprobadorActualizaciones(
  * la respuesta— agota la memoria del telefono.
  */
 private suspend fun descargaTexto(url: String): String = withContext(Dispatchers.IO) {
+    var actual = url
+
+    // Un salto y solo uno. La direccion va compilada dentro de cada APK y no se
+    // puede cambiar en los que ya estan instalados, asi que tiene que sobrevivir
+    // a que el sitio se mude —un dominio propio delante de GitHub Pages deja el
+    // .github.io devolviendo un 301 para siempre—. Mas de un salto no hace falta
+    // para eso y si permite que una cadena de redirecciones de vueltas sin fin.
+    repeat(2) {
+        when (val respuesta = pide(actual)) {
+            is Respuesta.Cuerpo -> return@withContext respuesta.texto
+            is Respuesta.Mudanza -> actual = respuesta.destino
+        }
+    }
+
+    error("Demasiadas redirecciones")
+}
+
+private sealed interface Respuesta {
+    data class Cuerpo(val texto: String) : Respuesta
+
+    /** Un 3xx con destino valido. */
+    data class Mudanza(val destino: String) : Respuesta
+}
+
+private fun pide(url: String): Respuesta {
     val conexion = (URL(url).openConnection() as HttpURLConnection).apply {
         requestMethod = "GET"
         connectTimeout = 10_000
         readTimeout = 10_000
-        // Sin redirecciones automaticas: una redireccion desde https puede
-        // acabar en http, y entonces la respuesta viaja en claro.
+        // Las redirecciones se siguen a mano, no automaticamente: asi se puede
+        // exigir que el destino tambien sea https. `HttpURLConnection` ni
+        // siquiera sigue solo las que cambian de protocolo, y una que se
+        // quedara en http dejaria la respuesta viajando en claro.
         instanceFollowRedirects = false
         setRequestProperty("Accept", "application/json")
     }
 
     try {
-        if (conexion.responseCode != HttpURLConnection.HTTP_OK) {
-            error("El sitio respondio ${conexion.responseCode}")
-        }
-        conexion.inputStream.bufferedReader().use { lector ->
-            // Se lee en bucle porque `read` no promete llenar el arreglo:
-            // devuelve lo que haya llegado, y una respuesta troceada o una red
-            // lenta la entregan en varios pedazos. Leerla de una sola llamada
-            // funciona casi siempre y falla justo cuando la red va mal, que es
-            // el peor momento para partir un JSON por la mitad.
-            val bufer = CharArray(TOPE_CARACTERES)
-            var total = 0
+        val codigo = conexion.responseCode
 
-            while (total < TOPE_CARACTERES) {
-                val leidos = lector.read(bufer, total, TOPE_CARACTERES - total)
-                if (leidos < 0) break
-                total += leidos
+        val mudanza = siguienteSalto(codigo, conexion.getHeaderField("Location"))
+        if (mudanza != null) return Respuesta.Mudanza(mudanza)
+
+        if (codigo != HttpURLConnection.HTTP_OK) error("El sitio respondio $codigo")
+
+        return Respuesta.Cuerpo(
+            conexion.inputStream.bufferedReader().use { lector ->
+                // Se lee en bucle porque `read` no promete llenar el arreglo:
+                // devuelve lo que haya llegado, y una respuesta troceada o una
+                // red lenta la entregan en varios pedazos. Leerla de una sola
+                // llamada funciona casi siempre y falla justo cuando la red va
+                // mal, que es el peor momento para partir un JSON por la mitad.
+                val bufer = CharArray(TOPE_CARACTERES)
+                var total = 0
+
+                while (total < TOPE_CARACTERES) {
+                    val leidos = lector.read(bufer, total, TOPE_CARACTERES - total)
+                    if (leidos < 0) break
+                    total += leidos
+                }
+
+                // Si se lleno el tope, la respuesta era mas larga de lo que este
+                // archivo puede ser: se descarta entera en vez de leer un JSON
+                // cortado, que en el mejor caso no interpreta y en el peor si.
+                if (total >= TOPE_CARACTERES) error("La respuesta pasa del tope")
+
+                String(bufer, 0, total)
             }
-
-            // Si se lleno el tope, la respuesta era mas larga de lo que este
-            // archivo puede ser: se descarta entera en vez de intentar leer un
-            // JSON cortado, que en el mejor caso no interpreta y en el peor si.
-            if (total >= TOPE_CARACTERES) error("La respuesta pasa del tope")
-
-            String(bufer, 0, total)
-        }
+        )
     } finally {
         conexion.disconnect()
     }
+}
+
+/**
+ * A donde saltar, o nulo si no hay que saltar a ningun sitio.
+ *
+ * Separada de la conexion porque es la unica parte de la descarga que decide
+ * algo, y asi se prueba sin levantar un servidor. Ver [ActualizacionesTest].
+ *
+ * **Solo https.** Es toda la razon por la que las redirecciones se siguen a
+ * mano: un 301 desde https que apunte a http dejaria la respuesta viajando en
+ * claro, y quien este en medio de la red podria anunciar la version que
+ * quisiera con el enlace de descarga que quisiera.
+ */
+internal fun siguienteSalto(codigo: Int, destino: String?): String? {
+    if (codigo !in 300..399) return null
+    val limpio = destino?.trim().orEmpty()
+    return limpio.takeIf { it.startsWith("https://", ignoreCase = true) }
 }
 
 /** 64 K caracteres. El archivo real ronda los 400 bytes; esto es holgura, no expectativa. */

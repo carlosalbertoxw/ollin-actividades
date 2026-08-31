@@ -86,7 +86,15 @@ Lo publica el sitio en `https://carlosalbertoxw.github.io/ollin-actividades/vers
 
 Un enlace en claro que llegara desde fuera acabaría abriendo el navegador en una descarga manipulable por cualquiera que esté en medio de la red. Si `apk` no empieza por `https://`, se ignora y se cae a `sitio`; si tampoco, el archivo se descarta entero.
 
-Por lo mismo la petición va con `instanceFollowRedirects = false`: una redirección desde `https` puede terminar en `http`, y entonces la respuesta viaja en claro. Y el manifiesto declara `usesCleartextTraffic="false"`, que lo prohíbe a nivel de plataforma.
+### Un salto, y solo hacia `https`
+
+La petición va con `instanceFollowRedirects = false`, pero no para rechazar las redirecciones: para seguirlas a mano y poder exigir que el destino siga siendo `https`. `HttpURLConnection` ni siquiera sigue por su cuenta las que cambian de protocolo, y una que se quedara en `http` dejaría la respuesta viajando en claro.
+
+Se sigue **un** salto. Hace falta porque la dirección va compilada dentro de cada APK y no se puede corregir en los que ya están instalados: poner un dominio propio delante de GitHub Pages deja el `.github.io` devolviendo un `301` para siempre, y sin seguirlo el aviso se apaga en todas las instalaciones a la vez. Más de un salto no aporta nada para eso y sí permite que una cadena de redirecciones dé vueltas sin fin.
+
+La decisión vive en `siguienteSalto(codigo, destino)`, separada de la conexión para poder probarla sin levantar un servidor.
+
+Y el manifiesto declara `usesCleartextTraffic="false"`, que prohíbe el texto en claro a nivel de plataforma por si todo lo anterior fallara.
 
 ## La descarga
 
@@ -96,6 +104,6 @@ Tiene un tope de 64 KB. El archivo real ronda los 400 bytes; el tope está porqu
 
 ## Pruebas
 
-[`ActualizacionesTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/ActualizacionesTest.kt), en la JVM y sin red: la descarga entra por parámetro, así que todo lo que decide algo se prueba con un JSON escrito a mano. Cubre el orden de las versiones, el rechazo de enlaces en claro, la ventana de un día, el reloj movido hacia atrás y que un fallo no gaste el día.
+[`ActualizacionesTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/ActualizacionesTest.kt), en la JVM y sin red: la descarga entra por parámetro, así que todo lo que decide algo se prueba con un JSON escrito a mano. Cubre el orden de las versiones, el rechazo de enlaces en claro, qué redirecciones se siguen y cuáles no, la ventana de un día, el reloj movido hacia atrás y que un fallo no gaste el día.
 
 Lo único sin cubrir es el `HttpURLConnection` en sí, que no toma ninguna decisión.
