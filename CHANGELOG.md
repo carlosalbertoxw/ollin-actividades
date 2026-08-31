@@ -16,6 +16,8 @@ Los enlaces van con dirección completa: el mismo texto se lee en GitHub, en el 
 
 ## [Sin publicar]
 
+## [1.0.1] - 2026-08-30
+
 ### Arreglado
 
 - **El aviso de actualizaciones no llegaba a preguntar nada.** La dirección que la app consulta va compilada dentro del APK, y al poner un dominio propio delante de GitHub Pages el `.github.io` empezó a responder con un 301. La app no seguía redirecciones —para que un salto no pudiera acabar en `http`— y trataba cualquier respuesta que no fuera 200 como un fallo, así que la 1.0.0 nunca se entera de que hay versión nueva. Ahora se sigue **un** salto, y solo si el destino también es `https`.
@@ -37,5 +39,6 @@ Primera versión pública.
 - **Aviso de actualizaciones.** Ollin consulta una vez al día si hay una versión más nueva publicada y lo enseña en *Acerca de*. Se apaga en Ajustes. Ver [seguridad y privacidad](https://github.com/carlosalbertoxw/ollin-actividades/blob/main/docs/seguridad.md).
 - **Sitio de descarga** en GitHub Pages, con el APK firmado, su huella y las instrucciones de instalación fuera de la tienda.
 
-[Sin publicar]: https://github.com/carlosalbertoxw/ollin-actividades/compare/v1.0.0...HEAD
+[Sin publicar]: https://github.com/carlosalbertoxw/ollin-actividades/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/carlosalbertoxw/ollin-actividades/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/carlosalbertoxw/ollin-actividades/releases/tag/v1.0.0
