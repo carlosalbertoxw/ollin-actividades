@@ -302,12 +302,38 @@ jobs:
   # Y el sitio, al final: le pregunta a GitHub por la release recien creada, le
   # saca la huella al APK publicado y reescribe el version.json que consultan
   # las instalaciones que ya estan por ahi.
+  #
+  # Se lanza sobre main en vez de invocarlo desde aqui, por dos razones que
+  # apuntan al mismo sitio.
+  #
+  # La practica: el entorno github-pages solo admite despliegues desde la rama
+  # por omision. Invocado desde aqui, el flujo corre en el ref de la etiqueta y
+  # GitHub lo rechaza con "not allowed to deploy to github-pages".
+  #
+  # La de fondo: el contenido del sitio —el HTML, los estilos, los textos— debe
+  # salir de main y no del arbol al que apunte una etiqueta. Si no, relanzar la
+  # publicacion de una version vieja republicaria el sitio de entonces y se
+  # llevaria por delante cualquier correccion posterior. Los datos de la
+  # descarga no viajan por aqui: sitio.yml le pregunta a GitHub cual es la
+  # ultima release, asi que lanzarlo sobre main publica exactamente lo mismo.
   # ---------------------------------------------------------------------------
   sitio:
-    name: Sitio
+    name: Lanzar el despliegue del sitio
     needs: publicar
-    uses: ./.github/workflows/sitio.yml
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
     permissions:
-      contents: read
-      pages: write
-      id-token: write
+      actions: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Desplegar desde main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh workflow run sitio.yml --ref main
+          echo "Despliegue lanzado. Corre aparte, aqui no se espera:"
+          echo "  $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/workflows/sitio.yml"

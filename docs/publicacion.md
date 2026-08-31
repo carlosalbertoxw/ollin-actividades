@@ -7,7 +7,9 @@ git tag -a v1.1.0 -m "Ollin Actividades 1.1.0"
 git push origin v1.1.0
 ```
 
-A partir de ahí: se comprueba que la etiqueta coincide con lo que encabeza el `CHANGELOG`, se pasan las pruebas, se corren las migraciones sobre un emulador, se compila el APK firmado, se crea la release con las notas de esa versión y se vuelve a desplegar el sitio para que anuncie la descarga nueva.
+A partir de ahí: se comprueba que la etiqueta coincide con lo que encabeza el `CHANGELOG`, se pasan las pruebas, se corren las migraciones sobre un emulador, se compila el APK firmado, se crea la release con las notas de esa versión y se lanza el despliegue del [sitio](sitio.md) para que anuncie la descarga nueva.
+
+Ese último despliegue se lanza sobre `main` con `gh workflow run` y corre aparte, así que el flujo de publicación termina sin esperarlo. Es a propósito: el entorno `github-pages` solo admite despliegues desde la rama por omisión, y además el contenido del sitio debe salir de `main` y no del árbol al que apunte una etiqueta. Ver [el sitio](sitio.md#siempre-desde-main-nunca-desde-la-etiqueta).
 
 ## El CHANGELOG manda
 

@@ -8,8 +8,9 @@
 # tres semanas.
 name: Sitio
 
+# Sin `workflow_call`: el flujo de publicacion lo lanza con `gh workflow run`
+# sobre main, no lo invoca desde el ref de la etiqueta. Ver publicacion.yml.
 on:
-  workflow_call:
   workflow_dispatch:
   push:
     branches: [main]

@@ -47,11 +47,23 @@ Si todavía no hay ninguna release, el script no falla: se apoya solo en el `CHA
 
 [`sitio.yml`](../.github/workflows/sitio.yml) corre en tres momentos:
 
-- **Al publicar una versión**, invocado al final de [`publicacion.yml`](../.github/workflows/publicacion.yml). Es el importante: reescribe el `version.json` que consultan las instalaciones que ya están por ahí.
+- **Al publicar una versión.** El último job de [`publicacion.yml`](../.github/workflows/publicacion.yml) lo lanza con `gh workflow run sitio.yml --ref main`. Es el despliegue importante: reescribe el `version.json` que consultan las instalaciones que ya están por ahí.
 - **Al empujar a `main`** algo bajo `web/` o el `CHANGELOG.md`.
 - **A mano**, desde la pestaña Actions.
 
 No recibe nada por parámetro: le pregunta a GitHub cuál es la última release. Por eso se puede relanzar en cualquier momento —tras corregir una errata, tras borrar una release equivocada— y siempre publica datos que corresponden con la realidad.
+
+### Siempre desde `main`, nunca desde la etiqueta
+
+El flujo de publicación lo **lanza** en vez de invocarlo como flujo reutilizable, y eso cambia el ref con el que corre. Hay dos razones y apuntan al mismo sitio.
+
+La práctica: el entorno `github-pages` solo admite despliegues desde la rama por omisión. Invocado desde el flujo de publicación, correría en el ref de la etiqueta y GitHub lo rechaza con *«Tag v1.0.0 is not allowed to deploy to github-pages due to environment protection rules»*.
+
+La de fondo: el contenido del sitio —el HTML, los estilos, los textos— debe salir de `main` y no del árbol al que apunte una etiqueta. Si saliera de la etiqueta, relanzar la publicación de una versión vieja republicaría el sitio de entonces y se llevaría por delante cualquier corrección posterior.
+
+Los datos de la descarga no se pierden por lanzarlo desde `main`: no viajan por el ref, sino que salen de preguntarle a GitHub cuál es la última release.
+
+Como contrapartida, el despliegue corre **aparte** y el flujo de publicación no lo espera: termina en verde en cuanto lo lanza. Si el sitio fallara, se ve en su propia ejecución.
 
 ## Trabajar en el sitio
 
