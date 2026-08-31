@@ -25,6 +25,8 @@ fun AjustesRepositorio.restauraDeFabrica() = runBlocking {
     guardaMetaFisico(omision.metaFisicoMinutos)
     guardaDuracionRapida(omision.duracionRapidaMinutos)
     guardaMuestraCompletadas(omision.muestraCompletadasEnHoy)
+    guardaRecordatorios(omision.recordatorios)
+    guardaBuscarActualizaciones(omision.buscarActualizaciones)
     reiniciaTutoriales()
     guardaEsquema(omision.esquema)
     guardaHojas(omision.hojas)

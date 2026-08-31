@@ -35,6 +35,57 @@ val almacenDeClaves = credencial("storeFile", "OLLIN_ACTIVIDADES_STORE_FILE")
     ?.let(rootProject::file)
     ?.takeIf { it.isFile }
 
+/**
+ * La version sale de CHANGELOG.md, no de este archivo.
+ *
+ * Un numero escrito a mano aqui se olvida: se publica la 1.2.0 con el build
+ * todavia en 1.1.0, o al reves, y quien instala el APK ve una version que no
+ * corresponde a las notas que leyo. Con el historial como unica fuente, subir
+ * la version y explicar por que son el mismo gesto, y el flujo de publicacion
+ * puede negarse a etiquetar algo que nadie documento.
+ *
+ * Se lee el primer encabezado `## [x.y.z]` del archivo. "Sin publicar" no
+ * casa con el patron a proposito, asi que compilar mientras hay cambios sin
+ * etiquetar sigue dando la ultima version publicada.
+ */
+val versionPublicada: Triple<Int, Int, Int> = run {
+    val historial = rootProject.file("CHANGELOG.md")
+    require(historial.isFile) { "Falta CHANGELOG.md: de ahi sale la version." }
+
+    val encabezado = Regex("""^##\s+\[(\d+)\.(\d+)\.(\d+)]""", RegexOption.MULTILINE)
+    val primero = encabezado.find(historial.readText())
+        ?: error("CHANGELOG.md no tiene ningun encabezado `## [x.y.z]`.")
+
+    val (mayor, menor, parche) = primero.destructured
+    Triple(mayor.toInt(), menor.toInt(), parche.toInt())
+}
+
+val nombreDeVersion = versionPublicada.toList().joinToString(".")
+
+/**
+ * El entero que compara Android. Se deriva del semver con tres huecos de dos
+ * cifras —1.2.3 es 10203— para que crezca solo y nunca haya que acordarse de
+ * subirlo aparte. Da margen hasta 99 versiones menores y 99 parches, de sobra
+ * para una app que publica a mano, y ordena igual que el semver: cualquier
+ * version posterior produce un entero mayor.
+ */
+val codigoDeVersion = versionPublicada.let { (mayor, menor, parche) ->
+    mayor * 10_000 + menor * 100 + parche
+}
+
+/**
+ * De donde se entera la app de que hay una version nueva.
+ *
+ * Es el sitio de GitHub Pages y no la API de GitHub: la API limita las
+ * peticiones anonimas por IP —una red compartida las agota entre todos— y
+ * devuelve un objeto enorme del que solo se usan tres campos. Un JSON estatico
+ * detras de un CDN no se cae, no se limita y se puede mirar con el navegador.
+ */
+val urlDeActualizaciones = providers
+    .gradleProperty("ollin.urlActualizaciones")
+    .orNull
+    ?: "https://carlosalbertoxw.github.io/ollin-actividades/version.json"
+
 android {
     namespace = "com.carlosalbertoxw.ollin.actividades"
     compileSdk = 36
@@ -43,10 +94,12 @@ android {
         applicationId = "com.carlosalbertoxw.ollin.actividades"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = codigoDeVersion
+        versionName = nombreDeVersion
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "URL_ACTUALIZACIONES", "\"$urlDeActualizaciones\"")
     }
 
     androidResources {
@@ -103,7 +156,8 @@ android {
 
     buildFeatures {
         compose = true
-        // La pantalla de Acerca de ensena la version instalada.
+        // La pantalla de Acerca de ensena la version instalada y de ahi sale
+        // tambien la direccion que se consulta para saber si hay una mas nueva.
         buildConfig = true
     }
 
@@ -131,6 +185,12 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+
+    // Los esquemas exportados viajan como assets de la suite instrumentada.
+    // MigrationTestHelper los lee de ahi para comparar la base migrada contra
+    // lo que Room espera; sin esta linea no encuentra ninguno y las pruebas de
+    // migracion pasan sin comprobar nada.
+    sourceSets.getByName("androidTest").assets.srcDir("$projectDir/schemas")
 }
 
 ksp {
@@ -180,6 +240,9 @@ dependencies {
     androidTestImplementation(libs.androidx.test.core.ktx)
     androidTestImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.room.runtime)
+    // MigrationTestHelper: corre las migraciones de verdad contra los esquemas
+    // exportados en app/schemas/. Ver MigracionesTest.
+    androidTestImplementation(libs.androidx.room.testing)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
 }

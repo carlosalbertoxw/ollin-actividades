@@ -1,6 +1,6 @@
 # Modelo de datos
 
-Room sobre SQLite cifrado. Tres tablas, versión de esquema **1**, esquema exportado en `app/schemas/`.
+Room sobre SQLite cifrado. Tres tablas, versión de esquema **1**, esquemas exportados y versionados en `app/schemas/`.
 
 Las entidades de Room son también el modelo de dominio: [`Entidades.kt`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/data/db/Entidades.kt).
 
@@ -91,18 +91,44 @@ Solo puede haber una actividad `EN_CURSO`. Arrancar el cronómetro cierra la ant
 
 `horaRecordatorio` es una hora suelta y no un instante a propósito: «a las ocho» son las ocho de donde estés. Guardar el instante ataría el recordatorio al huso en que se creó y sonaría a las tres de la madrugada después de un vuelo.
 
-## Versiones del esquema
+## Versiones y migraciones
 
-La base va por la **versión 1**: el esquema con el que la app se publica. Todavía no hay ninguna migración escrita, porque no hay ninguna bitácora allá afuera que migrar.
+La versión y el camino para llegar a ella viven juntos, en [`Migraciones.kt`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/data/db/Migraciones.kt):
 
-El esquema real vive en [`app/schemas/`](../app/schemas/), lo genera KSP y sí se versiona: es la referencia contra la que se probará la primera migración que haga falta.
+```kotlin
+object Migraciones {
+    const val VERSION = 1
+    val TODAS: Array<Migration> = arrayOf()
+}
+```
 
-Dos columnas admiten nulos y no por descuido: en las dos, nulo es una respuesta y no un dato que falta. `horaRecordatorio` nula significa que el hábito no avisa —avisar es una decisión de quien lo creó, no algo que se dé por hecho—, y `ancla` nula significa «cuenta desde el día en que di de alta el hábito», que es lo que resuelve `Habito.anclaEfectiva()` sin inventarle una fecha.
+`OllinDatabase` declara `version = Migraciones.VERSION` y registra `addMigrations(*Migraciones.TODAS)`. Están en el mismo archivo a propósito: subir un número en un sitio y olvidar el paso que lo acompaña en otro es el error que deja la app sin abrir en el teléfono de alguien, y aquí las dos cosas están a tres líneas de distancia.
 
-**No hay `fallbackToDestructiveMigration` en ningún lado, y no debe haberlo.** La base va cifrada con una llave del Keystore que no se respalda, así que borrarla y empezar de cero no es un inconveniente: es perder la bitácora entera. En cuanto exista la primera instalación fuera de este equipo, cualquier cambio de entidad exige:
+Hoy el esquema va por la **versión 1** y `TODAS` está vacía: no hay nada que migrar cuando solo existe la primera versión.
 
-1. Modificar las entidades.
-2. Subir `version` en `OllinDatabase`.
-3. Escribir la `Migration` y registrarla en `addMigrations(...)`.
-4. Versionar el nuevo `app/schemas/N.json` que genera KSP.
-5. Agregar una prueba que corra la migración contra el esquema real de la versión anterior: si se equivoca, Room no abre y la bitácora queda inaccesible.
+**No hay `fallbackToDestructiveMigration` en ningún lado, y no debe haberlo.** La base va cifrada con una llave del Keystore que no se respalda, así que borrarla y empezar de cero no es un inconveniente: es perder la bitácora entera y no hay de dónde recuperarla. Si falta un paso, Room se niega a abrir. Un arranque que falla se arregla con una actualización; una bitácora borrada, no.
+
+Dos columnas admiten nulos, y en las dos nulo es una respuesta y no un dato que falta: `horaRecordatorio` nula significa que el hábito no avisa, y `ancla` nula significa «cuenta desde el día en que di de alta el hábito», que es lo que resuelve `Habito.anclaEfectiva()` sin inventarle una fecha.
+
+### Agregar una versión
+
+1. Cambiar las entidades.
+2. Subir `Migraciones.VERSION`.
+3. Escribir la `Migration` y sumarla a `Migraciones.TODAS`, en orden.
+4. Compilar para que KSP escriba `app/schemas/N.json`, y **versionarlo**.
+5. Agregar a `MigracionesTest` una prueba propia que escriba un renglón antes de migrar y lo vuelva a leer después.
+
+### Qué vigila cada prueba
+
+| Prueba | Dónde corre | Qué caza |
+|---|---|---|
+| [`EsquemaTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/EsquemaTest.kt) | JVM, en cada compilación | Una versión sin migración, una migración que salta versiones, un `N.json` sin versionar |
+| [`MigracionesTest`](../app/src/androidTest/java/com/carlosalbertoxw/ollin/actividades/db/MigracionesTest.kt) | Emulador, al publicar | Que el SQL de cada paso deje la base exactamente como Room la espera |
+
+Son cosas distintas y las dos hacen falta. Una migración puede existir, estar bien encadenada y aun así dejar una columna con el tipo equivocado o sin su índice; `EsquemaTest` no lo vería, porque no ejecuta SQL. Y al revés: `MigracionesTest` necesita un emulador y diez minutos, así que no puede ser lo único que vigile un descuido de contabilidad.
+
+`MigracionesTest` compara contra los `N.json` que KSP exporta de las entidades, así que valida el resultado y no la intención. Corre sin cifrar —el helper abre con el SQLite del sistema, no con SQLCipher— y da igual: el cifrado envuelve el archivo entero y las migraciones ven el mismo esquema con llave o sin ella.
+
+`EsquemaTest` corre en la JVM en milisegundos, así que entra en cada pull request. `MigracionesTest` bloquea la publicación de una versión, ver [publicación](publicacion.md).
+
+Los esquemas exportados viven en [`app/schemas/`](../app/schemas/) y **se versionan en git**: son la referencia contra la que se prueba cada migración. También viajan como assets de la suite instrumentada, por la línea `sourceSets.getByName("androidTest").assets.srcDir(...)` del build; sin ella `MigrationTestHelper` no encuentra ninguno y las pruebas de migración pasarían sin comprobar nada.

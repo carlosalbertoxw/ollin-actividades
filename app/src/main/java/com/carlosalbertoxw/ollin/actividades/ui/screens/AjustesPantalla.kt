@@ -255,6 +255,33 @@ fun AjustesPantalla(
             }
 
             Spacer(Modifier.height(20.dp))
+            Text("Actualizaciones", style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(4.dp))
+
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text("Avisarme de versiones nuevas", style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        "Una vez al día Ollin pregunta al sitio si salió una versión más " +
+                            "nueva y te lo enseña en Acerca de. La pregunta no lleva nada " +
+                            "tuyo dentro y nunca se descarga ni se instala nada sola.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colores.textoTenue
+                    )
+                }
+                Switch(
+                    checked = ajustes.buscarActualizaciones,
+                    onCheckedChange = vm::buscarActualizaciones
+                )
+            }
+
+            Spacer(Modifier.height(20.dp))
             Text("Ayuda", style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(4.dp))
 

@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -45,6 +46,23 @@ data class Ajustes(
      * entera, y con ella los avisos que si se querian.
      */
     val recordatorios: Boolean = false,
+    /**
+     * Si Ollin pregunta una vez al dia si hay una version mas nueva.
+     *
+     * Nace encendido, al reves que los recordatorios, porque no resuelven lo
+     * mismo. Un aviso de habito lo puede dar la propia memoria; enterarse de
+     * que se corrigio un fallo que te afecta, no, y una app que se instala
+     * fuera de la tienda no tiene ningun otro canal para decirlo. Lo que sale
+     * del telefono es un GET a un archivo estatico, sin nada dentro.
+     */
+    val buscarActualizaciones: Boolean = true,
+    /** Milisegundos epoch de la ultima consulta hecha. Cero: nunca. */
+    val ultimaComprobacion: Long = 0L,
+    /** Ultima version que anuncio el sitio, aunque sea la que ya esta puesta. */
+    val versionDisponible: String? = null,
+    /** De donde se baja. Se abre en el navegador; Ollin nunca descarga sola. */
+    val urlDeDescarga: String? = null,
+    val notasDeVersion: String? = null,
     /** Interruptor maestro de las tarjetas de ayuda de cada pantalla. */
     val muestraTutoriales: Boolean = true,
     /** Claves de [com.carlosalbertoxw.ollin.actividades.ui.components.Tutorial] ya descartadas. */
@@ -86,6 +104,11 @@ class AjustesRepositorio(private val contexto: Context) {
         val PIN_SAL = stringPreferencesKey("pin_sal")
         val PIN_FALLOS = intPreferencesKey("pin_fallos")
         val RECORDATORIOS = booleanPreferencesKey("recordatorios")
+        val ACTUALIZACIONES = booleanPreferencesKey("buscar_actualizaciones")
+        val ULTIMA_COMPROBACION = longPreferencesKey("ultima_comprobacion")
+        val VERSION_DISPONIBLE = stringPreferencesKey("version_disponible")
+        val URL_DESCARGA = stringPreferencesKey("url_descarga")
+        val NOTAS_VERSION = stringPreferencesKey("notas_version")
     }
 
     val ajustes: Flow<Ajustes> = contexto.almacen.data.map(::mapea)
@@ -119,7 +142,12 @@ class AjustesRepositorio(private val contexto: Context) {
         pinHash = p[Claves.PIN_HASH],
         pinSal = p[Claves.PIN_SAL],
         pinFallos = p[Claves.PIN_FALLOS] ?: 0,
-        recordatorios = p[Claves.RECORDATORIOS] ?: false
+        recordatorios = p[Claves.RECORDATORIOS] ?: false,
+        buscarActualizaciones = p[Claves.ACTUALIZACIONES] ?: true,
+        ultimaComprobacion = p[Claves.ULTIMA_COMPROBACION] ?: 0L,
+        versionDisponible = p[Claves.VERSION_DISPONIBLE],
+        urlDeDescarga = p[Claves.URL_DESCARGA],
+        notasDeVersion = p[Claves.NOTAS_VERSION]
     )
 
     suspend fun guardaTema(oscuro: Boolean?) {
@@ -231,6 +259,46 @@ class AjustesRepositorio(private val contexto: Context) {
 
     suspend fun guardaRecordatorios(valor: Boolean) {
         contexto.almacen.edit { it[Claves.RECORDATORIOS] = valor }
+    }
+
+    // ------------------------------------------------------ actualizaciones
+
+    /**
+     * Mover el interruptor olvida lo que se supo la ultima vez, en los dos
+     * sentidos y por razones distintas.
+     *
+     * Al **apagarlo**, porque si no quedaria en pantalla el aviso de una
+     * version nueva que ya nadie va a volver a comprobar, sin forma de saber si
+     * sigue siendo cierto.
+     *
+     * Al **encenderlo**, porque se borra tambien la marca de tiempo: quien
+     * acaba de activarlo espera enterarse ahora y no cuando venza el dia que
+     * corria desde la ultima consulta, que pudo ser hace meses.
+     */
+    suspend fun guardaBuscarActualizaciones(valor: Boolean) {
+        contexto.almacen.edit {
+            it[Claves.ACTUALIZACIONES] = valor
+            it.remove(Claves.ULTIMA_COMPROBACION)
+            it.remove(Claves.VERSION_DISPONIBLE)
+            it.remove(Claves.URL_DESCARGA)
+            it.remove(Claves.NOTAS_VERSION)
+        }
+    }
+
+    /** Lo que dijo el sitio y cuando se le pregunto, de una sola escritura. */
+    suspend fun guardaComprobacion(
+        cuando: Long,
+        version: String,
+        url: String,
+        notas: String?
+    ) {
+        contexto.almacen.edit {
+            it[Claves.ULTIMA_COMPROBACION] = cuando
+            it[Claves.VERSION_DISPONIBLE] = version
+            it[Claves.URL_DESCARGA] = url
+            if (notas.isNullOrBlank()) it.remove(Claves.NOTAS_VERSION)
+            else it[Claves.NOTAS_VERSION] = notas
+        }
     }
 
     /** Suma un fallo. El contador no tiene techo; la espera si. */

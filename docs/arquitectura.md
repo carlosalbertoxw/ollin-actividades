@@ -37,17 +37,18 @@ Sin dependencias de Android. Contiene los enums del modelo ([`Ambito`, `EstadoAc
 - `db/` — Room. Las entidades son también el modelo de dominio: con un solo módulo, duplicarlas en otra capa solo agregaría mapeo. Ver [modelo de datos](modelo-de-datos.md).
 - `repo/` — [`ActividadesRepositorio`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/data/repo/ActividadesRepositorio.kt). Único punto de escritura; ahí viven las reglas que mantienen coherentes inicio, fin, día y duración.
 - `excel/` — lector y escritor de `.xlsx` propios, más el exportador e importador de la bitácora. Ver [Excel](excel.md).
+- `actualizaciones/` — pregunta una vez al día si hay una versión más nueva. Es lo único que usa la red. Ver [actualizaciones](actualizaciones.md).
 - `prefs/` — preferencias en DataStore, expuestas como un `Flow<Ajustes>`.
 - `recordatorios/` — qué toca avisar, la alarma del sistema y las notificaciones. Ver [recordatorios](recordatorios.md).
 - `seguridad/` — llave de la base, derivación del PIN y control de bloqueo. Ver [seguridad](seguridad.md).
 
 ## Inyección de dependencias
 
-Manual, en [`Contenedor`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/di/Contenedor.kt): base de datos, repositorio, ajustes, control de bloqueo, sembrador y coordinador de recordatorios, todos `by lazy`. Se construye una vez en [`OllinApp`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/OllinApp.kt) y se pasa por parámetro a las pantallas.
+Manual, en [`Contenedor`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/di/Contenedor.kt): base de datos, repositorio, ajustes, control de bloqueo, sembrador, coordinador de recordatorios y comprobador de actualizaciones, todos `by lazy`. Se construye una vez en [`OllinApp`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/OllinApp.kt) y se pasa por parámetro a las pantallas.
 
 Con media docena de objetos compartidos, Hilt aportaría anotaciones y tiempo de compilación sin resolver ningún problema real.
 
-`OllinApp` también siembra el catálogo inicial de categorías en un `CoroutineScope` de IO. El sembrador es idempotente: si ya hay categorías, no toca nada. En ese mismo arranque se crea el canal de notificaciones y se enciende `CoordinadorRecordatorios.vigila(...)`, que es quien arma la primera alarma; sin esa llamada el receptor no despierta nunca y no suena nada, por muy encendido que esté el interruptor de Ajustes.
+`OllinApp` también siembra el catálogo inicial de categorías en un `CoroutineScope` de IO. El sembrador es idempotente: si ya hay categorías, no toca nada. En ese mismo arranque se crea el canal de notificaciones y se enciende `CoordinadorRecordatorios.vigila(...)`, que es quien arma la primera alarma; sin esa llamada el receptor no despierta nunca y no suena nada, por muy encendido que esté el interruptor de Ajustes. Al final, y envuelto en `runCatching`, se comprueba si hay versión nueva: es lo único del arranque que depende de la red, y quedarse sin señal no puede impedir que la app abra.
 
 ## Arranque y bloqueo
 

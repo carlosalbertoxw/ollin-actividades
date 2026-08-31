@@ -14,9 +14,17 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
 
+    <!-- Aviso de actualizaciones. Ollin se instala fuera de la tienda, asi que
+         sin esto no hay ningun canal para enterarse de que se corrigio un
+         fallo. Es todo lo que la red se usa: un GET diario a un JSON estatico
+         del sitio, sin nada del telefono dentro y sin descargar nada. Ver
+         ComprobadorActualizaciones y docs/seguridad.md. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:name=".OllinApp"
         android:allowBackup="true"
+        android:usesCleartextTraffic="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"

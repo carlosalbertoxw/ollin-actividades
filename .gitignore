@@ -4,6 +4,8 @@
 .kotlin/
 /local.properties
 /.idea/
+# Configuracion local de las herramientas de edicion, como /.idea.
+/.claude/
 .DS_Store
 /build
 /app/build
@@ -13,6 +15,11 @@
 local.properties
 *.apk
 *.aab
+
+# El sitio: dependencias y compilado. Los JSON generados se ignoran desde
+# web/.gitignore, junto a la explicacion de por que no se versionan.
+node_modules/
+web/dist/
 
 # Firma de release. Ni el almacen ni sus contrasenas entran al repositorio:
 # con ellos cualquiera publica una actualizacion falsa de Ollin Actividades.

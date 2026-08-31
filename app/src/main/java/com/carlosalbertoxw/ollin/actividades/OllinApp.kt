@@ -40,6 +40,12 @@ class OllinApp : Application() {
             // despierta nunca y no suena nada por muy encendido que este el
             // interruptor de Ajustes.
             contenedor.recordatorios.vigila(alcance)
+
+            // Y de paso se mira si hay version nueva. Va al final y envuelto:
+            // es lo unico del arranque que depende de la red, y quedarse sin
+            // señal no puede impedir que la app abra. El propio comprobador
+            // decide si toca —una vez al dia— y si el interruptor lo permite.
+            runCatching { contenedor.actualizaciones.compruebaSiToca() }
         }
     }
 }

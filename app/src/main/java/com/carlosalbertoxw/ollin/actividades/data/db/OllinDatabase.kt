@@ -9,14 +9,11 @@ import com.carlosalbertoxw.ollin.actividades.data.seguridad.LlaveBase
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 
 /**
- * Version 1: el esquema con el que la app se publica por primera vez.
+ * La base. Tres tablas, cifrada, y una sola instancia por proceso.
  *
- * Todavia no hay migraciones porque no hay ninguna bitacora alla afuera que
- * migrar. En cuanto la haya, cada cambio de entidad sube la version y trae su
- * [androidx.room.migration.Migration]. Lo que no debe aparecer nunca es
- * `fallbackToDestructiveMigration`: la base va cifrada con una llave del
- * Keystore que no se respalda, asi que borrarla y empezar de cero no es un
- * inconveniente, es perder la bitacora entera.
+ * La version y el camino para llegar a ella viven en [Migraciones], no aqui:
+ * asi no se puede subir un numero en un archivo y olvidar el paso que lo
+ * acompana en otro.
  */
 @Database(
     entities = [
@@ -24,7 +21,7 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         Habito::class,
         Actividad::class
     ],
-    version = 1,
+    version = Migraciones.VERSION,
     exportSchema = true
 )
 @TypeConverters(Convertidores::class)
@@ -60,6 +57,10 @@ abstract class OllinDatabase : RoomDatabase() {
             return Room.databaseBuilder(app, OllinDatabase::class.java, NOMBRE)
                 .openHelperFactory(SupportOpenHelperFactory(frase.toByteArray(Charsets.UTF_8)))
                 .setJournalMode(JournalMode.WRITE_AHEAD_LOGGING)
+                // Sin `fallbackToDestructiveMigration`, a proposito: si falta
+                // un paso, Room se niega a abrir en vez de borrar la bitacora.
+                // Un arranque que falla se arregla; una bitacora borrada no.
+                .addMigrations(*Migraciones.TODAS)
                 .build()
         }
     }

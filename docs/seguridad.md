@@ -1,6 +1,8 @@
 # Seguridad y privacidad
 
-Ollin no manda nada a ningún servidor: no hay cuenta, no hay nube y no hay publicidad. Tampoco declara ningún permiso de red. Los cuatro que sí pide son `USE_BIOMETRIC`, para el candado, y `POST_NOTIFICATIONS`, `RECEIVE_BOOT_COMPLETED` y `SCHEDULE_EXACT_ALARM`, los tres para los [recordatorios](recordatorios.md).
+**Tu bitácora no sale del teléfono**: no hay cuenta, no hay nube, no hay publicidad y no hay analítica. La única vez que Ollin usa la red es para preguntar si salió una versión nueva, y esa petición no lleva nada tuyo dentro; está detallada [más abajo](#la-comprobación-de-actualizaciones).
+
+Los permisos que declara son cinco: `USE_BIOMETRIC` para el candado; `POST_NOTIFICATIONS`, `RECEIVE_BOOT_COMPLETED` y `SCHEDULE_EXACT_ALARM` para los [recordatorios](recordatorios.md); e `INTERNET` para lo anterior.
 
 ## Cifrado de la base
 
@@ -78,6 +80,24 @@ El respaldo automático y el traspaso a un teléfono nuevo **excluyen** la base,
 La razón es física: una llave del Keystore no se puede restaurar ni transferir, así que la copia llegaría ilegible y el usuario creería tener un respaldo que no sirve.
 
 **El respaldo real es la exportación a `.xlsx`**, que el usuario decide dónde guardar. Ver [Excel](excel.md).
+
+## La comprobación de actualizaciones
+
+Ollin se instala fuera de la tienda, así que nadie avisa de una corrección: sin esto, quien instaló el APK en marzo se queda con el de marzo para siempre. Una vez al día la app pide un archivo estático al [sitio](sitio.md) y compara.
+
+**Qué sale del teléfono:** una petición `GET`. Sin identificador, sin la versión instalada —la comparación ocurre aquí dentro, con el JSON ya descargado— y evidentemente sin nada de la bitácora. Lo único que el otro extremo puede deducir es que alguien, desde una dirección IP, pidió ese archivo: lo mismo que abrir la dirección en el navegador. Lo sirve GitHub Pages.
+
+**Qué no hace:** descargar ni instalar nada. Cuando hay versión nueva, *Acerca de* enseña un botón que abre el sitio en el navegador. Una app que se actualiza sola necesita el permiso de instalar paquetes, y con él se convierte en un canal de entrega: quien comprometa el servidor de actualizaciones entrega código arbitrario a todos los teléfonos que lo consultan.
+
+Tres cierres, porque el enlace acaba abriéndose en el navegador de alguien y viene de fuera:
+
+- **Solo `https`.** Si la dirección del APK no lo es, se ignora; si no queda ninguna válida, el archivo se descarta entero.
+- **Sin redirecciones automáticas** (`instanceFollowRedirects = false`): una redirección desde `https` puede terminar en `http`, y entonces la respuesta viaja en claro.
+- **`usesCleartextTraffic="false"`** en el manifiesto, que lo prohíbe a nivel de plataforma por si lo anterior fallara.
+
+La respuesta tiene un tope de 64 KB. El archivo real ronda los 400 bytes; el tope está porque es lo único que entra a la app desde la red, y sin límite un servidor que nunca cierra la respuesta agota la memoria del teléfono.
+
+Se apaga en `Ajustes → Actualizaciones`. Nace encendido, al revés que los recordatorios: un aviso de hábito lo puede dar la propia memoria, enterarse de que se corrigió un fallo que te afecta, no. Ver [actualizaciones](actualizaciones.md).
 
 ## Manejo de errores
 

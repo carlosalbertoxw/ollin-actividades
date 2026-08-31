@@ -1,6 +1,9 @@
 package com.carlosalbertoxw.ollin.actividades.di
 
 import android.content.Context
+import com.carlosalbertoxw.ollin.actividades.BuildConfig
+import com.carlosalbertoxw.ollin.actividades.data.actualizaciones.ComprobadorActualizaciones
+import com.carlosalbertoxw.ollin.actividades.data.actualizaciones.Version
 import com.carlosalbertoxw.ollin.actividades.data.db.OllinDatabase
 import com.carlosalbertoxw.ollin.actividades.data.db.Sembrador
 import com.carlosalbertoxw.ollin.actividades.data.prefs.AjustesRepositorio
@@ -39,6 +42,16 @@ class Contenedor(
     val controlBloqueo: ControlBloqueo by lazy { ControlBloqueo(ajustes) }
 
     val sembrador: Sembrador by lazy { Sembrador(baseDeDatos.categoriaDao()) }
+
+    val actualizaciones: ComprobadorActualizaciones by lazy {
+        ComprobadorActualizaciones(
+            ajustes = ajustes,
+            // La variante de depuracion trae "-debug" pegado al nombre; Version
+            // lo ignora, asi que probar el aviso no exige compilar en release.
+            instalada = Version.de(BuildConfig.VERSION_NAME),
+            url = BuildConfig.URL_ACTUALIZACIONES
+        )
+    }
 
     val recordatorios: CoordinadorRecordatorios by lazy {
         CoordinadorRecordatorios(

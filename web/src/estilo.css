@@ -1,0 +1,288 @@
+/*
+ * La paleta es la de la app: obsidiana, jade y cempasuchil. Estan declaradas
+ * en app/src/main/res/values/colors.xml y en ui/theme/Color.kt; aqui se
+ * repiten porque un sitio estatico no puede leer los recursos de un APK, y son
+ * tres constantes que cambian una vez cada nunca.
+ *
+ * El tema sigue al del sistema. No hay interruptor: quien prefiere el modo
+ * oscuro ya lo eligio en su telefono, y una pagina de descarga no es sitio para
+ * volver a preguntarselo.
+ */
+
+:root {
+  --obsidiana: #12181B;
+  --jade: #2F9E6E;
+  --cempasuchil: #E9A13B;
+
+  --fondo: #FBFAF7;
+  --superficie: #FFFFFF;
+  --superficie-alta: #F2F0EA;
+  --texto: #1A1F22;
+  --texto-tenue: #5C6569;
+  --trazo: #E2DED4;
+  --sombra: 0 1px 2px rgb(18 24 27 / 6%), 0 8px 24px rgb(18 24 27 / 6%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fondo: #0E1315;
+    --superficie: #161D20;
+    --superficie-alta: #1D262A;
+    --texto: #E8EDEE;
+    --texto-tenue: #94A1A6;
+    --trazo: #263238;
+    --sombra: none;
+  }
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+/*
+ * `hidden` tiene que ganarle a cualquier `display` que se declare mas abajo.
+ * La regla del navegador es `[hidden] { display: none }`, y cualquier selector
+ * de clase la pisa por especificidad: sin esto, el boton de descarga se ve
+ * incluso cuando el script lo dejo oculto porque no supo que version ofrecer.
+ */
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  background: var(--fondo);
+  color: var(--texto);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  font-size: 17px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--jade); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+a:hover { color: var(--cempasuchil); }
+
+code, pre {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.88em;
+}
+
+code {
+  background: var(--superficie-alta);
+  border-radius: 5px;
+  padding: 0.1em 0.38em;
+}
+
+/* Para quien navega con teclado: el primer tabulador salta a lo que se vino a
+   hacer, en vez de recorrer el encabezado entero. */
+.salto {
+  position: absolute;
+  left: -9999px;
+  background: var(--jade);
+  color: #fff;
+  padding: 0.7rem 1.2rem;
+  border-radius: 0 0 10px 0;
+  z-index: 10;
+}
+.salto:focus { left: 0; top: 0; color: #fff; }
+
+.envoltura {
+  width: min(100% - 2.5rem, 62rem);
+  margin-inline: auto;
+}
+
+/* ------------------------------------------------------------- portada */
+
+.portada {
+  background:
+    radial-gradient(120% 90% at 50% -10%, rgb(47 158 110 / 14%), transparent 60%),
+    var(--superficie);
+  border-bottom: 1px solid var(--trazo);
+  padding: clamp(3rem, 9vw, 5.5rem) 0 clamp(2.5rem, 6vw, 4rem);
+  text-align: center;
+}
+
+.portada__contenido { max-width: 44rem; }
+
+.glifo { width: 84px; height: 84px; }
+
+h1 {
+  font-size: clamp(2.1rem, 6vw, 3rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin: 0.6rem 0 0;
+}
+
+.lema {
+  margin: 0.35rem 0 0;
+  color: var(--cempasuchil);
+  font-size: 1.05rem;
+  letter-spacing: 0.04em;
+}
+
+.entrada {
+  margin: 1.6rem auto 0;
+  color: var(--texto-tenue);
+  text-wrap: pretty;
+}
+
+/* ------------------------------------------------------------ descarga */
+
+.descarga { margin-top: 2.2rem; }
+
+.boton {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.95rem 2.2rem;
+  border-radius: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.boton--principal {
+  background: var(--jade);
+  color: #fff;
+  box-shadow: 0 6px 20px rgb(47 158 110 / 28%);
+}
+
+.boton--principal:hover {
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 26px rgb(47 158 110 / 34%);
+}
+
+.boton__detalle {
+  font-weight: 400;
+  font-size: 0.8rem;
+  opacity: 0.9;
+}
+
+.descarga__espera, .descarga__fallo {
+  color: var(--texto-tenue);
+  font-size: 0.9rem;
+  margin: 0.5rem 0 0;
+}
+
+.descarga__nota {
+  margin: 0.9rem 0 0;
+  color: var(--texto-tenue);
+  font-size: 0.85rem;
+}
+
+/* ------------------------------------------------------------ secciones */
+
+.seccion { padding: clamp(2.5rem, 7vw, 4rem) 0; }
+
+h2 {
+  font-size: clamp(1.4rem, 3.5vw, 1.8rem);
+  letter-spacing: -0.01em;
+  margin: 0 0 1.4rem;
+}
+
+h3 { font-size: 1.05rem; margin: 2rem 0 0.6rem; }
+
+.parrafo {
+  max-width: 46rem;
+  color: var(--texto-tenue);
+  text-wrap: pretty;
+}
+
+.apunte { font-size: 0.9rem; }
+
+.rejilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1rem;
+}
+
+.tarjeta {
+  background: var(--superficie);
+  border: 1px solid var(--trazo);
+  border-radius: 16px;
+  padding: 1.4rem;
+  box-shadow: var(--sombra);
+}
+
+.tarjeta h3 { margin: 0 0 0.5rem; font-size: 1rem; }
+.tarjeta p { margin: 0; color: var(--texto-tenue); font-size: 0.95rem; }
+
+.pasos { max-width: 46rem; color: var(--texto-tenue); padding-left: 1.2rem; }
+.pasos li { margin-bottom: 0.5rem; }
+
+.codigo {
+  background: var(--superficie-alta);
+  border: 1px solid var(--trazo);
+  border-radius: 12px;
+  padding: 0.9rem 1.1rem;
+  overflow-x: auto;
+  max-width: 46rem;
+}
+.codigo code { background: none; padding: 0; }
+
+.huella {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.78rem;
+  color: var(--texto-tenue);
+  word-break: break-all;
+  max-width: 46rem;
+}
+
+/* ------------------------------------------------------------ historial */
+
+.historial { display: grid; gap: 1rem; }
+
+.version {
+  background: var(--superficie);
+  border: 1px solid var(--trazo);
+  border-radius: 16px;
+  padding: 1.2rem 1.4rem;
+  box-shadow: var(--sombra);
+}
+
+.version__titulo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.7rem;
+  margin: 0 0 0.4rem;
+  font-size: 1.05rem;
+}
+
+.version__fecha { color: var(--texto-tenue); font-size: 0.85rem; font-weight: 400; }
+
+.version__insignia {
+  background: var(--jade);
+  color: #fff;
+  border-radius: 999px;
+  padding: 0.1rem 0.6rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.version h4 {
+  margin: 1rem 0 0.3rem;
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cempasuchil);
+}
+
+.version ul { margin: 0.3rem 0; padding-left: 1.2rem; color: var(--texto-tenue); }
+.version li { margin-bottom: 0.35rem; font-size: 0.95rem; }
+.version p { color: var(--texto-tenue); font-size: 0.95rem; }
+
+/* ------------------------------------------------------------------ pie */
+
+.pie {
+  border-top: 1px solid var(--trazo);
+  padding: 2rem 0 3rem;
+  color: var(--texto-tenue);
+  font-size: 0.9rem;
+}
+.pie p { margin: 0.3rem 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}

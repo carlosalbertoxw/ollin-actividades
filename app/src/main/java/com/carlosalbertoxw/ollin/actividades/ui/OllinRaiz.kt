@@ -178,7 +178,7 @@ fun OllinRaiz(contenedor: Contenedor) {
                 }
 
                 composable(Rutas.ACERCA_DE) {
-                    AcercaDePantalla { nav.popBackStack() }
+                    AcercaDePantalla(contenedor) { nav.popBackStack() }
                 }
             }
         }

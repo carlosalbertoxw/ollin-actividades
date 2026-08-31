@@ -21,6 +21,8 @@ import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.filled.SystemUpdateAlt
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -28,19 +30,28 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.carlosalbertoxw.ollin.actividades.BuildConfig
 import com.carlosalbertoxw.ollin.actividades.R
+import com.carlosalbertoxw.ollin.actividades.di.Contenedor
+import com.carlosalbertoxw.ollin.actividades.domain.model.Tiempo
+import com.carlosalbertoxw.ollin.actividades.ui.recuerdaVm
 import com.carlosalbertoxw.ollin.actividades.ui.theme.LocalColoresOllin
+import java.time.Instant
 
 /**
  * Que es Ollin y con que reglas trabaja.
@@ -52,7 +63,15 @@ import com.carlosalbertoxw.ollin.actividades.ui.theme.LocalColoresOllin
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AcercaDePantalla(alCerrar: () -> Unit) {
+fun AcercaDePantalla(contenedor: Contenedor, alCerrar: () -> Unit) {
+    val vm = recuerdaVm("acerca") {
+        AcercaDeVm(
+            repo = contenedor.ajustes,
+            comprobador = contenedor.actualizaciones,
+            instalada = BuildConfig.VERSION_NAME
+        )
+    }
+    val version by vm.estado.collectAsStateWithLifecycle()
     val colores = LocalColoresOllin.current
 
     Scaffold(
@@ -104,13 +123,16 @@ fun AcercaDePantalla(alCerrar: () -> Unit) {
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "Version ${BuildConfig.VERSION_NAME}",
+                    "Versión ${BuildConfig.VERSION_NAME}",
                     style = MaterialTheme.typography.labelMedium,
                     color = colores.textoTenue
                 )
             }
 
-            Spacer(Modifier.height(28.dp))
+            Spacer(Modifier.height(24.dp))
+            SeccionVersion(version, vm::compruebaAhora)
+
+            Spacer(Modifier.height(24.dp))
 
             Card(
                 Modifier.fillMaxWidth(),
@@ -171,11 +193,20 @@ fun AcercaDePantalla(alCerrar: () -> Unit) {
             Text("Tus datos", style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(8.dp))
             Text(
-                "Ollin no manda nada a ningun servidor: no hay cuenta, no hay nube y no " +
-                    "hay publicidad. La bitacora vive en este telefono en una base cifrada " +
-                    "con AES-256, y la llave no sale del Keystore de Android, asi que el " +
-                    "archivo no dice nada aunque alguien lo saque por USB.",
+                "Tu bitácora no sale de este teléfono: no hay cuenta, no hay nube y no " +
+                    "hay publicidad. Vive aquí en una base cifrada con AES-256, y la llave " +
+                    "no sale del Keystore de Android, así que el archivo no dice nada " +
+                    "aunque alguien lo saque por USB.",
                 style = MaterialTheme.typography.bodyMedium,
+                color = colores.textoTenue
+            )
+            Spacer(Modifier.height(10.dp))
+            Text(
+                "Lo único que Ollin le pide a la red es preguntar una vez al día si hay " +
+                    "una versión más nueva publicada. Esa pregunta no lleva nada tuyo " +
+                    "dentro —ni siquiera qué versión tienes: la comparación se hace aquí—, " +
+                    "y se apaga en Ajustes. Ollin nunca descarga ni instala nada sola.",
+                style = MaterialTheme.typography.bodySmall,
                 color = colores.textoTenue
             )
             Spacer(Modifier.height(10.dp))
@@ -214,6 +245,116 @@ fun AcercaDePantalla(alCerrar: () -> Unit) {
             )
         }
     }
+}
+
+/**
+ * La version instalada y si hay una mas nueva.
+ *
+ * Ollin se instala fuera de la tienda, asi que esta tarjeta es el unico sitio
+ * donde alguien puede enterarse de que salio una correccion. Por eso ensena
+ * siempre la version puesta —aunque no haya novedad— y no solo cuando hay algo
+ * que anunciar: una tarjeta que aparece y desaparece no se aprende a mirar.
+ *
+ * El boton **abre el navegador**, no descarga. Instalar un APK exige un permiso
+ * que convertiria a Ollin en un canal de entrega de software, y eso es mucho
+ * mas de lo que hace falta para avisar de una version.
+ */
+@Composable
+private fun SeccionVersion(estado: AcercaDeVm.Estado, alComprobar: () -> Unit) {
+    val colores = LocalColoresOllin.current
+    val navegador = LocalUriHandler.current
+    val url = estado.urlDeDescarga
+
+    Card(
+        Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = if (estado.hayVersionNueva) {
+                MaterialTheme.colorScheme.primaryContainer
+            } else {
+                MaterialTheme.colorScheme.surfaceContainer
+            }
+        ),
+        shape = RoundedCornerShape(18.dp)
+    ) {
+        Column(Modifier.padding(18.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Filled.SystemUpdateAlt,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        if (estado.hayVersionNueva) "Hay una versión nueva" else "Estás al día",
+                        style = MaterialTheme.typography.titleSmall
+                    )
+                    Text(
+                        if (estado.hayVersionNueva) {
+                            "Tienes la ${estado.instalada} y ya salió la ${estado.disponible}."
+                        } else {
+                            "Versión instalada ${estado.instalada}."
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colores.textoTenue
+                    )
+                }
+            }
+
+            // Las notas solo cuando hay algo que decidir: leer el resumen de la
+            // version que ya tienes puesta no ayuda a nadie a hacer nada.
+            if (estado.hayVersionNueva && !estado.notas.isNullOrBlank()) {
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    estado.notas,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colores.textoTenue
+                )
+            }
+
+            if (estado.hayVersionNueva && url != null) {
+                Spacer(Modifier.height(12.dp))
+                Button(
+                    onClick = { navegador.openUri(url) },
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("Ver la versión ${estado.disponible}") }
+            }
+
+            Spacer(Modifier.height(4.dp))
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    estado.aviso ?: textoDeLaUltimaComprobacion(estado),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colores.textoTenue,
+                    modifier = Modifier.weight(1f)
+                )
+                if (estado.consultando) {
+                    CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                } else {
+                    TextButton(onClick = alComprobar) { Text("Buscar ahora") }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Cuando se preguntó por última vez.
+ *
+ * Se dice aunque no haya novedad, porque es lo que distingue "no hay version
+ * nueva" de "llevo un mes sin poder preguntar". Sin esta linea, una app sin red
+ * desde hace semanas se ve exactamente igual que una al dia.
+ */
+private fun textoDeLaUltimaComprobacion(estado: AcercaDeVm.Estado): String = when {
+    !estado.activa -> "La búsqueda de actualizaciones está apagada en Ajustes."
+    estado.ultimaComprobacion <= 0L -> "Todavía no se ha buscado."
+    else -> "Última búsqueda: " +
+        Tiempo.fechaHora(Instant.ofEpochMilli(estado.ultimaComprobacion))
 }
 
 @Composable

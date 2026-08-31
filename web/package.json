@@ -1,0 +1,16 @@
+{
+  "name": "ollin-actividades-sitio",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Sitio de descarga de Ollin Actividades. Publica el APK y el version.json que la app consulta.",
+  "scripts": {
+    "datos": "node scripts/genera-datos.mjs",
+    "dev": "npm run datos && vite",
+    "build": "npm run datos && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^6.3.5"
+  }
+}
