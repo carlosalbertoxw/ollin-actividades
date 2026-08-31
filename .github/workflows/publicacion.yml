@@ -199,19 +199,53 @@ jobs:
       # El almacen de claves viaja como secreto en base64 porque un secreto de
       # Actions es texto y un .jks es binario. Se escribe fuera del arbol de
       # trabajo para que no pueda acabar en un artefacto por descuido.
+      #
+      # Los cuatro secretos se comprueban aqui, juntos y antes de compilar. Un
+      # secreto ausente es la cadena vacia, no un error: si se deja pasar, el
+      # build tarda dos minutos en morir dentro de AGP con un NullPointer que
+      # no nombra el secreto ni dice que falta uno. Y se listan todos los que
+      # falten de una vez, para arreglarlos en un viaje y no en cuatro.
       - name: Restaurar el almacén de claves
         env:
           ALMACEN: ${{ secrets.OLLIN_ACTIVIDADES_KEYSTORE_BASE64 }}
+          OLLIN_ACTIVIDADES_STORE_PASSWORD: ${{ secrets.OLLIN_ACTIVIDADES_STORE_PASSWORD }}
+          ALIAS: ${{ secrets.OLLIN_ACTIVIDADES_KEY_ALIAS }}
+          CLAVE: ${{ secrets.OLLIN_ACTIVIDADES_KEY_PASSWORD }}
         run: |
           set -euo pipefail
 
-          if [ -z "${ALMACEN:-}" ]; then
-            echo "::error::Falta el secreto OLLIN_ACTIVIDADES_KEYSTORE_BASE64."
-            echo "::error::Sin él el APK saldría sin firmar y no se puede instalar. Ver docs/publicacion.md."
+          faltan=()
+          [ -n "${ALMACEN:-}" ] || faltan+=("OLLIN_ACTIVIDADES_KEYSTORE_BASE64")
+          [ -n "${OLLIN_ACTIVIDADES_STORE_PASSWORD:-}" ] || faltan+=("OLLIN_ACTIVIDADES_STORE_PASSWORD")
+          [ -n "${ALIAS:-}" ] || faltan+=("OLLIN_ACTIVIDADES_KEY_ALIAS")
+          [ -n "${CLAVE:-}" ] || faltan+=("OLLIN_ACTIVIDADES_KEY_PASSWORD")
+
+          if [ ${#faltan[@]} -gt 0 ]; then
+            echo "::error::Faltan estos secretos del repositorio: ${faltan[*]}"
+            echo "::error::Sin ellos el APK saldría sin firmar y no se instala en ningún teléfono."
+            echo "::error::Van en Settings → Secrets and variables → Actions, como secretos del"
+            echo "::error::repositorio y no de un entorno. Los nombres van tal cual. Ver docs/publicacion.md."
             exit 1
           fi
 
-          printf '%s' "$ALMACEN" | base64 --decode > "$RUNNER_TEMP/ollin-actividades-release.jks"
+          almacen="$RUNNER_TEMP/ollin-actividades-release.jks"
+          printf '%s' "$ALMACEN" | base64 --decode > "$almacen"
+
+          # Que el archivo sea un almacen de verdad, que la contrasena lo abra y
+          # que el alias exista: las tres cosas en un segundo, contra los dos
+          # minutos que tarda R8 en llegar al momento de firmar y descubrirlo.
+          # La contrasena va por `:env` y nunca por la linea de comandos.
+          if ! keytool -list -keystore "$almacen" \
+                 -storepass:env OLLIN_ACTIVIDADES_STORE_PASSWORD \
+                 -alias "$ALIAS" > /dev/null 2>&1; then
+            echo "::error::El almacén no se pudo abrir con el alias '$ALIAS'."
+            echo "::error::O el base64 no corresponde al .jks, o STORE_PASSWORD no es la suya,"
+            echo "::error::o el alias está mal escrito. Compruébalo en local con:"
+            echo "::error::  ./gradlew :app:signingReport"
+            exit 1
+          fi
+
+          echo "Almacén restaurado y comprobado, alias '$ALIAS'."
 
       - name: Compilar el APK y el bundle
         env:

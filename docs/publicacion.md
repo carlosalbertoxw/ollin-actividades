@@ -29,7 +29,7 @@ Un número escrito a mano en el build se olvida: se publica la 1.2.0 con el buil
 
 ## Los secretos
 
-El flujo necesita cuatro, en *Settings → Secrets and variables → Actions*:
+El flujo necesita cuatro, en *Settings → Secrets and variables → Actions*, **como secretos del repositorio y no de un entorno**: el job que firma no declara `environment:`, así que un secreto de entorno le llega vacío.
 
 | Secreto | Qué es |
 |---|---|
@@ -52,7 +52,13 @@ Los nombres llevan la app completa y no un `OLLIN_` a secas: Ollin Finanzas se p
 
 Compilando en local, la ausencia de credenciales **no** falla la compilación: sale `app-release-unsigned.apk` y sigue adelante. Es a propósito, para que quien solo quiere comprobar que R8 no rompió nada no necesite el almacén.
 
-En el flujo de publicación eso sería un desastre silencioso —una release con un APK que no se puede instalar—, así que hay dos redes: se comprueba que el secreto exista antes de compilar, y se pasa `apksigner verify --print-certs` sobre el resultado antes de crear la release.
+En el flujo de publicación eso sería un desastre silencioso —una release con un APK que no se puede instalar—, así que hay tres redes.
+
+**Antes de compilar** se comprueban los cuatro secretos juntos y se listan todos los que falten de una vez, para arreglarlos en un viaje. Un secreto ausente en Actions es la cadena vacía, no un error: si se deja pasar, la compilación tarda dos minutos en morir dentro de AGP con un `NullPointerException` que no nombra el secreto ni dice que falte uno.
+
+En el mismo paso se abre el almacén con `keytool` para comprobar que el base64 corresponde a un `.jks` de verdad, que la contraseña lo abre y que el alias existe. Tarda un segundo y ahorra los dos minutos que R8 necesita para llegar al momento de firmar y descubrirlo. La contraseña va por `-storepass:env`, nunca por la línea de comandos.
+
+**Después de compilar** se pasa `apksigner verify --print-certs` sobre el APK, antes de crear la release.
 
 ## Qué se publica
 
