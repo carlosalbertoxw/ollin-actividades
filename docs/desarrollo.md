@@ -140,6 +140,18 @@ Tres decisiones que explican el reparto:
 
 Los secretos de firma y el proceso completo, en [publicación](publicacion.md).
 
+### El bit de ejecución, si desarrollas en Windows
+
+Git en Windows corre con `core.filemode = false` y guarda todo como `100644`, sin permiso de ejecución. Da igual en Windows y rompe en el runner, que es Linux: `./gradlew` responde *Permission denied* y el flujo se cae antes de compilar nada.
+
+`gradlew` ya está marcado como `100755` en el índice. Cualquier script que se agregue desde Windows y tenga que ejecutarse en CI necesita lo mismo:
+
+```bash
+git update-index --chmod=+x <archivo>
+```
+
+`gradlew.bat` no: es un `.bat` y nunca se ejecuta en Linux.
+
 ## Convenciones del código
 
 - **Todo en español**: nombres de clases, funciones, variables y comentarios. Los nombres de prueba van en backticks y en prosa (`` `un dia saltado si la rompe` ``).
