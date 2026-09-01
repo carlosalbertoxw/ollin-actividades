@@ -16,6 +16,18 @@ No está en Google Play: el APK se instala a mano, y el sitio explica cómo. La 
 comprueba una vez al día si salió una versión nueva y lo dice en *Acerca de*; se puede
 apagar en Ajustes.
 
+Cada release lleva su `checksums.txt` con la huella del APK, calculada sobre el archivo
+que se descarga. Comprobarla antes de instalar es una línea:
+
+```bash
+sha256sum -c checksums.txt
+```
+
+[Ollin Finanzas](https://github.com/carlosalbertoxw/ollin-finanzas) es la app hermana —un
+libro de finanzas personales— y comparte estas convenciones: la versión sale del
+`CHANGELOG`, la firma de variables de entorno, y los mismos cuatro flujos de publicación.
+Lo que se aprende manteniendo una se aplica a la otra.
+
 ---
 
 ## Qué hace
@@ -159,9 +171,20 @@ cuenta: cuando hay versión nueva, *Acerca de* enseña un botón que abre el sit
 
 Requiere **JDK 21** para correr Gradle y Android SDK 36. Gradle 8.14.5 no sabe interpretar
 las versiones 25 y 26 de Java y falla al compilar `build.gradle.kts` antes de tocar una
-línea de código fuente. Ojo con el JBR que trae Android Studio: en instalaciones recientes
-ya es 25 y falla igual. Apunta `JAVA_HOME` a un JDK 21 — Android Studio suele dejar uno en
-`~/.jdks/`.
+línea de código fuente.
+
+El síntoma cuesta reconocerlo, porque el mensaje entero es el número de la versión que
+encontró:
+
+```
+* What went wrong:
+26.0.1
+```
+
+No falta ningún componente ni hay nada que instalar: ese `26.0.1` es el JDK del `PATH`.
+Ojo con el JBR que trae Android Studio, que en instalaciones recientes ya es 25 y falla
+igual, con un `25.0.2` igual de escueto. Apunta `JAVA_HOME` a un JDK 21 — Android Studio
+suele dejar uno en `~/.jdks/`.
 
 ```bash
 JAVA_HOME="$HOME/.jdks/jbr-21.0.11" ./gradlew :app:assembleDebug
