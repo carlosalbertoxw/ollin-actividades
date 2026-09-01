@@ -168,11 +168,24 @@ jobs:
           if-no-files-found: ignore
 
   # ---------------------------------------------------------------------------
+  # Que la version nueva abra sobre la anterior, en un emulador de verdad.
+  #
+  # Se invoca el flujo en vez de copiar los pasos, igual que con las pruebas.
+  # Bloquea publicar por la misma razon que las migraciones: un fallo al
+  # actualizar deja sin app a quien ya la tenia, y tampoco se arregla desde
+  # fuera. Ver .github/workflows/actualizacion.yml.
+  # ---------------------------------------------------------------------------
+  actualizacion:
+    name: Actualización
+    needs: etiqueta
+    uses: ./.github/workflows/actualizacion.yml
+
+  # ---------------------------------------------------------------------------
   # El artefacto firmado y la release.
   # ---------------------------------------------------------------------------
   publicar:
     name: Compilar y publicar
-    needs: [etiqueta, pruebas, migraciones]
+    needs: [etiqueta, pruebas, migraciones, actualizacion]
     runs-on: ubuntu-latest
     timeout-minutes: 40
 

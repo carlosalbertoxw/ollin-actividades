@@ -16,6 +16,14 @@ Los enlaces van con dirección completa: el mismo texto se lee en GitHub, en el 
 
 ## [Sin publicar]
 
+### Añadido
+
+- Una prueba de actualización sobre emulador: instala la versión de la etiqueta anterior, la abre para que escriba sus preferencias, instala la nueva encima sin desinstalar y comprueba que sigue abriéndose. **Bloquea la publicación**, junto a las migraciones.
+
+### Cambiado
+
+- Las lecturas de preferencias comprueban el tipo en tiempo de ejecución y tratan como ausente lo que no cuadre. Ninguna clave ha cambiado de tipo aquí, así que no había nada roto: es la red que le faltó a [Ollin Finanzas](https://github.com/carlosalbertoxw/ollin-finanzas), donde el mismo descuido cerró la app al arrancar en los teléfonos que venían de la versión anterior. La regla sigue siendo que una clave no cambia de tipo nunca.
+
 ## [1.0.1] - 2026-08-30
 
 ### Arreglado

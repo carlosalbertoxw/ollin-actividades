@@ -89,6 +89,7 @@ Sin emulador. Robolectric para lo que necesita `Context`.
 | [`RecordatoriosTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/RecordatoriosTest.kt) | Qué avisa el planificador y qué no: hora, cadencia, meta diaria, hábito cumplido o pausado, tareas pendientes |
 | [`ActualizacionesTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/ActualizacionesTest.kt) | Orden de las versiones, lectura del `version.json`, la ventana de un día y el reloj movido hacia atrás |
 | [`EsquemaTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/EsquemaTest.kt) | Que la versión de la base, sus esquemas exportados y sus migraciones cuadren |
+| [`PreferenciasHeredadasTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/PreferenciasHeredadasTest.kt) | Que lo que dejó escrito una versión anterior se siga leyendo, y que una clave con el tipo equivocado se trate como ausente en vez de cerrar la app |
 
 Las pruebas con Room arrancan con una `Application` pelona en vez de `OllinApp`: la de verdad siembra el catálogo contra la base cifrada, y SQLCipher es una biblioteca nativa de Android que en la JVM no existe.
 
@@ -131,6 +132,7 @@ Cuatro flujos, en [`.github/workflows/`](../.github/workflows/):
 | [`publicacion.yml`](../.github/workflows/publicacion.yml) | Tag `v*` | Valida la etiqueta contra el `CHANGELOG`, invoca `pruebas.yml`, corre `MigracionesTest`, firma, publica la release y despliega el sitio |
 | [`sitio.yml`](../.github/workflows/sitio.yml) | Cambios en `web/`, a mano, y al publicar | Compila el sitio y lo despliega en GitHub Pages |
 | [`pruebas-instrumentadas.yml`](../.github/workflows/pruebas-instrumentadas.yml) | Lunes y a mano | La suite de interfaz completa, en emuladores API 26 y 34 |
+| [`actualizacion.yml`](../.github/workflows/actualizacion.yml) | Al etiquetar, lunes y a mano | Instala la versión nueva sobre la anterior y comprueba que abre |
 
 Tres decisiones que explican el reparto:
 

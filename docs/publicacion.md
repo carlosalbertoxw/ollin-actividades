@@ -77,9 +77,12 @@ La huella se publica junto al archivo para que cualquiera pueda comprobar que lo
 | Etiqueta contra `CHANGELOG` | `publicacion.yml` | Sí |
 | Pruebas unitarias, Lint, `assembleRelease` | `pruebas.yml`, invocado tal cual | Sí |
 | `MigracionesTest` en emulador | `publicacion.yml` | Sí |
+| Actualizar sobre la versión anterior | [`actualizacion.yml`](../.github/workflows/actualizacion.yml), invocado tal cual | Sí |
 | Suite de interfaz completa | [`pruebas-instrumentadas.yml`](../.github/workflows/pruebas-instrumentadas.yml) | No |
 
 Las pruebas son **el mismo flujo** que corre en cualquier pull request, invocado con `workflow_call` en vez de copiado. Una etiqueta no puede pasar por una comprobación más floja que un cambio cualquiera, y dos copias de los mismos pasos divergen.
+
+La prueba de actualización bloquea por la misma razón que las migraciones: instala la versión de la etiqueta anterior, la abre para que escriba sus preferencias, instala la nueva encima sin desinstalar y comprueba que sigue abriendo. Ver [desarrollo](desarrollo.md#la-prueba-de-actualización).
 
 Las migraciones sí bloquean y las de interfaz no. Una migración equivocada deja la app sin abrir en el teléfono de quien actualiza y no hay forma de arreglarlo desde fuera; las de pantalla dependen de animaciones y relojes, y su intermitencia no puede ser lo que impida publicar una corrección. Esas corren solas los lunes y a mano cuando se ha tocado una pantalla.
 

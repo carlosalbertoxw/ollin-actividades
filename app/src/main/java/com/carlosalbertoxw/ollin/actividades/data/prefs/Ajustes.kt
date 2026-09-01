@@ -111,43 +111,51 @@ class AjustesRepositorio(private val contexto: Context) {
         val NOTAS_VERSION = stringPreferencesKey("notas_version")
     }
 
-    val ajustes: Flow<Ajustes> = contexto.almacen.data.map(::mapea)
+    val ajustes: Flow<Ajustes> = contexto.almacen.data.map(::interpreta)
 
-    private fun mapea(p: Preferences): Ajustes = Ajustes(
-        temaOscuro = when (p[Claves.TEMA]) {
+    /**
+     * Traduce lo que hay en disco.
+     *
+     * `internal` para poder probarla con unas preferencias escritas a mano,
+     * incluidas las que dejo una version anterior. Ver [PreferenciasHeredadasTest].
+     */
+    internal fun interpreta(p: Preferences): Ajustes = conLoGuardado(p.asMap())
+
+    private fun conLoGuardado(p: Map<Preferences.Key<*>, Any>): Ajustes = Ajustes(
+        temaOscuro = when (p.lee(Claves.TEMA)) {
             "oscuro" -> true
             "claro" -> false
             else -> null
         },
-        colorDinamico = p[Claves.DINAMICO] ?: false,
-        metaTrabajoMinutos = p[Claves.META_TRABAJO] ?: 300,
-        metaFisicoMinutos = p[Claves.META_FISICO] ?: 30,
-        duracionRapidaMinutos = p[Claves.DURACION_RAPIDA] ?: 25,
-        muestraCompletadasEnHoy = p[Claves.COMPLETADAS_HOY] ?: true,
-        muestraTutoriales = p[Claves.TUTORIALES] ?: true,
-        tutorialesOcultos = p[Claves.TUTORIALES_OCULTOS] ?: emptySet(),
-        esquema = p[Claves.ESQUEMA]
+        colorDinamico = p.lee(Claves.DINAMICO) ?: false,
+        metaTrabajoMinutos = p.lee(Claves.META_TRABAJO) ?: 300,
+        metaFisicoMinutos = p.lee(Claves.META_FISICO) ?: 30,
+        duracionRapidaMinutos = p.lee(Claves.DURACION_RAPIDA) ?: 25,
+        muestraCompletadasEnHoy = p.lee(Claves.COMPLETADAS_HOY) ?: true,
+        muestraTutoriales = p.lee(Claves.TUTORIALES) ?: true,
+        tutorialesOcultos = p.lee(Claves.TUTORIALES_OCULTOS) ?: emptySet(),
+        esquema = p.lee(Claves.ESQUEMA)
             ?.let { runCatching { EsquemaExportacion.valueOf(it) }.getOrNull() }
             ?: EsquemaExportacion.EXTENDIDO,
-        hojas = p[Claves.HOJAS]
+        hojas = p.lee(Claves.HOJAS)
             ?.mapNotNull { runCatching { HojaExportable.valueOf(it) }.getOrNull() }
             ?.toSet()
             ?.takeIf { it.isNotEmpty() }
             ?: HojaExportable.PREDETERMINADAS,
-        reemplazarAlImportar = p[Claves.REEMPLAZAR] ?: true,
-        creaFaltantesAlImportar = p[Claves.CREA_FALTANTES] ?: true,
-        modoBloqueo = p[Claves.BLOQUEO]
+        reemplazarAlImportar = p.lee(Claves.REEMPLAZAR) ?: true,
+        creaFaltantesAlImportar = p.lee(Claves.CREA_FALTANTES) ?: true,
+        modoBloqueo = p.lee(Claves.BLOQUEO)
             ?.let { runCatching { ModoBloqueo.valueOf(it) }.getOrNull() }
             ?: ModoBloqueo.NINGUNO,
-        pinHash = p[Claves.PIN_HASH],
-        pinSal = p[Claves.PIN_SAL],
-        pinFallos = p[Claves.PIN_FALLOS] ?: 0,
-        recordatorios = p[Claves.RECORDATORIOS] ?: false,
-        buscarActualizaciones = p[Claves.ACTUALIZACIONES] ?: true,
-        ultimaComprobacion = p[Claves.ULTIMA_COMPROBACION] ?: 0L,
-        versionDisponible = p[Claves.VERSION_DISPONIBLE],
-        urlDeDescarga = p[Claves.URL_DESCARGA],
-        notasDeVersion = p[Claves.NOTAS_VERSION]
+        pinHash = p.lee(Claves.PIN_HASH),
+        pinSal = p.lee(Claves.PIN_SAL),
+        pinFallos = p.lee(Claves.PIN_FALLOS) ?: 0,
+        recordatorios = p.lee(Claves.RECORDATORIOS) ?: false,
+        buscarActualizaciones = p.lee(Claves.ACTUALIZACIONES) ?: true,
+        ultimaComprobacion = p.lee(Claves.ULTIMA_COMPROBACION) ?: 0L,
+        versionDisponible = p.lee(Claves.VERSION_DISPONIBLE),
+        urlDeDescarga = p.lee(Claves.URL_DESCARGA),
+        notasDeVersion = p.lee(Claves.NOTAS_VERSION)
     )
 
     suspend fun guardaTema(oscuro: Boolean?) {
@@ -313,3 +321,27 @@ class AjustesRepositorio(private val contexto: Context) {
         contexto.almacen.edit { it.remove(Claves.PIN_FALLOS) }
     }
 }
+
+/**
+ * Lee una clave comprobando su tipo, no confiando en el.
+ *
+ * DataStore guarda el tipo junto al valor, asi que pedir como texto algo que
+ * una version anterior escribio como entero revienta. Y revienta lejos: con
+ * los genericos borrados, el `checkcast` no queda dentro de esta funcion sino
+ * en el punto donde se usa el valor, asi que envolverla en un `runCatching` no
+ * atrapa nada. La unica forma de comprobarlo de verdad es preguntar por el tipo
+ * en tiempo de ejecucion, que es lo que hace `as?` con un parametro `reified`.
+ *
+ * Importa porque esto corre dentro del Flow que alimenta el arranque y todas
+ * las pantallas: una excepcion aqui no se queda en una preferencia perdida,
+ * cierra la app en el telefono de quien actualiza. Un valor que no cuadra se
+ * trata como ausente y se cae al de fabrica.
+ *
+ * La regla que evita llegar hasta aqui: **una clave no cambia de tipo nunca**.
+ * Si el dato cambia de forma se estrena nombre, y el viejo se barre. Esto es la
+ * red de abajo, para que el dia que se olvide no cueste una version publicada,
+ * como le costo a Ollin Finanzas entre su 1.0.0 y su 1.0.1.
+ */
+private inline fun <reified T> Map<Preferences.Key<*>, Any>.lee(
+    clave: Preferences.Key<T>
+): T? = this[clave] as? T
