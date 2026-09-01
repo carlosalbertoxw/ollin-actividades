@@ -38,6 +38,36 @@ class EsquemaTest {
             .mapNotNull { it.nameWithoutExtension.toIntOrNull() }
             .sorted()
 
+    /**
+     * La prueba que faltaba el dia que la version bajo de 2 a 1.
+     *
+     * Room guarda la version dentro del archivo de la base, asi que en cuanto
+     * un APK con la version N se instala en un telefono —el de quien
+     * desarrolla incluido—, ese telefono queda con una base marcada con N para
+     * siempre. Bajar la version despues convierte cada una de esas
+     * instalaciones en un downgrade, y Room se niega a abrir una base mas nueva
+     * que la app: se cierra al arrancar, sin diálogo, y solo en los telefonos
+     * que venian de antes.
+     *
+     * Aquella vez el razonamiento fue "no hay nada publicado, no hay nada que
+     * migrar". Era cierto y aun asi insuficiente: publicado y instalado no son
+     * lo mismo. Por eso el numero no vive solo en un comentario que se puede
+     * borrar al refactorizar —se borro—, sino aqui, donde bajarlo rompe la
+     * compilación de las pruebas antes de llegar a un telefono.
+     *
+     * **Al subir la version, sube tambien este numero.**
+     */
+    @Test
+    fun `la version del esquema nunca retrocede`() {
+        assertTrue(
+            "Migraciones.VERSION es ${Migraciones.VERSION} y la $USADA_MAS_ALTA ya estuvo " +
+                "instalada en algun telefono. Bajarla convierte esas instalaciones en un " +
+                "downgrade y Room se niega a abrir: la app se cierra al arrancar. Un numero " +
+                "de version usado esta quemado, aunque no llegara a publicarse.",
+            Migraciones.VERSION >= USADA_MAS_ALTA
+        )
+    }
+
     @Test
     fun `cada version del esquema esta versionada en el repositorio`() {
         assertEquals(
@@ -92,5 +122,17 @@ class EsquemaTest {
 
     private companion object {
         const val BASE = "com.carlosalbertoxw.ollin.actividades.data.db.OllinDatabase"
+
+        /**
+         * La version mas alta que alguna vez salio de este repositorio dentro
+         * de un APK, publicado o no.
+         *
+         * No se deriva de nada a proposito: si se calculara desde los archivos
+         * de `app/schemas/`, borrar uno —que es justo lo que se hizo aquella
+         * vez— haria bajar el listón junto con la version y la prueba pasaria
+         * tan campante. Es un numero escrito a mano porque tiene que doler
+         * cambiarlo.
+         */
+        const val USADA_MAS_ALTA = 2
     }
 }

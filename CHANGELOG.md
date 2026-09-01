@@ -16,6 +16,15 @@ Los enlaces van con dirección completa: el mismo texto se lee en GitHub, en el 
 
 ## [Sin publicar]
 
+### Arreglado
+
+- **La app se cerraba al abrirse en los teléfonos que venían de una compilación de desarrollo.** El esquema de la base había usado la versión 2 antes de la primera publicación, y al preparar la 1.0.0 se bajó a 1 porque no había nada publicado que migrar. No había nada publicado, pero sí teléfonos con una base marcada como 2: para esos, instalar la 1.0.0 o la 1.0.1 era un downgrade, y Room se niega a abrir una base más nueva que la app. La versión vuelve a ser 2, con una migración de la 1 a la 2 que no hace nada porque las dos describen el mismo esquema. Nadie pierde datos y las dos procedencias abren.
+- **Un fallo al arrancar ya no mata la app en silencio.** La excepción salía del `launch` de `OllinApp` y el proceso desaparecía sin diálogo ni mensaje. Ahora se atrapa y se enseña una pantalla que dice qué pasó, que los datos siguen intactos y qué hacer.
+
+### Añadido
+
+- `EsquemaTest` comprueba que la versión del esquema **nunca retroceda**, contra una constante escrita a mano con la más alta que llegó a instalarse. Es la prueba que faltaba el día del fallo de arriba.
+
 ### Añadido
 
 - Una prueba de actualización sobre emulador: instala la versión de la etiqueta anterior, la abre para que escriba sus preferencias, instala la nueva encima sin desinstalar y comprueba que sigue abriéndose. **Bloquea la publicación**, junto a las migraciones.

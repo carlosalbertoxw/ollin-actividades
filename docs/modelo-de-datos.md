@@ -97,16 +97,35 @@ La versión y el camino para llegar a ella viven juntos, en [`Migraciones.kt`](.
 
 ```kotlin
 object Migraciones {
-    const val VERSION = 1
-    val TODAS: Array<Migration> = arrayOf()
+    const val VERSION = 2
+    val TODAS: Array<Migration> = arrayOf(SIN_CAMBIOS_1_2)
 }
 ```
 
 `OllinDatabase` declara `version = Migraciones.VERSION` y registra `addMigrations(*Migraciones.TODAS)`. Están en el mismo archivo a propósito: subir un número en un sitio y olvidar el paso que lo acompaña en otro es el error que deja la app sin abrir en el teléfono de alguien, y aquí las dos cosas están a tres líneas de distancia.
 
-Hoy el esquema va por la **versión 1** y `TODAS` está vacía: no hay nada que migrar cuando solo existe la primera versión.
+### Un número de versión usado está quemado
 
-**No hay `fallbackToDestructiveMigration` en ningún lado, y no debe haberlo.** La base va cifrada con una llave del Keystore que no se respalda, así que borrarla y empezar de cero no es un inconveniente: es perder la bitácora entera y no hay de dónde recuperarla. Si falta un paso, Room se niega a abrir. Un arranque que falla se arregla con una actualización; una bitácora borrada, no.
+Room guarda la versión **dentro del archivo** de la base. En cuanto un APK con la versión N se instala en un teléfono —el de quien desarrolla incluido—, ese teléfono tiene una base marcada con N para siempre. Bajar la versión después no la libera: convierte cada una de esas instalaciones en un *downgrade*, y Room se niega a abrir una base más nueva que la app.
+
+| Versión | Quién la usó |
+|---|---|
+| 1 | El primer esquema, y el de las publicadas 1.0.0 y 1.0.1 |
+| 2 | `habito.horaRecordatorio` en compilaciones de desarrollo; hoy, **la misma forma** que la 1 |
+
+La 2 nació agregando `horaRecordatorio` sobre una 1 que no la tenía. Al preparar la primera publicación se replegó todo a la versión 1 —con la columna ya dentro del `CREATE TABLE` inicial— porque no había nada publicado que migrar. El razonamiento tenía un agujero: no había nada *publicado*, pero sí teléfonos de desarrollo con una base marcada como 2, y para esos la 1.0.0 era un downgrade. Se cerraban al abrirse, sin diálogo.
+
+De ahí que la versión vuelva a ser 2 y que `SIN_CAMBIOS_1_2` no haga nada. Las dos versiones describen exactamente el mismo esquema —mismo `identityHash`, `cc3cd97f…`— y lo único que hacía falta es que el número avanzara en vez de retroceder. Una migración vacía es rara, y por eso está explicada donde vive: no arregla el esquema, reconcilia dos numeraciones que se cruzaron.
+
+Lo cubre `EsquemaTest.la version del esquema nunca retrocede`, contra una constante escrita a mano. No se deriva de los archivos de `app/schemas/` a propósito: borrar uno —que es justo lo que se hizo aquella vez— bajaría el listón junto con la versión y la prueba pasaría tan campante.
+
+**No hay `fallbackToDestructiveMigration` en ningún lado, y no debe haberlo** —ni su variante `OnDowngrade`—. La base va cifrada con una llave del Keystore que no se respalda, así que borrarla y empezar de cero no es un inconveniente: es perder la bitácora entera y no hay de dónde recuperarla. Si falta un paso, Room se niega a abrir. Un arranque que falla se arregla con una actualización; una bitácora borrada, no.
+
+### Cuando aun así falla
+
+Room negándose a abrir mata el proceso si nadie lo atrapa, y eso es lo que hacía: la excepción salía del `launch` de `OllinApp`, llegaba al manejador por defecto del hilo y la app desaparecía sin decir nada. Ahora el arranque va dentro de un `try`, deja el fallo en `OllinApp.arranqueFallido` y [`MainActivity`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/MainActivity.kt) enseña una pantalla que lo explica, con el tipo y el mensaje de la excepción.
+
+Esa pantalla es la excepción a la regla de [ocultar lo interno](seguridad.md#manejo-de-errores): la app no va a funcionar, no hay otra pantalla desde la que enterarse de nada, y sin una línea que copiar no hay forma de distinguir «se me corrompió la base» de «esta versión no abre en mi teléfono». Va antes que el candado, porque si la base no abrió no hay bitácora que proteger.
 
 Dos columnas admiten nulos, y en las dos nulo es una respuesta y no un dato que falta: `horaRecordatorio` nula significa que el hábito no avisa, y `ancla` nula significa «cuenta desde el día en que di de alta el hábito», que es lo que resuelve `Habito.anclaEfectiva()` sin inventarle una fecha.
 

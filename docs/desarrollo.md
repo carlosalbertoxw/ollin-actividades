@@ -124,7 +124,7 @@ Viven en `app/src/androidTest/java/com/carlosalbertoxw/ollin/actividades/ui/`, *
 
 ## Integración continua
 
-Cuatro flujos, en [`.github/workflows/`](../.github/workflows/):
+Cinco flujos, en [`.github/workflows/`](../.github/workflows/):
 
 | Flujo | Cuándo | Qué hace |
 |---|---|---|
@@ -141,6 +141,19 @@ Tres decisiones que explican el reparto:
 - **Las pruebas de interfaz no bloquean nada.** Dependen de animaciones, diálogos y relojes; su intermitencia acabaría enseñando a ignorar el aspa roja, que es peor que no tenerlas. Van una vez por semana. Las de migración sí bloquean, por la razón contraria: un fallo ahí no se puede arreglar desde fuera.
 
 Los secretos de firma y el proceso completo, en [publicación](publicacion.md).
+
+### La prueba de actualización
+
+[`actualizacion.yml`](../.github/workflows/actualizacion.yml) compila el APK de la etiqueta anterior y el de ahora, instala el viejo en un emulador, lo abre para que escriba sus preferencias, instala el nuevo **encima sin desinstalar** y comprueba que sigue abriendo. Lo hace [`actualiza-y-abre.sh`](../.github/scripts/actualiza-y-abre.sh), y bloquea publicar.
+
+Es el único escenario que ninguna otra prueba puede ver, porque todas las demás empiezan con el disco vacío —y el disco vacío es justamente el caso donde estos fallos no existen—. Ya ha aparecido dos veces en la familia Ollin:
+
+- **En Finanzas**, una clave de preferencias que cambió de entero a texto entre dos versiones. DataStore guarda el tipo junto al valor, así que la lectura lanzaba dentro del `Flow` que alimenta el arranque.
+- **Aquí**, la versión del esquema de Room bajando de 2 a 1 porque «no había nada publicado». Ver [modelo de datos](modelo-de-datos.md#un-número-de-versión-usado-está-quemado).
+
+Los dos son invisibles en una instalación limpia, los dos cierran la app al abrirse, y los dos se descubren en el teléfono de alguien.
+
+Lo que afirma es deliberadamente pobre: que el proceso siga vivo y que no haya una excepción mortal. No mira la pantalla, porque un fallo de arranque se manifiesta como el proceso que desaparece y eso se ve sin depender de animaciones.
 
 ### El bit de ejecución, si desarrollas en Windows
 
