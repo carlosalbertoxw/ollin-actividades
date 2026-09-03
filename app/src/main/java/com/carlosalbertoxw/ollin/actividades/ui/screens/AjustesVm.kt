@@ -27,6 +27,8 @@ class AjustesVm(private val repo: AjustesRepositorio) : ViewModel() {
     fun buscarActualizaciones(valor: Boolean) =
         viewModelScope.launch { repo.guardaBuscarActualizaciones(valor) }
 
+    fun avisaRespaldo(valor: Boolean) = viewModelScope.launch { repo.guardaAvisaRespaldo(valor) }
+
     fun tutoriales(valor: Boolean) = viewModelScope.launch { repo.guardaMuestraTutoriales(valor) }
 
     fun reiniciaTutoriales() = viewModelScope.launch { repo.reiniciaTutoriales() }

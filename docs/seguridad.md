@@ -81,6 +81,8 @@ La razón es física: una llave del Keystore no se puede restaurar ni transferir
 
 **El respaldo real es la exportación a `.xlsx`**, que el usuario decide dónde guardar. Ver [Excel](excel.md).
 
+Como es el único, Ollin lo recuerda: un aviso semanal si no se ha exportado, y otro al encontrar una versión nueva —instalar un APK encima es cuando más importa tenerlo—. Los dos nacen encendidos y tienen su propio interruptor, aparte del de los hábitos. Ver [recordatorios](recordatorios.md#el-recordatorio-de-respaldar).
+
 ## La comprobación de actualizaciones
 
 Ollin se instala fuera de la tienda, así que nadie avisa de una corrección: sin esto, quien instaló el APK en marzo se queda con el de marzo para siempre. Una vez al día la app pide un archivo estático al [sitio](sitio.md) y compara.

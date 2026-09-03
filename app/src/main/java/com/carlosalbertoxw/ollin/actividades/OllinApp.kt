@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import com.carlosalbertoxw.ollin.actividades.data.actualizaciones.Resultado
 import com.carlosalbertoxw.ollin.actividades.data.recordatorios.Notificaciones
 import com.carlosalbertoxw.ollin.actividades.di.Contenedor
 
@@ -76,7 +77,19 @@ class OllinApp : Application() {
             // es lo unico del arranque que depende de la red, y quedarse sin
             // señal no puede impedir que la app abra. El propio comprobador
             // decide si toca —una vez al dia— y si el interruptor lo permite.
-            runCatching { contenedor.actualizaciones.compruebaSiToca() }
+            runCatching {
+                val novedad = contenedor.actualizaciones.compruebaSiToca()
+                // Enterarse de que hay version nueva solo sirve si alguien lo
+                // ve, y hasta ahora habia que entrar a Acerca de a mirarlo. Se
+                // avisa una vez por version, con el recordatorio de respaldar
+                // pegado: instalar un APK encima es el momento en que mas
+                // importa tener el .xlsx a salvo.
+                if (novedad is Resultado.HayVersionNueva) {
+                    contenedor.recordatorios.avisaDeVersionNueva(
+                        novedad.publicada.version.toString()
+                    )
+                }
+            }
         }
     }
 

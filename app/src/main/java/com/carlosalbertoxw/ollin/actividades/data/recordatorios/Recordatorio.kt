@@ -19,7 +19,23 @@ data class Recordatorio(
     val detalle: String,
     val cuando: Instant
 ) {
-    enum class Clase { HABITO, TAREA }
+    enum class Clase {
+        HABITO,
+        TAREA,
+
+        /**
+         * El recordatorio semanal de respaldar. No cuelga de ningun registro,
+         * asi que va siempre con [id] cero: solo hay uno pendiente a la vez.
+         */
+        RESPALDO,
+
+        /**
+         * Hay version nueva; conviene respaldar antes de instalarla. Aparte de
+         * [RESPALDO] para que no se tapen: son dos avisos que pueden coincidir
+         * el mismo dia y dicen cosas distintas.
+         */
+        VERSION
+    }
 
     /**
      * Id de la notificacion en el sistema.
@@ -67,6 +83,15 @@ class PlanificadorRecordatorios(
      * notificarlo y lo venidero para programar la alarma, y las dos salen del
      * mismo recorrido.
      */
+    /**
+     * Si hay algo en la bitacora que valga la pena respaldar.
+     *
+     * Una instalacion recien estrenada no tiene nada que perder, y recordarle
+     * un respaldo a quien no ha registrado nada es la primera notificacion
+     * inutil: la que ensena que las de esta app se pueden ignorar.
+     */
+    suspend fun hayBitacora(): Boolean = actividades.cuenta() > 0
+
     suspend fun entre(desde: Instant, hasta: Instant): List<Recordatorio> =
         (deHabitos(desde, hasta) + deTareas(desde, hasta)).sortedBy { it.cuando }
 

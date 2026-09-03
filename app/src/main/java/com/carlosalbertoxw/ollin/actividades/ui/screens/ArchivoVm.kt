@@ -89,6 +89,10 @@ class ArchivoVm(
             val a = ajustes.value
             runCatching { repo.exporta(uri, a.esquema, a.hojas) }.fold(
                 onSuccess = {
+                    // El plazo del recordatorio de respaldo cuenta desde aqui.
+                    // Se marca al terminar bien y no al empezar: un libro que
+                    // no llego a escribirse no es un respaldo.
+                    prefs.marcaRespaldo()
                     _estado.value = EstadoArchivo.Exportado(
                         hojas = HojaExportable.normaliza(a.hojas).size,
                         actividades = totalActividades.value

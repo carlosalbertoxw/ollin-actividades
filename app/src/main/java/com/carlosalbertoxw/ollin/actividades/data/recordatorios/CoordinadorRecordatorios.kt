@@ -2,6 +2,7 @@ package com.carlosalbertoxw.ollin.actividades.data.recordatorios
 
 import android.content.Context
 import com.carlosalbertoxw.ollin.actividades.OllinApp
+import com.carlosalbertoxw.ollin.actividades.data.prefs.Ajustes
 import com.carlosalbertoxw.ollin.actividades.data.prefs.AjustesRepositorio
 import com.carlosalbertoxw.ollin.actividades.data.prefs.ModoBloqueo
 import com.carlosalbertoxw.ollin.actividades.domain.model.Tiempo
@@ -41,24 +42,108 @@ class CoordinadorRecordatorios(
      */
     suspend fun despacha() {
         val preferencias = ajustes.ajustes.first()
-        if (!preferencias.recordatorios) {
-            AlarmaRecordatorios.cancela(contexto)
-            return
-        }
         val discreto = preferencias.modoBloqueo != ModoBloqueo.NINGUNO
 
         val ahora = Tiempo.ahora()
         val desde = ahora.minus(Duration.ofHours(PlanificadorRecordatorios.RESCATE_HORAS))
         val hasta = ahora.plus(Duration.ofDays(PlanificadorRecordatorios.HORIZONTE_DIAS))
 
-        val avisos = planificador.entre(desde, hasta)
+        // Habitos y tareas van bajo el interruptor maestro. El respaldo no, y
+        // es deliberado: son dos cosas distintas. Apagar los avisos de habitos
+        // es decir "no me persigas con lo que me propuse"; el del respaldo es
+        // lo unico que se interpone entre un telefono perdido y una bitacora
+        // que no se puede recuperar de ningun lado, porque la llave vive en el
+        // Keystore y no viaja. Tiene su propio interruptor.
+        val deLaBitacora =
+            if (preferencias.recordatorios) planificador.entre(desde, hasta) else emptyList()
+
+        val avisos = (deLaBitacora + listOfNotNull(respaldoPendiente(preferencias, ahora, hasta)))
+            .sortedBy { it.cuando }
+
         val (vencidos, futuros) = avisos.partition { !it.cuando.isAfter(ahora) }
 
-        vencidos.forEach { Notificaciones.avisa(contexto, it, discreto) }
+        vencidos.forEach { aviso ->
+            Notificaciones.avisa(contexto, aviso, discreto)
+            // La marca se pone al avisar y no al respaldar: si no, un aviso
+            // desatendido se repetiria en cada replanificacion, o sea varias
+            // veces al dia.
+            if (aviso.clase == Recordatorio.Clase.RESPALDO) ajustes.marcaAvisoDeRespaldo()
+        }
 
         val siguiente = futuros.firstOrNull()?.cuando
         if (siguiente != null) AlarmaRecordatorios.programa(contexto, siguiente)
         else AlarmaRecordatorios.cancela(contexto)
+    }
+
+    /**
+     * El recordatorio de respaldar, si toca y si hay algo que respaldar.
+     *
+     * El plazo cuenta desde el ultimo respaldo, o desde el ultimo aviso si
+     * nadie le hizo caso, o desde el primer arranque si no hay ninguna de las
+     * dos cosas. Ese ultimo caso es el que estrena el plazo: se guarda la fecha
+     * en vez de avisar de inmediato, porque estrenar la app y recibir a los dos
+     * minutos "respalda tu bitacora" no tiene ningun sentido.
+     *
+     * `internal` para poder probar el calendario del aviso sin levantar
+     * AlarmManager ni el canal de notificaciones, que es sistema operativo.
+     */
+    internal suspend fun respaldoPendiente(
+        preferencias: Ajustes,
+        ahora: Instant,
+        hasta: Instant
+    ): Recordatorio? {
+        if (!preferencias.avisaRespaldo) return null
+
+        val ancla = maxOf(preferencias.respaldoDesde, preferencias.ultimoAvisoRespaldo)
+        if (ancla == 0L) {
+            ajustes.estrenaPlazoDeRespaldo(ahora.toEpochMilli())
+            return null
+        }
+
+        if (!planificador.hayBitacora()) return null
+
+        val vence = Instant.ofEpochMilli(ancla).plus(Duration.ofDays(PLAZO_RESPALDO_DIAS))
+        // Vencido se avisa ya, sin la ventana de rescate de los habitos: este
+        // no depende de una hora concreta, asi que llegar tarde no lo caduca.
+        val cuando = if (vence.isBefore(ahora)) ahora else vence
+        if (cuando.isAfter(hasta)) return null
+
+        return Recordatorio(
+            clase = Recordatorio.Clase.RESPALDO,
+            id = 0,
+            titulo = "Respalda tu bitácora",
+            detalle = "Exporta a Excel desde Ajustes → Archivo. Es el único respaldo que hay.",
+            cuando = cuando
+        )
+    }
+
+    /**
+     * Avisa de que hay version nueva, una sola vez por version.
+     *
+     * Va aqui y no en el comprobador porque es una notificacion, y el
+     * comprobador no sabe de notificaciones: pregunta, compara y devuelve.
+     *
+     * El texto habla de respaldar y no solo de actualizar porque ese es el
+     * momento en que mas importa: instalar un APK encima es justo cuando a
+     * alguien le puede pasar algo con sus datos, y es el unico aviso que llega
+     * **antes** de que sea tarde.
+     */
+    suspend fun avisaDeVersionNueva(version: String) {
+        val preferencias = ajustes.ajustes.first()
+        if (preferencias.versionAvisada == version) return
+
+        Notificaciones.avisa(
+            contexto,
+            Recordatorio(
+                clase = Recordatorio.Clase.VERSION,
+                id = 0,
+                titulo = "Hay una versión nueva de Ollin",
+                detalle = "La $version ya está publicada. Respalda a Excel antes de instalarla.",
+                cuando = Tiempo.ahora()
+            ),
+            discreto = preferencias.modoBloqueo != ModoBloqueo.NINGUNO
+        )
+        ajustes.marcaVersionAvisada(version)
     }
 
     /**
@@ -77,7 +162,9 @@ class CoordinadorRecordatorios(
         alcance.launch {
             combine(
                 planificador.cambios,
-                ajustes.ajustes.map { it.recordatorios }.distinctUntilChanged()
+                ajustes.ajustes
+                    .map { it.recordatorios to it.avisaRespaldo }
+                    .distinctUntilChanged()
             ) { _, _ -> Unit }
                 .collectLatest {
                     // Un respiro antes de recalcular: una importacion escribe
@@ -91,6 +178,13 @@ class CoordinadorRecordatorios(
 
     companion object {
         private const val REPOSO_MS = 700L
+
+        /**
+         * Cada cuanto se recuerda respaldar. Una semana: lo bastante seguido
+         * para que lo perdido quepa en la cabeza, y lo bastante espaciado para
+         * que no se vuelva ruido de fondo.
+         */
+        const val PLAZO_RESPALDO_DIAS = 7L
 
         fun de(contexto: Context): CoordinadorRecordatorios =
             (contexto.applicationContext as OllinApp).contenedor.recordatorios

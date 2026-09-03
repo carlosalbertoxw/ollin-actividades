@@ -1,8 +1,17 @@
 # Recordatorios
 
-Ollin puede avisar de lo que tienes pendiente: **un hábito** a la hora que le pusiste, los días que toca, y **una tarea** a su hora de inicio.
+Ollin avisa de cuatro cosas, y no todas se gobiernan igual:
 
-El interruptor maestro está en `Ajustes → Recordatorios` y **nace apagado**. Una app de bitácora que empieza a mandar notificaciones sin que nadie se lo pida acaba silenciada entera, y con ella los avisos que sí se querían.
+| Aviso | Cuándo | Interruptor |
+|---|---|---|
+| **Hábito** | Los días que toca, a `horaRecordatorio` | `Recordatorios`, **apagado** de fábrica |
+| **Tarea** | A su hora de inicio | `Recordatorios`, **apagado** de fábrica |
+| **Respaldo** | Cada semana sin exportar | `Recordarme respaldar`, **encendido** |
+| **Versión nueva** | Al encontrarla, una vez por versión | `Avisarme de versiones nuevas`, **encendido** |
+
+El interruptor de hábitos y tareas nace apagado: una app de bitácora que empieza a mandar notificaciones sin que nadie se lo pida acaba silenciada entera, y con ella los avisos que sí se querían.
+
+**Los otros dos no cuelgan de él, y es deliberado.** Apagar los avisos de hábitos es decir «no me persigas con lo que me propuse». El del respaldo es otra cosa: es lo único que se interpone entre un teléfono perdido y una bitácora que no se recupera de ningún lado, porque la llave vive en el Keystore y no viaja. Quien apaga los hábitos no está pidiendo quedarse sin red de seguridad, así que tiene su propio interruptor.
 
 ## Qué avisa y qué no
 
@@ -11,9 +20,31 @@ El interruptor maestro está en `Ajustes → Recordatorios` y **nace apagado**. 
 | **Hábito** | Los días que toca según su cadencia, a `horaRecordatorio` | Sin hora puesta · pausado · ya cumplido ese día |
 | **Tarea** | A su `inicio` | Si ya está completada o en curso |
 
+Los hábitos periódicos avisan **solo el día que toca**, aunque queden vencidos y sigan a la vista en Hoy. Ver [rachas](rachas.md#lo-vencido-se-queda-a-la-vista).
+
 Un hábito con meta diaria de tres sigue avisando hasta la tercera: el planificador cuenta los cumplimientos del día, no se conforma con que haya alguno.
 
 La hora del hábito es una **hora local suelta**, no un instante. «A las ocho» son las ocho de donde estés: guardar el instante ataría el recordatorio al huso en que se creó y sonaría a las tres de la madrugada después de un vuelo.
+
+## El recordatorio de respaldar
+
+Cada **7 días** sin exportar. El plazo cuenta desde el último respaldo, o desde el último aviso si nadie le hizo caso, o desde el primer arranque si no hay ninguna de las dos cosas.
+
+Tres reglas que lo separan de una molestia:
+
+- **No avisa si no hay nada que perder.** Con la bitácora vacía no se dice nada: recordarle un respaldo a quien no ha registrado nada es la primera notificación inútil, la que enseña que las de esta app se pueden ignorar.
+- **No avisa el día que se instala.** El primer arranque *estrena* el plazo en vez de disparar: abrir la app y recibir a los dos minutos «respalda tu bitácora» no tiene ningún sentido. Encender el interruptor hace lo mismo.
+- **Un aviso desatendido no se repite hasta la semana siguiente.** La marca se pone al avisar y no al respaldar; sin eso se repetiría en cada replanificación, que ocurre varias veces al día.
+
+Exportar desde `Ajustes → Archivo` reinicia el plazo. Se marca al terminar bien y no al empezar: un libro que no llegó a escribirse no es un respaldo.
+
+## El aviso de versión nueva
+
+Cuando la [comprobación diaria](actualizaciones.md) encuentra algo más reciente, se notifica **una vez por versión**. Hasta ahora había que entrar a *Acerca de* a mirarlo, así que enterarse dependía de ir a buscarlo.
+
+El texto habla de respaldar y no solo de actualizar, porque ese es el momento en que más importa: instalar un APK encima es justo cuando algo puede salir mal con los datos, y es el único aviso que llega **antes** de que sea tarde.
+
+Vive en `CoordinadorRecordatorios` y no en el comprobador: el comprobador pregunta, compara y devuelve; no sabe de notificaciones.
 
 ## Cómo funciona por dentro
 

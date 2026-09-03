@@ -42,7 +42,7 @@ Lo que se aprende manteniendo una se aplica a la otra.
 | **Analítica sobre lo completado** | Minutos por día, por categoría y por ámbito en ventanas de 7, 30 o 90 días. Lo pendiente no infla ninguna cifra: solo suma lo que cerraste. |
 | **Recordatorios de lo que falta** | Un aviso por cada hábito que toque y todavía no hayas cumplido, a la hora que le pongas, y por cada tarea pendiente a su hora de inicio. Se calculan al vuelo y se arma una sola alarma, la del más próximo: una tabla de avisos habría que invalidarla en seis sitios y el primero que se olvidara dejaría fantasmas. Nacen apagados. |
 | **Bajo llave si quieres** | Con la credencial del teléfono —patrón, PIN, huella— o con un PIN propio de Ollin, con espera creciente ante los intentos fallidos y `FLAG_SECURE` mientras hay candado puesto. |
-| **Importar y exportar .xlsx** | Tu respaldo es un libro de Excel que tú decides dónde guardar. |
+| **Importar y exportar .xlsx** | Tu respaldo es un libro de Excel que tú decides dónde guardar. Y como es el único que hay —la base va cifrada con una llave que no se restaura en otro teléfono—, Ollin te lo recuerda cada semana si no has exportado, y otra vez cuando encuentra una versión nueva, que es justo antes de instalar algo encima. |
 
 Los instantes se guardan en **UTC** y el día local **aparte**, en su propia columna. Un
 instante es un punto en la línea del tiempo y no debe moverse al viajar; "cuánto trabajé

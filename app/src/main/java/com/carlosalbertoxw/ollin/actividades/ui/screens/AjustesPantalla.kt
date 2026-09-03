@@ -93,17 +93,22 @@ fun AjustesPantalla(
     // Encender los avisos y conceder el permiso son la misma intencion, asi que
     // van en el mismo gesto: si el sistema lo niega, el interruptor no se
     // enciende, porque quedaria prometiendo algo que no puede cumplir.
+    // Que interruptor se encendera cuando vuelva la respuesta del permiso. Los
+    // dos que notifican lo piden igual, y el launcher es uno solo.
+    var alConcederPermiso by remember { mutableStateOf<(Boolean) -> Unit>({}) }
+
     val permisoNotificaciones = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { concedido -> vm.recordatorios(concedido) }
+    ) { concedido -> alConcederPermiso(concedido) }
 
-    val pidePermisoNotificaciones = {
+    val pidePermisoNotificaciones = { encender: (Boolean) -> Unit ->
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             !Notificaciones.sePuedeAvisar(contexto)
         ) {
+            alConcederPermiso = encender
             permisoNotificaciones.launch(Manifest.permission.POST_NOTIFICATIONS)
         } else {
-            vm.recordatorios(true)
+            encender(true)
         }
     }
 
@@ -245,13 +250,40 @@ fun AjustesPantalla(
                     onCheckedChange = { quiere ->
                         // El permiso se pide solo al encenderlo: preguntarlo al
                         // abrir Ajustes seria pedir algo que quiza nadie quiere.
-                        if (quiere) pidePermisoNotificaciones() else vm.recordatorios(false)
+                        if (quiere) pidePermisoNotificaciones(vm::recordatorios)
+                        else vm.recordatorios(false)
                     }
                 )
             }
 
             if (ajustes.recordatorios) {
                 RecordatoriosEnRiesgo(contexto)
+            }
+
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text("Recordarme respaldar", style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        "Cada semana, si no has exportado. Tu bitácora vive cifrada con una " +
+                            "llave que no se puede restaurar en otro teléfono: el .xlsx es el " +
+                            "único respaldo que hay.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colores.textoTenue
+                    )
+                }
+                Switch(
+                    checked = ajustes.avisaRespaldo,
+                    onCheckedChange = { quiere ->
+                        if (quiere) pidePermisoNotificaciones(vm::avisaRespaldo)
+                        else vm.avisaRespaldo(false)
+                    }
+                )
             }
 
             Spacer(Modifier.height(20.dp))

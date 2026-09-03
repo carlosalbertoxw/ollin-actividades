@@ -1,6 +1,6 @@
 # Exportación e importación en Excel
 
-La pantalla **Ajustes → Archivo** genera un `.xlsx` con toda la bitácora y lo vuelve a leer. Es el respaldo real de la app: la base cifrada no se puede restaurar en otro teléfono.
+La pantalla **Ajustes → Archivo** genera un `.xlsx` con toda la bitácora y lo vuelve a leer. Es el respaldo real de la app: la base cifrada no se puede restaurar en otro teléfono. Por eso exportar reinicia el plazo del [recordatorio semanal de respaldo](recordatorios.md#el-recordatorio-de-respaldar).
 
 Todo el paquete `data/excel/` es propio, **sin dependencias externas**. Apache POI pesa del orden de 15 MB en Android, mete decenas de miles de métodos y obliga a desugaring; aquí el formato producido está bajo control, así que un escritor de ~400 líneas es más pequeño, arranca más rápido y no sorprende.
 

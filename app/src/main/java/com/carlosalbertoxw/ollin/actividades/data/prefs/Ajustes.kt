@@ -63,6 +63,29 @@ data class Ajustes(
     /** De donde se baja. Se abre en el navegador; Ollin nunca descarga sola. */
     val urlDeDescarga: String? = null,
     val notasDeVersion: String? = null,
+    /**
+     * Si Ollin recuerda hacer un respaldo en Excel cada semana.
+     *
+     * Nace encendido por lo mismo que el aviso de versiones: la base va cifrada
+     * con una llave del Keystore que no se respalda ni viaja a otro telefono,
+     * asi que el `.xlsx` no es *un* respaldo, es **el unico**. Quien lo apague
+     * sabe lo que hace; quien nunca lo encienda se enteraria el dia que cambie
+     * de telefono, que es tarde.
+     */
+    val avisaRespaldo: Boolean = true,
+    /**
+     * Desde cuando corre el plazo del proximo aviso de respaldo: el ultimo
+     * respaldo hecho, o el primer arranque si todavia no hay ninguno.
+     *
+     * Uno solo y no dos porque las dos fechas responden la misma pregunta —"el
+     * plazo empieza a contar aqui"— y llevarlas por separado obligaria a
+     * decidir cual manda en cada lectura.
+     */
+    val respaldoDesde: Long = 0L,
+    /** Cuando se aviso por ultima vez, para no repetirlo cada dia. */
+    val ultimoAvisoRespaldo: Long = 0L,
+    /** De que version ya se aviso, para no anunciarla dos veces. */
+    val versionAvisada: String? = null,
     /** Interruptor maestro de las tarjetas de ayuda de cada pantalla. */
     val muestraTutoriales: Boolean = true,
     /** Claves de [com.carlosalbertoxw.ollin.actividades.ui.components.Tutorial] ya descartadas. */
@@ -109,6 +132,10 @@ class AjustesRepositorio(private val contexto: Context) {
         val VERSION_DISPONIBLE = stringPreferencesKey("version_disponible")
         val URL_DESCARGA = stringPreferencesKey("url_descarga")
         val NOTAS_VERSION = stringPreferencesKey("notas_version")
+        val AVISA_RESPALDO = booleanPreferencesKey("avisa_respaldo")
+        val RESPALDO_DESDE = longPreferencesKey("respaldo_desde")
+        val ULTIMO_AVISO_RESPALDO = longPreferencesKey("ultimo_aviso_respaldo")
+        val VERSION_AVISADA = stringPreferencesKey("version_avisada")
     }
 
     val ajustes: Flow<Ajustes> = contexto.almacen.data.map(::interpreta)
@@ -155,7 +182,11 @@ class AjustesRepositorio(private val contexto: Context) {
         ultimaComprobacion = p.lee(Claves.ULTIMA_COMPROBACION) ?: 0L,
         versionDisponible = p.lee(Claves.VERSION_DISPONIBLE),
         urlDeDescarga = p.lee(Claves.URL_DESCARGA),
-        notasDeVersion = p.lee(Claves.NOTAS_VERSION)
+        notasDeVersion = p.lee(Claves.NOTAS_VERSION),
+        avisaRespaldo = p.lee(Claves.AVISA_RESPALDO) ?: true,
+        respaldoDesde = p.lee(Claves.RESPALDO_DESDE) ?: 0L,
+        ultimoAvisoRespaldo = p.lee(Claves.ULTIMO_AVISO_RESPALDO) ?: 0L,
+        versionAvisada = p.lee(Claves.VERSION_AVISADA)
     )
 
     suspend fun guardaTema(oscuro: Boolean?) {
@@ -314,6 +345,51 @@ class AjustesRepositorio(private val contexto: Context) {
         contexto.almacen.edit {
             it[Claves.PIN_FALLOS] = (it[Claves.PIN_FALLOS] ?: 0) + 1
         }
+    }
+
+    // ------------------------------------------------------------ respaldo
+
+    suspend fun guardaAvisaRespaldo(valor: Boolean) {
+        contexto.almacen.edit {
+            it[Claves.AVISA_RESPALDO] = valor
+            // Encenderlo estrena plazo: quien lo activa hoy no quiere un aviso
+            // inmediato porque lleve meses sin exportar, quiere el de dentro de
+            // una semana. Apagarlo tambien lo limpia, para que volver a
+            // encenderlo no arrastre una cuenta vieja.
+            it.remove(Claves.ULTIMO_AVISO_RESPALDO)
+            it[Claves.RESPALDO_DESDE] = System.currentTimeMillis()
+        }
+    }
+
+    /**
+     * Un respaldo hecho reinicia el plazo y borra el aviso pendiente.
+     *
+     * Lo llama la exportacion cuando termina bien. No distingue a donde se
+     * guardo el archivo: si el sistema acepto la escritura, hay un `.xlsx` en
+     * algun sitio que la persona eligio, y eso es exactamente lo que el aviso
+     * pedia.
+     */
+    suspend fun marcaRespaldo(cuando: Long = System.currentTimeMillis()) {
+        contexto.almacen.edit {
+            it[Claves.RESPALDO_DESDE] = cuando
+            it.remove(Claves.ULTIMO_AVISO_RESPALDO)
+        }
+    }
+
+    /** El ancla del plazo la primera vez, sin fingir que hubo un respaldo. */
+    suspend fun estrenaPlazoDeRespaldo(cuando: Long = System.currentTimeMillis()) {
+        contexto.almacen.edit {
+            if (it[Claves.RESPALDO_DESDE] == null) it[Claves.RESPALDO_DESDE] = cuando
+        }
+    }
+
+    suspend fun marcaAvisoDeRespaldo(cuando: Long = System.currentTimeMillis()) {
+        contexto.almacen.edit { it[Claves.ULTIMO_AVISO_RESPALDO] = cuando }
+    }
+
+    /** De que version ya se aviso. Evita anunciar la misma cada dia. */
+    suspend fun marcaVersionAvisada(version: String) {
+        contexto.almacen.edit { it[Claves.VERSION_AVISADA] = version }
     }
 
     /** Lo unico que pone el contador a cero es acertar el PIN. */
