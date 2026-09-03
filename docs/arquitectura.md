@@ -30,7 +30,7 @@ La navegación vive en [`OllinRaiz`](../app/src/main/java/com/carlosalbertoxw/ol
 
 ### `domain/`
 
-Sin dependencias de Android. Contiene los enums del modelo ([`Ambito`, `EstadoActividad`, `Unidad`, `Frecuencia`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/domain/model/Enums.kt)), las utilidades de calendario y reloj ([`Tiempo`, `DiasSemana`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/domain/model/Tiempo.kt)) y el cálculo de [rachas](rachas.md).
+Sin dependencias de Android. Contiene los enums del modelo ([`Ambito`, `EstadoActividad`, `Unidad`, `Frecuencia`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/domain/model/Enums.kt)), las utilidades de calendario y reloj ([`Tiempo`, `DiasSemana`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/domain/model/Tiempo.kt)) y, en `usecase/`, el calendario de los hábitos periódicos —cuándo toca, qué está vencido— y el cálculo de [rachas](rachas.md). El calendario vive aquí y no en la entidad porque con el modo «desde que lo hice» depende de los cumplimientos, que son historia y no plantilla.
 
 ### `data/`
 

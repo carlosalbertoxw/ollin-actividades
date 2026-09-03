@@ -12,6 +12,8 @@ Por eso un tag `v1.2.0` sin su `## [1.2.0]` aquí arriba **falla antes de compil
 
 Lo que todavía no se publica se va acumulando bajo `## [Sin publicar]
 
+## [1.1.0] - 2026-08-31
+
 ### Añadido
 
 - **Los hábitos periódicos eligen qué pasa si los haces tarde.** Hasta ahora el calendario era siempre fijo: uno cada quince días anclado al 1 tocaba el 16 y el 31, y hacerlo el 20 no movía nada — el siguiente seguía siendo el 31, once días después. Ahora cada hábito elige entre **fechas fijas**, que es lo de antes y sigue siendo lo de fábrica, y **desde que lo hice**, donde el intervalo vuelve a empezar en cada cumplimiento. Lo primero es para la renta del día 1; lo segundo, para cambiar el filtro cada quince días. El modo viaja en el `.xlsx`, en la columna *Si se hace tarde* de la pestaña *Habitos*.
@@ -56,6 +58,7 @@ Primera versión pública.
 - **Aviso de actualizaciones.** Ollin consulta una vez al día si hay una versión más nueva publicada y lo enseña en *Acerca de*. Se apaga en Ajustes. Ver [seguridad y privacidad](https://github.com/carlosalbertoxw/ollin-actividades/blob/main/docs/seguridad.md).
 - **Sitio de descarga** en GitHub Pages, con el APK firmado, su huella y las instrucciones de instalación fuera de la tienda.
 
-[Sin publicar]: https://github.com/carlosalbertoxw/ollin-actividades/compare/v1.0.1...HEAD
+[Sin publicar]: https://github.com/carlosalbertoxw/ollin-actividades/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/carlosalbertoxw/ollin-actividades/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/carlosalbertoxw/ollin-actividades/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/carlosalbertoxw/ollin-actividades/releases/tag/v1.0.0

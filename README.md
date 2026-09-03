@@ -95,7 +95,7 @@ app/src/main/java/com/carlosalbertoxw/ollin/actividades/
 ├── di/                  Contenedor de dependencias, a mano
 ├── domain/
 │   ├── model/           Enums, utilidades de tiempo y días de la semana
-│   └── usecase/         Cálculo de rachas
+│   └── usecase/         Calendario de los hábitos y cálculo de rachas
 └── ui/                  Compose: pantallas y sus ViewModels, navegación, tema, componentes
 ```
 

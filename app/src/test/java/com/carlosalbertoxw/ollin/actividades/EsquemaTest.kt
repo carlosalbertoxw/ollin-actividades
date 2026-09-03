@@ -178,7 +178,9 @@ class EsquemaTest {
          */
         val HUELLAS_CONGELADAS = mapOf(
             1 to "cc3cd97f94296b5baabe7ee78f790407",
-            2 to "cc3cd97f94296b5baabe7ee78f790407"
+            2 to "cc3cd97f94296b5baabe7ee78f790407",
+            // La 3 se congela al etiquetar la 1.1.0, que es la que la publica.
+            3 to "527478060b25204de00c336cbde3fd44"
         )
     }
 }
