@@ -5,6 +5,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.carlosalbertoxw.ollin.actividades.data.db.Migraciones
 import com.carlosalbertoxw.ollin.actividades.data.db.OllinDatabase
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -77,6 +79,46 @@ class MigracionesTest {
                 true,
                 *Migraciones.TODAS
             ).close()
+        }
+    }
+
+    /**
+     * La 2 a la 3, con un habito dentro.
+     *
+     * Es la prueba que el comentario de esta clase pide para cada migracion, y
+     * la unica que demuestra lo que de verdad importa: que la bitacora
+     * sobrevive al viaje. La cadena de arriba solo dice que el esquema llega
+     * entero, y un `ALTER TABLE` puede dejar el esquema perfecto y aun asi
+     * perder o corromper lo que habia.
+     *
+     * Se comprueba tambien el valor por omision de la columna nueva: un habito
+     * escrito por la version 2 no eligio modo de ciclo, y tiene que salir de la
+     * migracion con el de siempre. Si saliera con el otro, actualizar le
+     * cambiaria el calendario a gente que no pidio nada.
+     */
+    @Test
+    fun laMigracionDe2A3ConservaLosHabitos() {
+        ayudante.createDatabase(NOMBRE, 2).use { base ->
+            base.execSQL(
+                """
+                INSERT INTO habito (nombre, frecuencia, metaDiaria, metaSemanal, diasSemana,
+                                    intervaloDias, intervaloMeses, activo, orden, creadoEn)
+                VALUES ('Cambiar el filtro', 'CADA_DIAS', 1, 5, 127, 15, 1, 1, 0, 0)
+                """.trimIndent()
+            )
+        }
+
+        ayudante.runMigrationsAndValidate(NOMBRE, 3, true, *Migraciones.TODAS).use { base ->
+            base.query("SELECT nombre, intervaloDias, modoCiclo FROM habito").use { fila ->
+                assertTrue("El habito no sobrevivio a la migracion", fila.moveToFirst())
+                assertEquals("Cambiar el filtro", fila.getString(0))
+                assertEquals(15, fila.getInt(1))
+                assertEquals(
+                    "Un habito de antes tiene que seguir contando como antes",
+                    "CALENDARIO",
+                    fila.getString(2)
+                )
+            }
         }
     }
 

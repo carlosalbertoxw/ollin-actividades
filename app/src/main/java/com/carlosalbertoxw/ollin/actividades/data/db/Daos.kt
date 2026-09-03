@@ -308,6 +308,31 @@ interface ActividadDao {
     )
     fun observaCumplimientosDesde(desde: LocalDate): Flow<List<CumplimientoHabito>>
 
+    /**
+     * Lo mismo, de una sola lectura.
+     *
+     * La necesita el planificador de recordatorios, que corre fuera de la
+     * interfaz y no observa nada: pregunta, decide y se va. Con las cadencias
+     * que cuentan desde el ultimo cumplimiento ya no le basta con saber si hoy
+     * esta hecho —el calendario entero depende de la historia—, y una consulta
+     * por dia y por habito serian cientos.
+     */
+    @Query(
+        """
+        SELECT a.habitoId AS habitoId,
+               a.dia AS dia,
+               COUNT(a.id) AS veces,
+               CAST(COALESCE(SUM(a.duracionMinutos), 0) AS INTEGER) AS minutos
+        FROM actividad a
+        WHERE a.habitoId IS NOT NULL
+          AND a.estado = 'COMPLETADO'
+          AND a.dia >= :desde
+        GROUP BY a.habitoId, a.dia
+        ORDER BY a.dia DESC
+        """
+    )
+    suspend fun cumplimientosDesde(desde: LocalDate): List<CumplimientoHabito>
+
     @Query(
         """
         SELECT a.dia AS dia,

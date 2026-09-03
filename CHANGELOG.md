@@ -10,24 +10,19 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y 
 
 Por eso un tag `v1.2.0` sin su `## [1.2.0]` aquí arriba **falla antes de compilar nada**. Es a propósito: una versión sin notas es una versión que nadie sabe si le conviene instalar.
 
-Lo que todavía no se publica se va acumulando bajo `## [Sin publicar]`; al etiquetar, esa sección se renombra con el número y la fecha.
+Lo que todavía no se publica se va acumulando bajo `## [Sin publicar]
 
-Los enlaces van con dirección completa: el mismo texto se lee en GitHub, en el sitio y en el cuerpo de la release, y una ruta relativa solo funcionaría en uno de los tres.
+### Añadido
 
-## [Sin publicar]
+- **Los hábitos periódicos eligen qué pasa si los haces tarde.** Hasta ahora el calendario era siempre fijo: uno cada quince días anclado al 1 tocaba el 16 y el 31, y hacerlo el 20 no movía nada — el siguiente seguía siendo el 31, once días después. Ahora cada hábito elige entre **fechas fijas**, que es lo de antes y sigue siendo lo de fábrica, y **desde que lo hice**, donde el intervalo vuelve a empezar en cada cumplimiento. Lo primero es para la renta del día 1; lo segundo, para cambiar el filtro cada quince días. El modo viaja en el `.xlsx`, en la columna *Si se hace tarde* de la pestaña *Habitos*.
+- **Lo vencido se queda a la vista.** Un hábito periódico que tocó y no se hizo sigue apareciendo en Hoy y en la lista, con la fecha en que tocaba, hasta que se haga o llegue la siguiente ocurrencia. Antes solo era cierto el día exacto, así que uno cada tres meses que se pasaba un día no volvía a asomar en tres meses: no se fallaba, se perdía de vista. Los recordatorios siguen avisando **solo el día que toca**, para que un olvido no se convierta en una campana diaria.
+- Una prueba de actualización sobre emulador: instala la versión de la etiqueta anterior, la abre para que escriba sus preferencias, instala la nueva encima sin desinstalar y comprueba que sigue abriéndose. **Bloquea la publicación**, junto a las migraciones.
+- `EsquemaTest` vigila dos cosas que antes no vigilaba nadie: que la versión del esquema **nunca retroceda**, y que **una versión que ya salió no cambie de forma**. Son las dos caras del fallo de abajo.
 
 ### Arreglado
 
-- **La app se cerraba al abrirse en los teléfonos que venían de una compilación de desarrollo.** El esquema de la base había usado la versión 2 antes de la primera publicación, y al preparar la 1.0.0 se bajó a 1 porque no había nada publicado que migrar. No había nada publicado, pero sí teléfonos con una base marcada como 2: para esos, instalar la 1.0.0 o la 1.0.1 era un downgrade, y Room se niega a abrir una base más nueva que la app. La versión vuelve a ser 2, con una migración de la 1 a la 2 que no hace nada porque las dos describen el mismo esquema. Nadie pierde datos y las dos procedencias abren.
+- **La app se cerraba al abrirse en los teléfonos que venían de una compilación de desarrollo.** El esquema de la base había usado la versión 2 antes de la primera publicación, y al preparar la 1.0.0 se bajó a 1 porque no había nada publicado que migrar. No había nada publicado, pero sí teléfonos con una base marcada como 2: para esos, instalar la 1.0.0 o la 1.0.1 era un downgrade, y Room se niega a abrir una base más nueva que la app. La versión volvió a subir, con una migración de la 1 a la 2 que no hace nada porque las dos describen el mismo esquema. Nadie pierde datos y las dos procedencias abren.
 - **Un fallo al arrancar ya no mata la app en silencio.** La excepción salía del `launch` de `OllinApp` y el proceso desaparecía sin diálogo ni mensaje. Ahora se atrapa y se enseña una pantalla que dice qué pasó, que los datos siguen intactos y qué hacer.
-
-### Añadido
-
-- `EsquemaTest` comprueba que la versión del esquema **nunca retroceda**, contra una constante escrita a mano con la más alta que llegó a instalarse. Es la prueba que faltaba el día del fallo de arriba.
-
-### Añadido
-
-- Una prueba de actualización sobre emulador: instala la versión de la etiqueta anterior, la abre para que escriba sus preferencias, instala la nueva encima sin desinstalar y comprueba que sigue abriéndose. **Bloquea la publicación**, junto a las migraciones.
 
 ### Cambiado
 

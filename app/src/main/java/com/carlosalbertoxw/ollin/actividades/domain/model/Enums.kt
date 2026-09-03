@@ -68,6 +68,39 @@ enum class Frecuencia(val etiqueta: String) {
 }
 
 /**
+ * Desde donde se cuenta el siguiente ciclo de una cadencia periodica.
+ *
+ * La diferencia solo importa cuando algo se hace tarde, y entonces importa
+ * mucho. Hay habitos donde manda la **fecha** —la renta, el pago del dia 1: si
+ * se paga el 3, el siguiente sigue siendo el 1 del mes que viene— y otros donde
+ * manda el **intervalo** —cambiar el filtro cada quince dias: si se cambio con
+ * cinco de retraso, los quince siguientes empiezan ese dia, no antes—.
+ *
+ * Solo aplica a [Frecuencia.CADA_DIAS] y [Frecuencia.CADA_MESES]. Las demas
+ * cadencias van pegadas al calendario semanal y no tienen de donde recontar.
+ */
+enum class ModoCiclo(val etiqueta: String, val descripcion: String) {
+    /**
+     * Fechas fijas desde el ancla: `ancla + n × intervalo`. Hacerlo tarde no
+     * mueve nada, asi que dos retrasos seguidos no van corriendo el calendario.
+     */
+    CALENDARIO(
+        "Fechas fijas",
+        "Cuenta desde la fecha de inicio. Hacerlo tarde no mueve las siguientes."
+    ),
+
+    /**
+     * El intervalo empieza a correr en cada cumplimiento. Un habito cada quince
+     * dias hecho con cinco de retraso vuelve a tocar quince dias despues de ese
+     * dia, no diez.
+     */
+    DESDE_ULTIMO(
+        "Desde que lo hice",
+        "El intervalo vuelve a empezar cada vez que lo cumples."
+    )
+}
+
+/**
  * Quita acentos y mayusculas para comparar nombres escritos de dos maneras.
  * "Reunion" y "reunión" deben caer en la misma categoria.
  */

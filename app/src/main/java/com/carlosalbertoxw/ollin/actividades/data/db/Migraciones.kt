@@ -47,6 +47,7 @@ object Migraciones {
      * |---|---|
      * | 1 | El primer esquema, y el de las publicadas 1.0.0 y 1.0.1 |
      * | 2 | `habito.horaRecordatorio`, en compilaciones de desarrollo; luego **la misma forma** que la 1 |
+     * | 3 | `habito.modoCiclo`: desde donde recuenta una cadencia periodica |
      *
      * La 2 nacio agregando `horaRecordatorio` sobre una 1 que no la tenia. Al
      * preparar la primera publicacion se replegó todo a la version 1 —con la
@@ -60,7 +61,7 @@ object Migraciones {
      * `identityHash`— y lo unico que hace falta es que el numero avance en vez
      * de retroceder.
      */
-    const val VERSION = 2
+    const val VERSION = 3
 
     /**
      * De la 1 a la 2 no hay nada que hacer, y aun asi tiene que existir.
@@ -79,6 +80,29 @@ object Migraciones {
         override fun migrate(db: SupportSQLiteDatabase) = Unit
     }
 
+    /**
+     * Agrega `habito.modoCiclo`: si una cadencia periodica recuenta desde su
+     * fecha fija o desde el ultimo cumplimiento.
+     *
+     * `NOT NULL DEFAULT 'CALENDARIO'`, y el mismo valor por omision esta
+     * declarado en la entidad con `@ColumnInfo`. Las dos cosas tienen que
+     * decir lo mismo: Room compara la tabla real contra la que generaria de
+     * las entidades, y una diferencia en el `DEFAULT` es motivo suficiente
+     * para que se niegue a abrir.
+     *
+     * CALENDARIO es lo que hacian todos los habitos hasta ahora, asi que
+     * quien actualiza no ve moverse ni una fecha. Contar desde el ultimo
+     * cumplimiento cambia cuando toca lo siguiente, y eso solo debe pasar si
+     * alguien lo pide, no por instalar una version.
+     */
+    val MODO_DE_CICLO_2_3 = object : Migration(2, 3) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "ALTER TABLE habito ADD COLUMN modoCiclo TEXT NOT NULL DEFAULT 'CALENDARIO'"
+            )
+        }
+    }
+
     /** Los pasos, en orden y sin huecos, de la version 1 a [VERSION]. */
-    val TODAS: Array<Migration> = arrayOf(SIN_CAMBIOS_1_2)
+    val TODAS: Array<Migration> = arrayOf(SIN_CAMBIOS_1_2, MODO_DE_CICLO_2_3)
 }

@@ -62,6 +62,7 @@ import com.carlosalbertoxw.ollin.actividades.di.Contenedor
 import com.carlosalbertoxw.ollin.actividades.domain.model.Ambito
 import com.carlosalbertoxw.ollin.actividades.domain.model.DiasSemana
 import com.carlosalbertoxw.ollin.actividades.domain.model.Frecuencia
+import com.carlosalbertoxw.ollin.actividades.domain.model.ModoCiclo
 import com.carlosalbertoxw.ollin.actividades.domain.model.Tiempo
 import com.carlosalbertoxw.ollin.actividades.ui.components.AyudaDePantalla
 import com.carlosalbertoxw.ollin.actividades.ui.components.EstadoVacio
@@ -429,6 +430,9 @@ private fun resumen(avance: HabitoConAvance): String {
         !avance.tocaHoy -> "hoy no toca"
         avance.cumplidoHoy -> "hecho hoy"
         habito.metaDiaria > 1 -> "${avance.vecesHoy}/${habito.metaDiaria} hoy"
+        // Vencido y no "pendiente hoy": la fecha en que tocaba es justo lo que
+        // hace falta para decidir si vale la pena ponerse ahora.
+        avance.vencidoDesde != null -> "tocaba el ${Tiempo.fechaCorta(avance.vencidoDesde)}"
         else -> "pendiente hoy"
     }
     val tiempo = if (avance.minutosHoy > 0) " · ${Tiempo.duracion(avance.minutosHoy)}" else ""
@@ -452,6 +456,7 @@ private fun DialogoHabito(
     var intervaloDias by remember { mutableStateOf(inicial.intervaloDias.toString()) }
     var intervaloMeses by remember { mutableStateOf(inicial.intervaloMeses.toString()) }
     var ancla by remember { mutableStateOf(inicial.ancla) }
+    var modoCiclo by remember { mutableStateOf(inicial.modoCiclo) }
     var minutos by remember { mutableStateOf(inicial.minutosSugeridos?.toString() ?: "") }
     var activo by remember { mutableStateOf(inicial.activo) }
     var recordatorio by remember { mutableStateOf(inicial.horaRecordatorio) }
@@ -474,6 +479,7 @@ private fun DialogoHabito(
                             intervaloDias = intervaloDias.toIntOrNull()?.coerceIn(1, 365) ?: 15,
                             intervaloMeses = intervaloMeses.toIntOrNull()?.coerceIn(1, 24) ?: 1,
                             ancla = ancla,
+                            modoCiclo = modoCiclo,
                             minutosSugeridos = minutos.toIntOrNull()?.takeIf { it > 0 },
                             activo = activo,
                             horaRecordatorio = recordatorio
@@ -572,6 +578,29 @@ private fun DialogoHabito(
                         anclaFijada = ancla != null,
                         alElegirAncla = { ancla = it },
                         alSoltarAncla = { ancla = null }
+                    )
+
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        "Si lo haces tarde",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = colores.textoTenue
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        ModoCiclo.entries.forEach { opcion ->
+                            FilterChip(
+                                selected = modoCiclo == opcion,
+                                onClick = { modoCiclo = opcion },
+                                label = { Text(opcion.etiqueta) }
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        modoCiclo.descripcion,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colores.textoTenue
                     )
                 }
 

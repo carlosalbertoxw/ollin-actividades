@@ -11,14 +11,44 @@ El cálculo vive en [`Rachas`](../app/src/main/java/com/carlosalbertoxw/ollin/ac
 | `DIARIA` | Todos los días | — |
 | `DIAS_ELEGIDOS` | Ciertos días de la semana | `diasSemana` (mapa de bits) |
 | `SEMANAL` | Cierto número de veces por semana | `metaSemanal` |
-| `CADA_DIAS` | Cada N días desde un ancla | `intervaloDias`, `ancla` |
-| `CADA_MESES` | Cada N meses desde un ancla | `intervaloMeses`, `ancla` |
+| `CADA_DIAS` | Cada N días desde un ancla | `intervaloDias`, `ancla`, `modoCiclo` |
+| `CADA_MESES` | Cada N meses desde un ancla | `intervaloMeses`, `ancla`, `modoCiclo` |
 
 Las tres primeras se apoyan en el calendario semanal. Las dos últimas cuentan desde una fecha ancla, y son las que permiten lo que no cabe en una semana: cada quince días, cada mes, cada trimestre.
 
 Las ocurrencias periódicas se calculan **siempre desde el ancla**, no encadenando saltos, porque `plusMonths` recorta al último día del mes: un hábito anclado al 31 cae en el 28 de febrero, pero el de marzo debe volver al 31 y no quedarse en el 28 para siempre.
 
 El ancla es opcional: `anclaEfectiva()` devuelve la fijada a mano o, si no hay, el día en que se dio de alta el hábito. En el diálogo del hábito se fija con **Seleccionar fecha**, que abre el calendario del sistema sobre el ancla vigente —así se corrige desde donde está, no desde hoy— y **Quitar la fecha** la suelta para volver al día de alta. El selector es [`DialogoFecha`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/ui/components/Comunes.kt), compartido con la captura de una actividad: su estado habla en UTC a medianoche, y convertir eso con el huso local pierde un día cada vez que se cruza la frontera de la fecha. Por eso viaja en el `.xlsx` como la columna **Cuenta desde** de la pestaña *Habitos* —ver [Excel](excel.md#cuenta-desde-el-ancla-de-las-cadencias-periódicas)—: sin esa columna, restaurar un respaldo haría nacer el hábito el día de la importación y le correría el calendario.
+
+## Si se hace tarde: las dos maneras de contar
+
+Solo aplica a las cadencias periódicas, y solo importa cuando algo se hace con retraso — pero entonces importa mucho. Es `modoCiclo`, y se elige en el diálogo del hábito.
+
+| Modo | Qué hace | Para qué sirve |
+|---|---|---|
+| **Fechas fijas** (`CALENDARIO`) | `ancla + n × intervalo`. Hacerlo tarde no mueve nada | La renta, el pago del día 1: si se paga el 3, el siguiente sigue siendo el 1 |
+| **Desde que lo hice** (`DESDE_ULTIMO`) | El intervalo vuelve a empezar en cada cumplimiento | Cambiar el filtro cada quince días: si se cambió con cinco de retraso, los quince siguientes empiezan ese día |
+
+Con el ejemplo de siempre —cada quince días, anclado al 1 de agosto— tocaba el 16 y se hizo el 20:
+
+- **Fechas fijas:** el siguiente sigue siendo el 31. Once días después, no quince.
+- **Desde que lo hice:** el siguiente pasa a ser el 4 de septiembre.
+
+Nace en **fechas fijas**, que es lo que hacían todos los hábitos antes de que existiera la opción: actualizar la app no le mueve el calendario a nadie.
+
+El cálculo vive en [`CalendarioHabito`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/domain/usecase/CalendarioHabito.kt) y no en la entidad, porque en el segundo modo **el calendario depende de lo cumplido**, y eso es historia que `Habito` no tiene ni debe tener.
+
+Una consecuencia que no es evidente: contando desde el último cumplimiento, mientras una ocurrencia siga pendiente **no hay siguiente**. No se puede contar quince días desde algo que todavía no pasó. Por eso un hábito así que lleva dos meses sin hacerse tiene una sola ocurrencia vencida, no cuatro, y por eso el recordatorio solo puede programar una fecha futura a la vez.
+
+## Lo vencido se queda a la vista
+
+Un hábito periódico que tocó y no se hizo **sigue apareciendo** en Hoy y en la lista, con la fecha en que tocaba, hasta que se haga o llegue la siguiente ocurrencia.
+
+Antes solo era cierto el día exacto: un hábito cada tres meses que se pasaba un día no volvía a asomar en tres meses. No se fallaba, se perdía de vista, que es peor porque ni siquiera se sabe.
+
+**Los recordatorios no siguen esa regla, y es a propósito.** Avisan solo el día que toca. Un hábito vencido está pendiente todos los días hasta que se haga, y avisar cada uno convierte un olvido en una campana diaria: quien se retrasa una semana con algo trimestral recibiría siete avisos idénticos y acabaría apagando los recordatorios enteros. Vencido se **ve**; se **avisa** una vez.
+
+Las cadencias no periódicas no arrastran nada: un hábito diario que no se hizo ayer no está vencido hoy, está fallado, y llevar eso a la pantalla de Hoy la llenaría de deudas que nadie puede pagar.
 
 ## Las dos reglas de la racha
 
@@ -37,7 +67,11 @@ No todos los hábitos cuentan días: decir "3 días" de algo que toca cada dos m
 | `CADA_DIAS`, `CADA_MESES` | veces | Repeticiones consecutivas cumplidas |
 | Resto | días | Días consecutivos aplicables cumplidos |
 
-En las cadencias periódicas, un ciclo se da por cumplido si hay algún registro entre su fecha y la de la siguiente repetición. Sin esa holgura, marcar un día tarde algo que toca cada quince rompería la racha, que es lo contrario de lo que la racha debería premiar.
+En las cadencias periódicas, un ciclo se da por cumplido si hay algún registro dentro de su ventana, y la ventana acaba en lo que llegue antes: la siguiente ocurrencia, o **un intervalo entero de gracia**. Sin esa holgura, marcar un día tarde algo que toca cada quince rompería la racha, que es lo contrario de lo que la racha debería premiar.
+
+Con fechas fijas las dos cosas coinciden casi siempre —la siguiente *es* ancla + intervalo—, salvo en los meses cortos, donde un ancla al 31 recorta al 28 y manda la siguiente.
+
+Contando desde el último cumplimiento la gracia es lo único que acota, y sin ella la racha no podría romperse nunca: cada ocurrencia nace del cumplimiento anterior, así que todas quedarían cumplidas por construcción. La regla, dicha en corto: **se rompe cuando en el hueco cupo otro ciclo entero.** Cada quince días, hacerlo con cuatro de retraso no la rompe; dejar pasar quince, sí.
 
 `ResumenRacha` devuelve la racha actual, la mejor histórica y la unidad.
 

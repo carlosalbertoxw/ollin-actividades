@@ -4,6 +4,7 @@ import com.carlosalbertoxw.ollin.actividades.data.db.ActividadDao
 import com.carlosalbertoxw.ollin.actividades.data.db.Habito
 import com.carlosalbertoxw.ollin.actividades.data.db.HabitoDao
 import com.carlosalbertoxw.ollin.actividades.domain.model.Tiempo
+import com.carlosalbertoxw.ollin.actividades.domain.usecase.CalendarioHabito
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import java.time.Instant
@@ -75,18 +76,32 @@ class PlanificadorRecordatorios(
 
         val primerDia = Tiempo.dia(desde)
         val ultimoDia = Tiempo.dia(hasta)
+
+        // La historia entera de una vez, y no una consulta por dia y por habito.
+        // Con las cadencias que cuentan desde el ultimo cumplimiento el
+        // calendario **depende** de lo cumplido, asi que ya no basta con
+        // preguntar si hoy esta hecho: hay que saber cuando se hizo la vez
+        // anterior para saber si hoy toca siquiera.
+        val historia = actividades.cumplimientosDesde(primerDia.minusDays(VENTANA_HISTORIA))
+            .groupBy { it.habitoId }
+
         val avisos = mutableListOf<Recordatorio>()
 
         conHora.forEach { habito ->
-            var dia = primerDia
-            while (!dia.isAfter(ultimoDia)) {
+            val meta = habito.metaDiaria.coerceAtLeast(1)
+            val porDia = historia[habito.id].orEmpty().associate { it.dia to it.veces }
+            val cumplidos = porDia.filterValues { it >= meta }.keys
+
+            // Los dias en que toca exactamente, no los que esta pendiente: un
+            // habito vencido lo esta todos los dias hasta que se haga, y avisar
+            // cada uno seria una campana diaria por un solo olvido.
+            val fechas = CalendarioHabito.fechasEn(habito, cumplidos, primerDia, ultimoDia)
+
+            fechas.forEach { dia ->
                 val momento = Tiempo.instante(dia.atTime(habito.horaRecordatorio))
-                if (momento >= desde && momento < hasta && habito.tocaHoy(dia) &&
-                    !cumplido(habito, dia)
-                ) {
+                if (momento >= desde && momento < hasta && (porDia[dia] ?: 0) < meta) {
                     avisos += aviso(habito, momento)
                 }
-                dia = dia.plusDays(1)
             }
         }
         return avisos
@@ -94,11 +109,9 @@ class PlanificadorRecordatorios(
 
     /**
      * Un habito que ya se cumplio ese dia no avisa. Avisar de lo hecho es la
-     * forma mas rapida de que alguien apague los recordatorios enteros.
+     * forma mas rapida de que alguien apague los recordatorios enteros; se
+     * comprueba arriba, contra la misma historia que sirve para el calendario.
      */
-    private suspend fun cumplido(habito: Habito, dia: LocalDate): Boolean =
-        actividades.cuentaCumplimientos(habito.id, dia) >= habito.metaDiaria.coerceAtLeast(1)
-
     private fun aviso(habito: Habito, momento: Instant) = Recordatorio(
         clase = Recordatorio.Clase.HABITO,
         id = habito.id,
@@ -143,5 +156,15 @@ class PlanificadorRecordatorios(
          * de anteayer, no: seria ruido por algo que ya no se puede hacer.
          */
         const val RESCATE_HORAS = 6L
+
+        /**
+         * Cuanta historia de cumplimientos se lee para armar el calendario.
+         *
+         * Con las cadencias que cuentan desde el ultimo cumplimiento hace falta
+         * saber cuando fue esa ultima vez, y un habito "cada tres meses" puede
+         * tenerla lejos. Un ano cubre de sobra cualquier intervalo razonable sin
+         * traerse la bitacora entera en cada replanificacion.
+         */
+        const val VENTANA_HISTORIA = 400L
     }
 }

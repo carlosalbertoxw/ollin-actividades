@@ -28,6 +28,7 @@ import com.carlosalbertoxw.ollin.actividades.domain.model.Ambito
 import com.carlosalbertoxw.ollin.actividades.domain.model.EstadoActividad
 import com.carlosalbertoxw.ollin.actividades.domain.model.Tiempo
 import com.carlosalbertoxw.ollin.actividades.domain.model.Unidad
+import com.carlosalbertoxw.ollin.actividades.domain.usecase.CalendarioHabito
 import com.carlosalbertoxw.ollin.actividades.domain.usecase.Rachas
 import com.carlosalbertoxw.ollin.actividades.domain.usecase.ResumenRacha
 import java.io.OutputStream
@@ -40,7 +41,16 @@ data class HabitoConAvance(
     val vecesHoy: Int,
     val minutosHoy: Int,
     val racha: ResumenRacha,
-    val tocaHoy: Boolean
+    /** Toca hoy, o toco antes y sigue sin cumplirse. */
+    val tocaHoy: Boolean,
+    /**
+     * Desde cuando esta vencido, o nulo si toca hoy mismo o no toca.
+     *
+     * Solo lo tienen las cadencias periodicas: un habito diario que no se hizo
+     * ayer no esta vencido, esta fallado, y arrastrarlo llenaria la pantalla de
+     * Hoy de deudas que nadie puede pagar.
+     */
+    val vencidoDesde: LocalDate? = null
 ) {
     val cumplidoHoy: Boolean get() = vecesHoy >= habito.metaDiaria.coerceAtLeast(1)
 }
@@ -145,12 +155,27 @@ class ActividadesRepositorio(
             lista.map { habito ->
                 val historia = porHabito[habito.id].orEmpty()
                 val hoy = historia.firstOrNull { it.dia == dia }
+                val porDia = historia.associate { it.dia to it.veces }
+
+                // Los dias que cuentan como cumplidos, con la misma vara que usa
+                // la racha: un habito con meta de tres no esta hecho con uno.
+                val meta = habito.metaDiaria.coerceAtLeast(1)
+                val cumplidos = porDia.filterValues { it >= meta }.keys
+
+                val pendiente = CalendarioHabito.pendienteEl(habito, cumplidos, dia)
+                val vigente = if (pendiente && habito.frecuencia.esPeriodica) {
+                    CalendarioHabito.ocurrenciaVigente(habito, cumplidos, dia)
+                } else {
+                    null
+                }
+
                 HabitoConAvance(
                     habito = habito,
                     vecesHoy = hoy?.veces ?: 0,
                     minutosHoy = hoy?.minutos ?: 0,
-                    racha = Rachas.calcula(habito, historia.associate { it.dia to it.veces }, dia),
-                    tocaHoy = habito.tocaHoy(dia)
+                    racha = Rachas.calcula(habito, porDia, dia),
+                    tocaHoy = pendiente,
+                    vencidoDesde = vigente?.takeIf { it.isBefore(dia) }
                 )
             }
         }.flowOn(Dispatchers.Default)

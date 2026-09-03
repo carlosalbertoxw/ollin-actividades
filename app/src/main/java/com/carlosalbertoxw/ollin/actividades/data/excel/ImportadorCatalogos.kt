@@ -7,6 +7,7 @@ import com.carlosalbertoxw.ollin.actividades.data.db.HabitoDao
 import com.carlosalbertoxw.ollin.actividades.domain.model.Ambito
 import com.carlosalbertoxw.ollin.actividades.domain.model.DiasSemana
 import com.carlosalbertoxw.ollin.actividades.domain.model.Frecuencia
+import com.carlosalbertoxw.ollin.actividades.domain.model.ModoCiclo
 import com.carlosalbertoxw.ollin.actividades.domain.model.Tiempo
 import com.carlosalbertoxw.ollin.actividades.domain.model.normalizaClave
 import java.time.DayOfWeek
@@ -59,6 +60,9 @@ internal class ImportadorCatalogos(
             "ancla" to listOf(
                 "cuenta desde", "ancla", "desde", "fecha de inicio", "inicio del ciclo",
                 "fecha ancla", "anchor"
+            ),
+            "modociclo" to listOf(
+                "si se hace tarde", "modo", "modo de ciclo", "recuenta", "recuento"
             ),
             "meta" to listOf("meta diaria", "meta", "veces al dia"),
             "minutos" to listOf("minutos sugeridos", "minutos", "duracion sugerida"),
@@ -238,6 +242,7 @@ internal class ImportadorCatalogos(
             val notas = renglon.texto("notas")
             val ancla = renglon.fecha("ancla")
             val recordatorio = renglon.hora("recordatorio")
+            val modo = renglon.texto("modociclo")?.let(::leeModoCiclo)
 
             val textoCadencia = renglon.texto("cadencia")
             val cadencia = textoCadencia?.let(::leeCadencia)
@@ -260,6 +265,7 @@ internal class ImportadorCatalogos(
                     orden = orden ?: existente.orden,
                     notas = notas ?: existente.notas,
                     ancla = ancla ?: existente.ancla,
+                    modoCiclo = modo ?: existente.modoCiclo,
                     horaRecordatorio = recordatorio ?: existente.horaRecordatorio
                 ).con(cadencia)
                 if (actualizado != existente) {
@@ -282,6 +288,7 @@ internal class ImportadorCatalogos(
                 // restaurar un respaldo, lo que tocaba el dia 3 pasaria a tocar
                 // el dia de la importacion. Ver "Cuenta desde" en docs/excel.md.
                 ancla = ancla,
+                modoCiclo = modo ?: ModoCiclo.CALENDARIO,
                 horaRecordatorio = recordatorio,
                 // Sin columna de orden manda el lugar que ocupa en la hoja: es
                 // el orden que alguien acomodo al editarla.
@@ -388,6 +395,19 @@ internal class ImportadorCatalogos(
             mascara = mascara or (1 shl (dia.value - 1))
         }
         return mascara
+    }
+
+    /**
+     * Acepta la etiqueta que escribe la app y tambien el nombre crudo del enum,
+     * igual que la cadencia y el ambito. Lo que no entienda se deja sin tocar:
+     * cambiarle el modo de ciclo a un habito le mueve el calendario, y eso no
+     * puede salir de una celda mal escrita.
+     */
+    private fun leeModoCiclo(texto: String): ModoCiclo? {
+        val clave = texto.normalizaClave()
+        return ModoCiclo.entries.firstOrNull {
+            it.name.normalizaClave() == clave || it.etiqueta.normalizaClave() == clave
+        }
     }
 
     private fun leeAmbito(texto: String): Ambito? {

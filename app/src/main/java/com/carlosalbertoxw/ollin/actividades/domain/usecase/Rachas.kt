@@ -42,9 +42,6 @@ object Rachas {
     /** Tope de dias hacia atras. Evita recorrer la historia entera del calendario. */
     private const val LIMITE_DIAS = 1_500
 
-    /** Tope de repeticiones que se recorren en una frecuencia periodica. */
-    private const val LIMITE_OCURRENCIAS = 600
-
     fun calcula(
         habito: Habito,
         cumplidosPorDia: Map<LocalDate, Int>,
@@ -72,17 +69,36 @@ object Rachas {
      * cumplieron.
      *
      * No se cuenta dia por dia sino por ciclos, y un ciclo se da por cumplido
-     * si hay algun registro entre su fecha y la de la siguiente repeticion. Sin
-     * esa holgura, marcar un dia tarde algo que toca cada quince romperia la
-     * racha, que es exactamente lo contrario de lo que la racha deberia premiar.
+     * si hay algun registro dentro de su ventana. Sin esa holgura, marcar un dia
+     * tarde algo que toca cada quince romperia la racha, que es exactamente lo
+     * contrario de lo que la racha deberia premiar.
+     *
+     * Las ocurrencias salen de [CalendarioHabito] porque con
+     * [com.carlosalbertoxw.ollin.actividades.domain.model.ModoCiclo.DESDE_ULTIMO]
+     * dependen de lo cumplido y ya no son una funcion de la plantilla.
      */
     private fun porCiclos(habito: Habito, dias: Set<LocalDate>, hoy: LocalDate): ResumenRacha {
-        val ocurrencias = ocurrenciasHasta(habito, hoy)
+        val ocurrencias = CalendarioHabito.ocurrencias(habito, dias, hoy)
         if (ocurrencias.isEmpty()) return ResumenRacha(0, 0, UnidadRacha.VECES)
 
         val cumplidos = ocurrencias.mapIndexed { i, inicio ->
+            // La ventana de un ciclo acaba en lo que llegue antes: la siguiente
+            // ocurrencia, o un intervalo entero de gracia.
+            //
+            // Con fechas fijas las dos cosas coinciden casi siempre —la
+            // siguiente *es* inicio + intervalo—, salvo en los meses cortos,
+            // donde el ancla al 31 recorta a 28 y manda la siguiente.
+            //
+            // Contando desde el ultimo cumplimiento la gracia es lo unico que
+            // acota: ahi la siguiente ocurrencia nace del cumplimiento, asi que
+            // sin este tope todo ciclo quedaria cumplido por construccion y la
+            // racha no podria romperse nunca. La regla, dicha en corto: se
+            // rompe cuando en el hueco cupo otro ciclo entero.
+            val gracia = habito.ocurrencia(inicio, 1)
             val siguiente = ocurrencias.getOrNull(i + 1)
-            dias.any { !it.isBefore(inicio) && (siguiente == null || it.isBefore(siguiente)) }
+            val fin = if (siguiente != null && siguiente.isBefore(gracia)) siguiente else gracia
+
+            dias.any { !it.isBefore(inicio) && it.isBefore(fin) }
         }
 
         var mejor = 0
@@ -105,22 +121,6 @@ object Rachas {
         }
 
         return ResumenRacha(actual, maxOf(mejor, actual), UnidadRacha.VECES)
-    }
-
-    /** Las fechas en que tocaba, desde el ancla y hasta hoy. */
-    private fun ocurrenciasHasta(habito: Habito, hoy: LocalDate): List<LocalDate> {
-        val ancla = habito.anclaEfectiva()
-        if (ancla.isAfter(hoy)) return emptyList()
-
-        val lista = mutableListOf<LocalDate>()
-        var indice = 0L
-        while (lista.size < LIMITE_OCURRENCIAS) {
-            val fecha = habito.ocurrencia(ancla, indice)
-            if (fecha.isAfter(hoy)) break
-            lista += fecha
-            indice++
-        }
-        return lista
     }
 
     private fun porDias(habito: Habito, dias: Set<LocalDate>, hoy: LocalDate): ResumenRacha {

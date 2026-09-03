@@ -4,6 +4,7 @@ import androidx.room.TypeConverter
 import com.carlosalbertoxw.ollin.actividades.domain.model.Ambito
 import com.carlosalbertoxw.ollin.actividades.domain.model.EstadoActividad
 import com.carlosalbertoxw.ollin.actividades.domain.model.Frecuencia
+import com.carlosalbertoxw.ollin.actividades.domain.model.ModoCiclo
 import com.carlosalbertoxw.ollin.actividades.domain.model.Unidad
 import java.time.Instant
 import java.time.LocalDate
@@ -37,4 +38,7 @@ class Convertidores {
 
     @TypeConverter fun frecuenciaATexto(v: Frecuencia?): String? = v?.name
     @TypeConverter fun textoAFrecuencia(v: String?): Frecuencia? = v?.let(Frecuencia::valueOf)
+
+    @TypeConverter fun modoCicloATexto(v: ModoCiclo?): String? = v?.name
+    @TypeConverter fun textoAModoCiclo(v: String?): ModoCiclo? = v?.let(ModoCiclo::valueOf)
 }

@@ -68,6 +68,37 @@ class EsquemaTest {
         )
     }
 
+    /**
+     * La otra forma del mismo error, que la prueba de arriba no ve.
+     *
+     * No hace falta *bajar* la version para romper un telefono: basta con
+     * cambiarle la forma a una version que ya salio. Si la 2 gana una columna,
+     * el telefono que tiene una base marcada como 2 no corre ninguna migracion
+     * —ya esta en la version que la app pide— y Room valida contra un esquema
+     * que no corresponde. Se cierra al arrancar, igual que antes.
+     *
+     * La tentacion aparece sola: «esa version todavia no se ha subido, la
+     * aprovecho». Subir no es lo que la quema; instalarla si, y en desarrollo
+     * se instala mucho antes de subir nada.
+     *
+     * El `identityHash` es la huella que Room calcula de las entidades y guarda
+     * dentro de la base. Fijarlo aqui para las versiones que ya salieron
+     * convierte «cambiaste algo de una version publicada» en una prueba roja.
+     */
+    @Test
+    fun `las versiones que ya salieron no cambian de forma`() {
+        HUELLAS_CONGELADAS.forEach { (version, huella) ->
+            val contenido = File(carpeta, "$version.json").readText()
+            assertTrue(
+                "El esquema $version cambió de forma. Su identityHash debería seguir " +
+                    "siendo $huella: es el que quedó grabado en las bases que ya están " +
+                    "instaladas con esa versión. Si el cambio hace falta, no se edita " +
+                    "esta versión: se estrena la siguiente con su migración.",
+                contenido.contains(""""identityHash": "$huella"""")
+            )
+        }
+    }
+
     @Test
     fun `cada version del esquema esta versionada en el repositorio`() {
         assertEquals(
@@ -133,6 +164,21 @@ class EsquemaTest {
          * tan campante. Es un numero escrito a mano porque tiene que doler
          * cambiarlo.
          */
-        const val USADA_MAS_ALTA = 2
+        const val USADA_MAS_ALTA = 3
+
+        /**
+         * La huella de cada version que ya salio en un APK, copiada de su
+         * `N.json` el dia que se publico. Al estrenar una version, se agrega su
+         * huella aqui **cuando se etiqueta**, no antes: mientras nadie la haya
+         * instalado todavia se puede corregir.
+         *
+         * La 1 y la 2 comparten huella porque describen el mismo esquema: la 2
+         * agrego `horaRecordatorio`, y al replegar todo a la 1 esa columna
+         * acabo dentro del `CREATE TABLE` inicial.
+         */
+        val HUELLAS_CONGELADAS = mapOf(
+            1 to "cc3cd97f94296b5baabe7ee78f790407",
+            2 to "cc3cd97f94296b5baabe7ee78f790407"
+        )
     }
 }

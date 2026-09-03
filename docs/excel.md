@@ -79,7 +79,7 @@ Las cuatro que Ollin sabe reconocer, **cada una si viene en el archivo** y en es
 | Pestaña | Qué entra | Qué se ignora |
 |---|---|---|
 | **Categorias** | Nombre, ámbito, color, si está archivada y orden | — |
-| **Habitos** | Nombre, categoría, cadencia, **cuenta desde**, **recordatorio**, meta diaria, minutos sugeridos, activo y notas | Cumplimientos, racha actual, mejor racha y unidad de racha |
+| **Habitos** | Nombre, categoría, cadencia, **cuenta desde**, **si se hace tarde**, **recordatorio**, meta diaria, minutos sugeridos, activo y notas | Cumplimientos, racha actual, mejor racha y unidad de racha |
 | **Diccionarios** | Las columnas *Categorias* y *Habitos*, solo para dar de alta lo que falte | Ámbitos, estados y unidades: son enumeraciones fijas de la app |
 | **Registros** | La bitácora | — |
 
@@ -94,6 +94,12 @@ Un libro que solo trae catálogos es legítimo: sirve para reordenar las categor
 La hora a la que el hábito avisa viaja en el libro, escrita como texto (`08:00`) y no como hora de Excel: la columna se lee y se edita a mano, y una hora serializada como fracción de día sale como `0.333` en cualquier visor que no herede el formato. Al importar se acepta cualquiera de las dos.
 
 Vacía significa que el hábito no avisa. Si la columna no viene del todo —un libro escrito a mano, o recortado— la hora que ya tuviera el hábito no se toca: una columna ausente no es una orden de borrar. Ver [Recordatorios](recordatorios.md).
+
+### «Si se hace tarde»: desde dónde recuenta el ciclo
+
+`Fechas fijas` o `Desde que lo hice`, y solo para las cadencias periódicas; en las demás la celda va vacía porque no gobierna nada. Es `modoCiclo`, ver [rachas](rachas.md#si-se-hace-tarde-las-dos-maneras-de-contar).
+
+Al importar se acepta la etiqueta que escribe la app y también el nombre crudo del enum (`CALENDARIO`, `DESDE_ULTIMO`). Lo que no se entienda **se deja sin tocar**: cambiarle el modo a un hábito le mueve el calendario, y eso no puede salir de una celda mal escrita.
 
 ### «Cuenta desde»: el ancla de las cadencias periódicas
 

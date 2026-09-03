@@ -1,5 +1,6 @@
 package com.carlosalbertoxw.ollin.actividades.data.db
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -8,6 +9,7 @@ import com.carlosalbertoxw.ollin.actividades.domain.model.Ambito
 import com.carlosalbertoxw.ollin.actividades.domain.model.DiasSemana
 import com.carlosalbertoxw.ollin.actividades.domain.model.EstadoActividad
 import com.carlosalbertoxw.ollin.actividades.domain.model.Frecuencia
+import com.carlosalbertoxw.ollin.actividades.domain.model.ModoCiclo
 import com.carlosalbertoxw.ollin.actividades.domain.model.Tiempo
 import com.carlosalbertoxw.ollin.actividades.domain.model.Unidad
 import java.time.Instant
@@ -195,6 +197,17 @@ data class Habito(
     val intervaloDias: Int = 15,
     /** Cada cuantos meses vuelve a tocar. Solo aplica a [Frecuencia.CADA_MESES]. */
     val intervaloMeses: Int = 1,
+    /**
+     * Desde donde vuelve a contarse el intervalo. Solo aplica a las cadencias
+     * periodicas; las demas van pegadas al calendario semanal.
+     *
+     * Nace en [ModoCiclo.CALENDARIO] y el valor por omision esta declarado
+     * tambien en la columna: es lo que heredan los habitos que ya existian
+     * cuando se agrego, y cambiarles el comportamiento al actualizar habria
+     * movido calendarios que su dueno no pidio mover.
+     */
+    @ColumnInfo(defaultValue = "CALENDARIO")
+    val modoCiclo: ModoCiclo = ModoCiclo.CALENDARIO,
     /**
      * Dia desde el que se cuenta el ciclo de las frecuencias periodicas. Nulo
      * significa el dia en que se creo el habito, que es lo que casi siempre se
