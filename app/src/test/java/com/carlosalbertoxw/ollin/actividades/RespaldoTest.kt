@@ -207,6 +207,40 @@ class RespaldoTest {
         )
     }
 
+    // ------------------------------------------------------------- el texto
+
+    /**
+     * "Acuerdate de respaldar" deja de leerse a la tercera semana. El numero es
+     * lo que mueve, y va en el titulo porque es lo unico que se ve sin
+     * desplegar la notificacion.
+     */
+    @Test
+    fun `el aviso dice cuantos dias llevas sin respaldar`() = runTest {
+        registraAlgo()
+        ajustes.marcaRespaldo(haceDias(21))
+
+        assertEquals("Tu último respaldo es de hace 21 días", pendiente()!!.titulo)
+    }
+
+    @Test
+    fun `quien no ha respaldado nunca no lee una cuenta inventada`() = runTest {
+        registraAlgo()
+        // El plazo corre —lo estreno el interruptor— pero no hay ningun .xlsx
+        // detras: decir "hace 7 dias" seria contar desde algo que no existe.
+        ajustes.marcaAvisoDeRespaldo(haceDias(8))
+
+        assertEquals("Todavía no has respaldado tu bitácora", pendiente()!!.titulo)
+    }
+
+    @Test
+    fun `el singular no queda en 1 dias`() = runTest {
+        registraAlgo()
+        ajustes.marcaRespaldo(haceDias(1))
+        ajustes.marcaAvisoDeRespaldo(haceDias(8))
+
+        assertEquals("Tu último respaldo es de ayer", pendiente()!!.titulo)
+    }
+
     // -------------------------------------------------------- version nueva
 
     @Test

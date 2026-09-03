@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.mutablePreferencesOf
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.test.core.app.ApplicationProvider
+import com.carlosalbertoxw.ollin.actividades.data.prefs.Ajustes
 import com.carlosalbertoxw.ollin.actividades.data.prefs.AjustesRepositorio
 import com.carlosalbertoxw.ollin.actividades.data.prefs.ModoBloqueo
 import org.junit.Assert.assertEquals
@@ -83,7 +84,14 @@ class PreferenciasHeredadasTest {
 
         assertNull("El tema vuelve a seguir al sistema", ajustes.temaOscuro)
         assertEquals(300, ajustes.metaTrabajoMinutos)
-        assertTrue("Los recordatorios vuelven a su valor de fabrica", !ajustes.recordatorios)
+        // Contra el valor declarado y no contra uno escrito aqui: lo que se
+        // afirma es "vuelve al de fabrica", no "vuelve a false". Si el de
+        // fabrica cambia --y cambio--, esto lo sigue solo en vez de romperse.
+        assertEquals(
+            "Los recordatorios vuelven a su valor de fabrica",
+            Ajustes().recordatorios,
+            ajustes.recordatorios
+        )
     }
 
     /** Una instalación nueva no lee nada y sale con lo de fábrica. */

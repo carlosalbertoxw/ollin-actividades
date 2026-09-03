@@ -74,6 +74,9 @@ fun AjustesRepositorio.restauraDeFabrica() = runBlocking {
     guardaMuestraCompletadas(omision.muestraCompletadasEnHoy)
     guardaRecordatorios(omision.recordatorios)
     guardaBuscarActualizaciones(omision.buscarActualizaciones)
+    // Cero es "nunca se ha respaldado", que es el estado de una instalacion
+    // nueva. Va antes del interruptor porque encenderlo estrena el plazo.
+    marcaRespaldo(0L)
     guardaAvisaRespaldo(omision.avisaRespaldo)
     reiniciaTutoriales()
     guardaEsquema(EsquemaExportacion.EXTENDIDO)

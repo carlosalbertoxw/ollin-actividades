@@ -41,11 +41,17 @@ data class Ajustes(
     val duracionRapidaMinutos: Int = 25,
     val muestraCompletadasEnHoy: Boolean = true,
     /**
-     * Interruptor maestro de los avisos. Nace apagado: una app de bitacora que
-     * empieza a mandar notificaciones sin que nadie se lo pida acaba silenciada
-     * entera, y con ella los avisos que si se querian.
+     * Interruptor maestro de los avisos de habitos y tareas.
+     *
+     * Nace encendido. Un recordatorio que hay que ir a activar a Ajustes lo
+     * activa quien ya se acordaba solo, que es justo quien menos lo necesita;
+     * la funcion se pagaba a si misma solo para los convencidos.
+     *
+     * Encendido no significa que suene sin permiso: desde Android 13 hace
+     * falta POST_NOTIFICATIONS, y hasta que se conceda no llega nada. Ajustes
+     * ensena el aviso de que falta, con el atajo para darlo.
      */
-    val recordatorios: Boolean = false,
+    val recordatorios: Boolean = true,
     /**
      * Si Ollin pregunta una vez al dia si hay una version mas nueva.
      *
@@ -82,6 +88,16 @@ data class Ajustes(
      * decidir cual manda en cada lectura.
      */
     val respaldoDesde: Long = 0L,
+    /**
+     * Cuando se exporto por ultima vez de verdad. Cero: nunca.
+     *
+     * Separado de [respaldoDesde] porque responden preguntas distintas. El
+     * ancla del plazo tambien la mueven el primer arranque y encender el
+     * interruptor; esta solo la mueve un `.xlsx` escrito. Mezclarlas obligaria
+     * al aviso a decir "hace 7 dias" a quien no ha respaldado nunca, que es
+     * justo la frase que no hay que decir.
+     */
+    val ultimoRespaldo: Long = 0L,
     /** Cuando se aviso por ultima vez, para no repetirlo cada dia. */
     val ultimoAvisoRespaldo: Long = 0L,
     /** De que version ya se aviso, para no anunciarla dos veces. */
@@ -134,6 +150,7 @@ class AjustesRepositorio(private val contexto: Context) {
         val NOTAS_VERSION = stringPreferencesKey("notas_version")
         val AVISA_RESPALDO = booleanPreferencesKey("avisa_respaldo")
         val RESPALDO_DESDE = longPreferencesKey("respaldo_desde")
+        val ULTIMO_RESPALDO = longPreferencesKey("ultimo_respaldo")
         val ULTIMO_AVISO_RESPALDO = longPreferencesKey("ultimo_aviso_respaldo")
         val VERSION_AVISADA = stringPreferencesKey("version_avisada")
     }
@@ -177,7 +194,7 @@ class AjustesRepositorio(private val contexto: Context) {
         pinHash = p.lee(Claves.PIN_HASH),
         pinSal = p.lee(Claves.PIN_SAL),
         pinFallos = p.lee(Claves.PIN_FALLOS) ?: 0,
-        recordatorios = p.lee(Claves.RECORDATORIOS) ?: false,
+        recordatorios = p.lee(Claves.RECORDATORIOS) ?: true,
         buscarActualizaciones = p.lee(Claves.ACTUALIZACIONES) ?: true,
         ultimaComprobacion = p.lee(Claves.ULTIMA_COMPROBACION) ?: 0L,
         versionDisponible = p.lee(Claves.VERSION_DISPONIBLE),
@@ -185,6 +202,7 @@ class AjustesRepositorio(private val contexto: Context) {
         notasDeVersion = p.lee(Claves.NOTAS_VERSION),
         avisaRespaldo = p.lee(Claves.AVISA_RESPALDO) ?: true,
         respaldoDesde = p.lee(Claves.RESPALDO_DESDE) ?: 0L,
+        ultimoRespaldo = p.lee(Claves.ULTIMO_RESPALDO) ?: 0L,
         ultimoAvisoRespaldo = p.lee(Claves.ULTIMO_AVISO_RESPALDO) ?: 0L,
         versionAvisada = p.lee(Claves.VERSION_AVISADA)
     )
@@ -372,6 +390,7 @@ class AjustesRepositorio(private val contexto: Context) {
     suspend fun marcaRespaldo(cuando: Long = System.currentTimeMillis()) {
         contexto.almacen.edit {
             it[Claves.RESPALDO_DESDE] = cuando
+            it[Claves.ULTIMO_RESPALDO] = cuando
             it.remove(Claves.ULTIMO_AVISO_RESPALDO)
         }
     }

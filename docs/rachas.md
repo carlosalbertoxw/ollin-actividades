@@ -85,7 +85,7 @@ Un hábito puede llevar `horaRecordatorio`. Si la tiene, Ollin avisa **los días
 
 Las tareas —actividades pendientes— avisan a su hora de inicio, que es la que ya tenían: una pendiente es justamente algo agendado para un momento.
 
-El interruptor maestro está en `Ajustes → Recordatorios` y **nace apagado**. Ver [Recordatorios](recordatorios.md) para cómo se programan y qué puede impedir que suenen.
+El interruptor maestro está en `Ajustes → Recordatorios` y **nace encendido**; hasta que se conceda el permiso de notificaciones no llega nada, y Ajustes lo avisa. Ver [Recordatorios](recordatorios.md) para cómo se programan y qué puede impedir que suenen.
 
 ## Activos y pausados
 

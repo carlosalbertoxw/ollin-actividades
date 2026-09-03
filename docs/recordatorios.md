@@ -4,14 +4,16 @@ Ollin avisa de cuatro cosas, y no todas se gobiernan igual:
 
 | Aviso | Cuándo | Interruptor |
 |---|---|---|
-| **Hábito** | Los días que toca, a `horaRecordatorio` | `Recordatorios`, **apagado** de fábrica |
-| **Tarea** | A su hora de inicio | `Recordatorios`, **apagado** de fábrica |
-| **Respaldo** | Cada semana sin exportar | `Recordarme respaldar`, **encendido** |
-| **Versión nueva** | Al encontrarla, una vez por versión | `Avisarme de versiones nuevas`, **encendido** |
+| **Hábito** | Los días que toca, a `horaRecordatorio` | `Recordatorios` |
+| **Tarea** | A su hora de inicio | `Recordatorios` |
+| **Respaldo** | Cada semana sin exportar | `Recordarme respaldar` |
+| **Versión nueva** | Al encontrarla, una vez por versión | `Avisarme de versiones nuevas` |
 
-El interruptor de hábitos y tareas nace apagado: una app de bitácora que empieza a mandar notificaciones sin que nadie se lo pida acaba silenciada entera, y con ella los avisos que sí se querían.
+**Los cuatro nacen encendidos.** Un recordatorio que hay que ir a activar a Ajustes lo activa quien ya se acordaba solo, que es justo quien menos lo necesita: la función se pagaba a sí misma únicamente para los convencidos.
 
-**Los otros dos no cuelgan de él, y es deliberado.** Apagar los avisos de hábitos es decir «no me persigas con lo que me propuse». El del respaldo es otra cosa: es lo único que se interpone entre un teléfono perdido y una bitácora que no se recupera de ningún lado, porque la llave vive en el Keystore y no viaja. Quien apaga los hábitos no está pidiendo quedarse sin red de seguridad, así que tiene su propio interruptor.
+Encendido no quiere decir que suene sin permiso. Desde Android 13 hace falta `POST_NOTIFICATIONS`, y hasta que se conceda no llega nada; Ajustes enseña el aviso de que falta, con el atajo para darlo. Ver [permisos](#permisos).
+
+**Los dos últimos tienen interruptor propio, y es deliberado.** Apagar los avisos de hábitos es decir «no me persigas con lo que me propuse». El del respaldo es otra cosa: es lo único que se interpone entre un teléfono perdido y una bitácora que no se recupera de ningún lado, porque la llave vive en el Keystore y no viaja. Quien apaga los hábitos no está pidiendo quedarse sin red de seguridad, así que tiene su propio interruptor.
 
 ## Qué avisa y qué no
 
@@ -27,6 +29,11 @@ Un hábito con meta diaria de tres sigue avisando hasta la tercera: el planifica
 La hora del hábito es una **hora local suelta**, no un instante. «A las ocho» son las ocho de donde estés: guardar el instante ataría el recordatorio al huso en que se creó y sonaría a las tres de la madrugada después de un vuelo.
 
 ## El recordatorio de respaldar
+
+El texto lleva la cuenta de días: *«Tu último respaldo es de hace 21 días»*, no *«acuérdate de respaldar»*. La segunda deja de leerse a la tercera semana porque no dice nada que quien la ve no sepa ya; la primera pone delante el número que uno no tenía en la cabeza. Va en el título y no en el detalle porque es lo único que se ve sin desplegar la notificación.
+
+Quien no ha respaldado nunca no puede leer «hace N días» de algo que no existe, así que ese caso tiene su propia frase. Por eso `ultimoRespaldo` vive aparte de `respaldoDesde`: el ancla del plazo también la mueven el primer arranque y encender el interruptor, pero solo un `.xlsx` escrito mueve la fecha del último respaldo.
+
 
 Cada **7 días** sin exportar. El plazo cuenta desde el último respaldo, o desde el último aviso si nadie le hizo caso, o desde el primer arranque si no hay ninguna de las dos cosas.
 

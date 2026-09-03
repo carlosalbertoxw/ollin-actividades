@@ -18,7 +18,8 @@ Lo que todavía no se publica se va acumulando bajo `## [Sin publicar]
 - **Lo vencido se queda a la vista.** Un hábito periódico que tocó y no se hizo sigue apareciendo en Hoy y en la lista, con la fecha en que tocaba, hasta que se haga o llegue la siguiente ocurrencia. Antes solo era cierto el día exacto, así que uno cada tres meses que se pasaba un día no volvía a asomar en tres meses: no se fallaba, se perdía de vista. Los recordatorios siguen avisando **solo el día que toca**, para que un olvido no se convierta en una campana diaria.
 - **Recordatorio de respaldo, cada semana sin exportar.** La base va cifrada con una llave del Keystore que no se respalda ni viaja a otro teléfono: el `.xlsx` no es *un* respaldo, es el único. No avisa si la bitácora está vacía, no avisa el día que se instala —el primer arranque estrena el plazo en vez de disparar— y un aviso desatendido no se repite hasta la semana siguiente. Exportar reinicia el plazo.
 - **Aviso al encontrar una versión nueva**, una vez por versión, con el recordatorio de respaldar pegado: instalar un APK encima es el momento en que más importa tener el `.xlsx` a salvo. Hasta ahora había que entrar a *Acerca de* a mirarlo.
-- Los dos nacen encendidos y **no cuelgan del interruptor de hábitos**: apagar los avisos de hábitos es decir «no me persigas con lo que me propuse», no renunciar a la red de seguridad. Tienen su propio interruptor en Ajustes.
+- El aviso de respaldo **dice cuántos días llevas**: «Tu último respaldo es de hace 21 días». «Acuérdate de respaldar» deja de leerse a la tercera semana porque no dice nada que quien lo ve no sepa ya. Quien no ha respaldado nunca lee su propia frase, no una cuenta inventada.
+- Los dos tienen interruptor propio y **no cuelgan del de hábitos**: apagar los avisos de hábitos es decir «no me persigas con lo que me propuse», no renunciar a la red de seguridad. Tienen su propio interruptor en Ajustes.
 - Una prueba de actualización sobre emulador: instala la versión de la etiqueta anterior, la abre para que escriba sus preferencias, instala la nueva encima sin desinstalar y comprueba que sigue abriéndose. **Bloquea la publicación**, junto a las migraciones.
 - `EsquemaTest` vigila dos cosas que antes no vigilaba nadie: que la versión del esquema **nunca retroceda**, y que **una versión que ya salió no cambie de forma**. Son las dos caras del fallo de abajo.
 
@@ -29,6 +30,7 @@ Lo que todavía no se publica se va acumulando bajo `## [Sin publicar]
 
 ### Cambiado
 
+- **Los recordatorios de hábitos y tareas nacen encendidos.** Antes nacían apagados, por no mandar notificaciones que nadie pidió; el problema es que un recordatorio que hay que ir a activar lo activa quien ya se acordaba solo, o sea quien menos lo necesita. Encendido no significa que suene sin permiso: desde Android 13 hace falta `POST_NOTIFICATIONS`, y Ajustes avisa mientras falte. Quien lo tenga apagado a propósito sigue igual: solo cambia lo que encuentra una instalación nueva o quien nunca tocó el interruptor.
 - Las lecturas de preferencias comprueban el tipo en tiempo de ejecución y tratan como ausente lo que no cuadre. Ninguna clave ha cambiado de tipo aquí, así que no había nada roto: es la red que le faltó a [Ollin Finanzas](https://github.com/carlosalbertoxw/ollin-finanzas), donde el mismo descuido cerró la app al arrancar en los teléfonos que venían de la versión anterior. La regla sigue siendo que una clave no cambia de tipo nunca.
 
 ## [1.0.1] - 2026-08-30
