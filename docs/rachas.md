@@ -46,9 +46,31 @@ Un hábito periódico que tocó y no se hizo **sigue apareciendo** en Hoy y en l
 
 Antes solo era cierto el día exacto: un hábito cada tres meses que se pasaba un día no volvía a asomar en tres meses. No se fallaba, se perdía de vista, que es peor porque ni siquiera se sabe.
 
+**Y se anuncia.** En Hoy lleva su propio renglón —«Vencido · tocaba el 20 ago»— y no comparte el de la categoría y la racha, donde una sola línea con puntos suspensivos se lo comía justo cuando más importa. Estar en la lista sin distinguirse de lo que toca hoy era casi lo mismo que no estar.
+
+**Las dos listas se ordenan por la fecha que cada hábito tiene pendiente**, que es una sola línea de tiempo y no tres reglas pegadas:
+
+1. Lo vencido, con **lo que lleva más esperando primero**: una deuda de tres semanas no puede quedar debajo de una de ayer solo porque el hábito se creó después.
+2. Lo de hoy.
+3. Lo que viene, de más cerca a más lejos.
+4. Lo que todavía no tiene fecha que dar.
+
+El orden es estable, así que empatados en fecha manda el orden que eligió su dueño. Los pausados no entran en el reparto: van en su propia sección al fondo de la lista de hábitos, donde su fecha no significa nada mientras estén parados.
+
 **Los recordatorios no siguen esa regla, y es a propósito.** Avisan solo el día que toca. Un hábito vencido está pendiente todos los días hasta que se haga, y avisar cada uno convierte un olvido en una campana diaria: quien se retrasa una semana con algo trimestral recibiría siete avisos idénticos y acabaría apagando los recordatorios enteros. Vencido se **ve**; se **avisa** una vez.
 
 Las cadencias no periódicas no arrastran nada: un hábito diario que no se hizo ayer no está vencido hoy, está fallado, y llevar eso a la pantalla de Hoy la llenaría de deudas que nadie puede pagar.
+
+## Cuándo vuelve a tocar
+
+La lista de hábitos dice la próxima fecha —«Cada trimestre · toca el 16 nov»— en vez de «hoy no toca», que era cierto y no servía: no distingue entre faltan dos días y faltan dos meses, que es lo único que uno quiere saber de algo trimestral. La calcula [`CalendarioHabito.proximaTras`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/domain/usecase/CalendarioHabito.kt), la contraparte de `ocurrenciaVigente`: una dice desde cuándo se debió hacer, la otra cuándo volverá a tocar.
+
+Sigue diciendo «hoy no toca» en los dos casos en que la fecha **no se puede saber**, que no es lo mismo que no tocar nunca:
+
+- Contando **desde que lo hice**, mientras haya algo vencido no hay siguiente que dar: no se puede contar quince días desde algo que todavía no pasó.
+- Un hábito de días elegidos **sin ningún día marcado**. Ese sí que no toca jamás.
+
+La fecha lleva el año cuando no es este. Un hábito anual que toca el 5 de marzo del año que viene anunciado como «5 mar» se lee como esta semana.
 
 ## Las dos reglas de la racha
 

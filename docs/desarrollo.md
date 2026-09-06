@@ -89,9 +89,10 @@ Sin emulador. Robolectric para lo que necesita `Context`.
 | [`RecordatoriosTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/RecordatoriosTest.kt) | Qué avisa el planificador y qué no: hora, cadencia, meta diaria, hábito cumplido o pausado, tareas pendientes |
 | [`ActualizacionesTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/ActualizacionesTest.kt) | Orden de las versiones, lectura del `version.json`, la ventana de un día y el reloj movido hacia atrás |
 | [`EsquemaTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/EsquemaTest.kt) | Que la versión de la base, sus esquemas exportados y sus migraciones cuadren; que la versión nunca retroceda y que una ya publicada no cambie de forma |
-| [`CalendarioHabitoTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/CalendarioHabitoTest.kt) | Los dos modos de ciclo de un hábito periódico, lo vencido y cuándo se rompe la racha |
+| [`CalendarioHabitoTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/CalendarioHabitoTest.kt) | Los dos modos de ciclo de un hábito periódico, lo vencido, cuándo vuelve a tocar y cuándo se rompe la racha |
 | [`RespaldoTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/RespaldoTest.kt) | Cuándo toca el recordatorio de respaldo y qué dice, y que una versión solo se anuncie una vez |
 | [`PreferenciasHeredadasTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/PreferenciasHeredadasTest.kt) | Que lo que dejó escrito una versión anterior se siga leyendo, y que una clave con el tipo equivocado se trate como ausente en vez de cerrar la app |
+| [`OrdenDeListasTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/OrdenDeListasTest.kt) | El orden de Hoy y de la lista de hábitos: lo vencido primero, lo que lleva más esperando arriba, y que empatados en fecha no se muevan |
 
 Las pruebas con Room arrancan con una `Application` pelona en vez de `OllinApp`: la de verdad siembra el catálogo contra la base cifrada, y SQLCipher es una biblioteca nativa de Android que en la JVM no existe.
 
