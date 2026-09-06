@@ -7,8 +7,22 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.time.DayOfWeek
 import java.time.Instant
+import java.time.LocalDate
 
 class TiempoTest {
+
+    @Test
+    fun `el ano solo aparece cuando no es este`() {
+        val esteAno = LocalDate.of(Tiempo.hoy().year, 3, 5)
+        val otroAno = esteAno.plusYears(1)
+
+        assertEquals(Tiempo.fechaCorta(esteAno), Tiempo.fechaCortaConAnio(esteAno))
+        assertEquals(
+            "Sin el ano, un habito anual se anuncia como si fuera esta semana",
+            "${Tiempo.fechaCorta(otroAno)} ${otroAno.year}",
+            Tiempo.fechaCortaConAnio(otroAno)
+        )
+    }
 
     @Test
     fun `la duracion se lee en horas y minutos`() {

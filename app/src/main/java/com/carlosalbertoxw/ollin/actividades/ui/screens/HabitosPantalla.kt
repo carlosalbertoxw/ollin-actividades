@@ -96,7 +96,12 @@ fun HabitosPantalla(
     var deshaciendo by remember { mutableStateOf<HabitoConAvance?>(null) }
     val colores = LocalColoresOllin.current
 
-    val (activos, pausados) = habitos.partition { it.habito.activo }
+    // Los pausados no se ordenan con los demas: van en su propia seccion y su
+    // fecha no significa nada mientras esten parados.
+    val (activos, pausados) = remember(habitos) {
+        val (encendidos, parados) = habitos.partition { it.habito.activo }
+        ordenDeHabitos(encendidos, Tiempo.hoy()) to parados
+    }
 
     Scaffold(
         floatingActionButton = {
@@ -198,6 +203,32 @@ fun HabitosPantalla(
             alCerrar = { editando = null }
         )
     }
+}
+
+/**
+ * Los habitos activos por la fecha que le importa a cada uno: lo vencido
+ * arriba, luego lo de hoy, luego lo que viene de mas cerca a mas lejos.
+ *
+ * Es una sola linea de tiempo y no tres reglas pegadas. Lo vencido queda
+ * primero porque su fecha ya paso, y entre lo vencido manda lo que lleva mas
+ * esperando; lo que aun no toca se ordena por cercania, que es lo unico que
+ * distingue a un habito de pasado manana de uno de dentro de tres meses.
+ *
+ * Al final va lo que no tiene fecha que dar, que no es lo mismo que no tocar
+ * nunca: contando desde el ultimo cumplimiento, la siguiente fecha nace de
+ * cumplir la que esta vencida.
+ */
+internal fun ordenDeHabitos(
+    activos: List<HabitoConAvance>,
+    hoy: LocalDate
+): List<HabitoConAvance> =
+    activos.sortedWith(compareBy(nullsLast<LocalDate>()) { fechaQueImporta(it, hoy) })
+
+/** La fecha por la que se ordena un habito: la que tiene pendiente. */
+private fun fechaQueImporta(avance: HabitoConAvance, hoy: LocalDate): LocalDate? = when {
+    avance.vencidoDesde != null -> avance.vencidoDesde
+    avance.tocaHoy -> hoy
+    else -> avance.proxima
 }
 
 @Composable
@@ -427,12 +458,18 @@ private fun resumen(avance: HabitoConAvance): String {
     val hoy = when {
         // Un habito en pausa no esta pendiente: no se espera nada de el hoy.
         !habito.activo -> "en pausa"
-        !avance.tocaHoy -> "hoy no toca"
+        // "Hoy no toca" es cierto y no sirve: no distingue entre faltan dos
+        // dias y faltan dos meses. Cuando no hay proxima fecha que dar es
+        // porque de verdad no se sabe, y entonces si toca decirlo asi.
+        !avance.tocaHoy -> avance.proxima
+            ?.let { "toca el ${Tiempo.fechaCortaConAnio(it)}" }
+            ?: "hoy no toca"
         avance.cumplidoHoy -> "hecho hoy"
         habito.metaDiaria > 1 -> "${avance.vecesHoy}/${habito.metaDiaria} hoy"
         // Vencido y no "pendiente hoy": la fecha en que tocaba es justo lo que
         // hace falta para decidir si vale la pena ponerse ahora.
-        avance.vencidoDesde != null -> "tocaba el ${Tiempo.fechaCorta(avance.vencidoDesde)}"
+        avance.vencidoDesde != null ->
+            "tocaba el ${Tiempo.fechaCortaConAnio(avance.vencidoDesde)}"
         else -> "pendiente hoy"
     }
     val tiempo = if (avance.minutosHoy > 0) " · ${Tiempo.duracion(avance.minutosHoy)}" else ""

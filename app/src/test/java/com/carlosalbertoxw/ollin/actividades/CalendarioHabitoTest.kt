@@ -1,14 +1,17 @@
 package com.carlosalbertoxw.ollin.actividades
 
 import com.carlosalbertoxw.ollin.actividades.data.db.Habito
+import com.carlosalbertoxw.ollin.actividades.domain.model.DiasSemana
 import com.carlosalbertoxw.ollin.actividades.domain.model.Frecuencia
 import com.carlosalbertoxw.ollin.actividades.domain.model.ModoCiclo
 import com.carlosalbertoxw.ollin.actividades.domain.usecase.CalendarioHabito
 import com.carlosalbertoxw.ollin.actividades.domain.usecase.Rachas
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.DayOfWeek
 import java.time.LocalDate
 
 /**
@@ -123,6 +126,83 @@ class CalendarioHabitoTest {
         // Toca todos los dias, pero no por lo que se dejo de hacer ayer: se
         // pregunta a la entidad, que no sabe de deudas.
         assertTrue(CalendarioHabito.pendienteEl(diario, emptySet(), agosto1))
+    }
+
+    // ------------------------------------------------------ proxima fecha
+
+    @Test
+    fun `con fechas fijas la proxima no depende de cuando se cumplio`() {
+        val habito = cadaQuince(ModoCiclo.CALENDARIO)
+        val cumplidos = dias(1, 16)
+
+        assertEquals(
+            "Cumplido el 16, lo siguiente es el 31 aunque se mire el 20",
+            LocalDate.of(2026, 8, 31),
+            CalendarioHabito.proximaTras(habito, cumplidos, LocalDate.of(2026, 8, 20))
+        )
+    }
+
+    @Test
+    fun `contando desde el ultimo, la proxima nace del cumplimiento`() {
+        val habito = cadaQuince(ModoCiclo.DESDE_ULTIMO)
+        // Tocaba el 16 y se hizo el 20: los quince siguientes cuentan del 20.
+        val cumplidos = dias(1, 20)
+
+        assertEquals(
+            LocalDate.of(2026, 9, 4),
+            CalendarioHabito.proximaTras(habito, cumplidos, LocalDate.of(2026, 8, 21))
+        )
+    }
+
+    @Test
+    fun `contando desde el ultimo, con algo vencido no hay proxima que dar`() {
+        val habito = cadaQuince(ModoCiclo.DESDE_ULTIMO)
+        // El ciclo del 16 sigue abierto: la siguiente fecha aun no existe.
+        val cumplidos = dias(1)
+
+        assertNull(
+            CalendarioHabito.proximaTras(habito, cumplidos, LocalDate.of(2026, 8, 20))
+        )
+    }
+
+    @Test
+    fun `un habito que aun no empieza toca el dia de su ancla`() {
+        val habito = cadaQuince(ModoCiclo.CALENDARIO)
+
+        assertEquals(
+            agosto1,
+            CalendarioHabito.proximaTras(habito, emptySet(), LocalDate.of(2026, 7, 25))
+        )
+    }
+
+    @Test
+    fun `los dias elegidos dan el siguiente dia marcado`() {
+        val entreSemana = Habito(
+            id = 3,
+            nombre = "Nadar",
+            frecuencia = Frecuencia.DIAS_ELEGIDOS,
+            diasSemana = DiasSemana.alterna(0, DayOfWeek.MONDAY)
+        )
+        // El 1 de agosto de 2026 es sabado.
+        assertEquals(DayOfWeek.SATURDAY, agosto1.dayOfWeek)
+
+        assertEquals(
+            "El lunes 3, no el sabado que se mira",
+            LocalDate.of(2026, 8, 3),
+            CalendarioHabito.proximaTras(entreSemana, emptySet(), agosto1)
+        )
+    }
+
+    @Test
+    fun `un habito sin ningun dia marcado no toca nunca`() {
+        val ninguno = Habito(
+            id = 4,
+            nombre = "Nada",
+            frecuencia = Frecuencia.DIAS_ELEGIDOS,
+            diasSemana = 0
+        )
+
+        assertNull(CalendarioHabito.proximaTras(ninguno, emptySet(), agosto1))
     }
 
     // -------------------------------------------------------------- racha

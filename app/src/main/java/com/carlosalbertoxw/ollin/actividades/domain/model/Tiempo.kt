@@ -22,6 +22,7 @@ object Tiempo {
     private val ES: Locale = Locale.forLanguageTag("es-MX")
     private val HORA = DateTimeFormatter.ofPattern("HH:mm", ES)
     private val FECHA_CORTA = DateTimeFormatter.ofPattern("d MMM", ES)
+    private val FECHA_CORTA_ANIO = DateTimeFormatter.ofPattern("d MMM yyyy", ES)
     private val FECHA_LARGA = DateTimeFormatter.ofPattern("EEEE d 'de' MMMM", ES)
     private val FECHA_HORA = DateTimeFormatter.ofPattern("d MMM, HH:mm", ES)
 
@@ -58,6 +59,16 @@ object Tiempo {
     fun horaLocal(hora: LocalTime): String = HORA.format(hora)
 
     fun fechaCorta(dia: LocalDate): String = FECHA_CORTA.format(dia)
+
+    /**
+     * La fecha corta, con el ano solo cuando no es este.
+     *
+     * Un habito anual que toca el ano que viene no puede anunciarse como "5
+     * sep" a secas: se lee como dentro de unos dias y es dentro de doce meses.
+     * El resto del tiempo el ano sobra y solo alarga el renglon.
+     */
+    fun fechaCortaConAnio(dia: LocalDate): String =
+        if (dia.year == hoy().year) fechaCorta(dia) else FECHA_CORTA_ANIO.format(dia)
 
     fun fechaLarga(dia: LocalDate): String =
         FECHA_LARGA.format(dia).replaceFirstChar { it.titlecase(ES) }

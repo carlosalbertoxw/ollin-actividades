@@ -25,6 +25,13 @@ object CalendarioHabito {
     private const val LIMITE_OCURRENCIAS = 600
 
     /**
+     * Hasta donde se busca la proxima fecha de una cadencia semanal. Un ano
+     * basta de sobra: un habito de dias elegidos que no toque en 366 dias es
+     * uno sin ningun dia marcado, y ese no toca nunca.
+     */
+    private const val HORIZONTE_DIAS = 366
+
+    /**
      * Las fechas en que toco, del ancla a [hasta], ambas incluidas.
      *
      * En [ModoCiclo.CALENDARIO] son `ancla + n × intervalo`, siempre calculadas
@@ -133,6 +140,44 @@ object CalendarioHabito {
 
         val ultima = ocurrencias(habito, cumplidos, dia).lastOrNull() ?: return false
         return cumplidos.none { !it.isBefore(ultima) && !it.isAfter(dia) }
+    }
+
+    /**
+     * La proxima fecha en que toca **despues** de [dia], o nula si no se sabe.
+     *
+     * Es la contraparte de [ocurrenciaVigente]: una dice desde cuando se debio
+     * hacer y la otra cuando volvera a tocar. Sin esto la lista de habitos solo
+     * podia decir "hoy no toca", que es cierto y no sirve: lo que se quiere
+     * saber de un habito trimestral es si le faltan dos dias o dos meses.
+     *
+     * Nula tiene dos motivos legitimos, y los dos son "no se puede saber", no
+     * "nunca". Con [ModoCiclo.DESDE_ULTIMO] la siguiente nace del cumplimiento
+     * de la actual, asi que mientras haya algo vencido no hay fecha que dar. Y
+     * un habito de dias elegidos sin ningun dia marcado no toca jamas.
+     */
+    fun proximaTras(
+        habito: Habito,
+        cumplidos: Set<LocalDate>,
+        dia: LocalDate
+    ): LocalDate? {
+        if (!habito.frecuencia.esPeriodica) {
+            return generateSequence(dia.plusDays(1)) { it.plusDays(1) }
+                .take(HORIZONTE_DIAS)
+                .firstOrNull { habito.tocaHoy(it) }
+        }
+
+        val ancla = habito.anclaEfectiva()
+        if (ancla.isAfter(dia)) return ancla
+
+        var fecha = ancla
+        var contadas = 0
+        while (contadas < LIMITE_OCURRENCIAS) {
+            contadas++
+            val siguiente = siguienteTras(habito, ancla, contadas, fecha, cumplidos) ?: return null
+            if (siguiente.isAfter(dia)) return siguiente
+            fecha = siguiente
+        }
+        return null
     }
 
     /**

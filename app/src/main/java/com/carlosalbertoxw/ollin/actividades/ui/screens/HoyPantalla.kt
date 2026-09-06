@@ -109,7 +109,7 @@ fun HoyPantalla(
     val totalHoy = remember(completadas) {
         completadas.sumOf { it.actividad.duracionMinutos ?: 0 }
     }
-    val habitosDeHoy = remember(habitos) { habitos.filter { it.tocaHoy } }
+    val habitosDeHoy = remember(habitos) { ordenDeHoy(habitos) }
     val cumplidosDeHoy = remember(habitosDeHoy) { habitosDeHoy.count { it.cumplidoHoy } }
 
     LazyColumn(
@@ -451,6 +451,22 @@ private fun MetaDelDia(
     }
 }
 
+/**
+ * Los habitos que hoy hay que atender, con lo vencido arriba.
+ *
+ * Lo vencido sube porque es lo unico de la lista que ya se fallo, y entre lo
+ * vencido manda lo que lleva mas esperando: una deuda de tres semanas no puede
+ * quedar debajo de una de ayer solo porque se creo despues.
+ *
+ * El resto conserva el orden que eligio su dueno, y eso depende de que la
+ * ordenacion sea estable: si lo que toca hoy se reacomodara cada vez que algo
+ * vence, la lista dejaria de estar donde uno la dejo.
+ */
+internal fun ordenDeHoy(habitos: List<HabitoConAvance>): List<HabitoConAvance> =
+    habitos
+        .filter { it.tocaHoy }
+        .sortedWith(compareBy(nullsLast<LocalDate>()) { it.vencidoDesde })
+
 @Composable
 private fun RenglonHabitoHoy(
     avance: HabitoConAvance,
@@ -511,6 +527,20 @@ private fun RenglonHabitoHoy(
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = colores.textoTenue,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            // Lo vencido se ve aqui y no en el renglon de arriba: la deuda es
+            // lo que decide si vale la pena ponerse ahora, y compitiendo por el
+            // mismo renglon con la categoria y la racha se la comian los
+            // puntos suspensivos justo cuando mas importa.
+            avance.vencidoDesde?.let { desde ->
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    "Vencido · tocaba el ${Tiempo.fechaCortaConAnio(desde)}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.error,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )

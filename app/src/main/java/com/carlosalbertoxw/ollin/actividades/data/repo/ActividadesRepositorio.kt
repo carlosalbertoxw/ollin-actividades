@@ -50,7 +50,16 @@ data class HabitoConAvance(
      * ayer no esta vencido, esta fallado, y arrastrarlo llenaria la pantalla de
      * Hoy de deudas que nadie puede pagar.
      */
-    val vencidoDesde: LocalDate? = null
+    val vencidoDesde: LocalDate? = null,
+    /**
+     * Cuando vuelve a tocar, o nulo si no se puede saber todavia.
+     *
+     * Es lo unico que hace util a un habito que hoy no toca: "hoy no toca" no
+     * dice si faltan dos dias o dos meses. Nulo no es "nunca" sino "aun no se
+     * sabe": contando desde el ultimo cumplimiento, la siguiente fecha nace de
+     * cumplir la que esta vencida.
+     */
+    val proxima: LocalDate? = null
 ) {
     val cumplidoHoy: Boolean get() = vecesHoy >= habito.metaDiaria.coerceAtLeast(1)
 }
@@ -168,6 +177,14 @@ class ActividadesRepositorio(
                 } else {
                     null
                 }
+                // Solo se busca cuando hoy no toca, que es cuando la pantalla la
+                // ensena: recorrer el calendario de cada habito en cada emision
+                // se paga en el hilo de fondo, pero se paga.
+                val proxima = if (pendiente) {
+                    null
+                } else {
+                    CalendarioHabito.proximaTras(habito, cumplidos, dia)
+                }
 
                 HabitoConAvance(
                     habito = habito,
@@ -175,7 +192,8 @@ class ActividadesRepositorio(
                     minutosHoy = hoy?.minutos ?: 0,
                     racha = Rachas.calcula(habito, porDia, dia),
                     tocaHoy = pendiente,
-                    vencidoDesde = vigente?.takeIf { it.isBefore(dia) }
+                    vencidoDesde = vigente?.takeIf { it.isBefore(dia) },
+                    proxima = proxima
                 )
             }
         }.flowOn(Dispatchers.Default)
