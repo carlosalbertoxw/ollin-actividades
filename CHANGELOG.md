@@ -12,6 +12,18 @@ Por eso un tag `v1.2.0` sin su `## [1.2.0]` aquí arriba **falla antes de compil
 
 Lo que todavía no se publica se va acumulando bajo `## [Sin publicar]
 
+## [1.2.0] - 2026-09-06
+
+### Añadido
+
+- **Lo vencido se anuncia en Hoy, y sube al principio de la lista.** Aparecer ya aparecía —eso fue la 1.1.0— pero sin distinguirse de lo que toca hoy: había que entrar a la lista de hábitos para enterarse de que algo llevaba tres semanas esperando. Ahora lleva su propio renglón —«*Vencido · tocaba el 20 ago*»— y los vencidos van arriba, con el que lleva más esperando primero: una deuda de tres semanas no puede quedar debajo de una de ayer solo porque el hábito se creó después. Lo demás de la lista no se mueve, sigue en el orden que le pusiste.
+
+### Cambiado
+
+- **La lista de hábitos dice cuándo vuelve a tocar, en vez de «hoy no toca».** La leyenda anterior era cierta y no servía: no distingue entre faltan dos días y faltan dos meses, que es justo lo único que uno quiere saber de un hábito trimestral. Ahora se lee «*Cada trimestre · toca el 16 nov*». Sigue diciendo «hoy no toca» cuando la fecha de verdad no se puede saber, que son dos casos y los dos son «todavía no» y no «nunca»: en el modo **desde que lo hice** la siguiente fecha nace de cumplir la que está vencida, y un hábito de días elegidos sin ningún día marcado no toca jamás.
+- **La lista de hábitos se ordena por fecha y no por antigüedad.** Una sola línea de tiempo: lo vencido arriba —lo que lleva más esperando primero—, luego lo de hoy, luego lo que viene de más cerca a más lejos, y al final lo que todavía no tiene fecha que dar. Empatados en fecha mandan el orden de siempre. Los pausados no entran: siguen en su propia sección al fondo, donde su fecha no significa nada mientras estén parados.
+- **Las fechas cortas llevan el año cuando no es este.** Un hábito anual que toca el 5 de marzo del año que viene se anunciaba como «5 mar», que se lee como esta semana.
+
 ## [1.1.0] - 2026-08-31
 
 ### Añadido
@@ -58,7 +70,8 @@ Primera versión pública.
 - **Aviso de actualizaciones.** Ollin consulta una vez al día si hay una versión más nueva publicada y lo enseña en *Acerca de*. Se apaga en Ajustes. Ver [seguridad y privacidad](https://github.com/carlosalbertoxw/ollin-actividades/blob/main/docs/seguridad.md).
 - **Sitio de descarga** en GitHub Pages, con el APK firmado, su huella y las instrucciones de instalación fuera de la tienda.
 
-[Sin publicar]: https://github.com/carlosalbertoxw/ollin-actividades/compare/v1.1.0...HEAD
+[Sin publicar]: https://github.com/carlosalbertoxw/ollin-actividades/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/carlosalbertoxw/ollin-actividades/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/carlosalbertoxw/ollin-actividades/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/carlosalbertoxw/ollin-actividades/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/carlosalbertoxw/ollin-actividades/releases/tag/v1.0.0
