@@ -55,6 +55,10 @@ jobs:
           api-level: ${{ matrix.api-level }}
           target: google_apis
           arch: x86_64
+          # Sin perfil el emulador arranca en 320x640, mas chico que cualquier
+          # telefono: en Hoy las secciones de abajo quedan fuera de la lista
+          # perezosa, no se componen y las pruebas no las encuentran.
+          profile: pixel_6
           disable-animations: true
           script: ./gradlew connectedDebugAndroidTest --no-daemon
 

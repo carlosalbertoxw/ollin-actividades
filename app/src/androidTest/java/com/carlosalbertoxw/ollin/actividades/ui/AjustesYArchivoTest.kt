@@ -99,7 +99,7 @@ class AjustesYArchivoTest {
         runBlocking { banco.contenedor.ajustes.ocultaTutorial(Tutorial.HOY.clave) }
 
         compose.esperaTexto("Volver a mostrar todos los tutoriales")
-        compose.onNodeWithText("Volver a mostrar todos los tutoriales").performClick()
+        compose.onNodeWithText("Volver a mostrar todos los tutoriales").performScrollTo().performClick()
 
         compose.espera("se restauran los tutoriales") { ajustesGuardados().tutorialesOcultos.isEmpty() }
         assertEquals(true, ajustesGuardados().muestraTutoriales)

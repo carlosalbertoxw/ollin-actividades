@@ -36,14 +36,14 @@ class NavegacionTest {
     fun `las_cuatro_pestanas_estan_y_se_puede_entrar_a_cada_una`() {
         montaRaiz()
 
-        listOf("Hoy", "Registro", "Habitos", "Analitica").forEach { nombre ->
+        listOf("Hoy", "Registro", "Habitos", "Analítica").forEach { nombre ->
             compose.onNode(pestana(nombre)).assertIsDisplayed()
         }
 
         compose.onNode(pestana("Registro")).performClick()
         compose.esperaTexto("Buscar por título o nota")
 
-        compose.onNode(pestana("Analitica")).performClick()
+        compose.onNode(pestana("Analítica")).performClick()
         compose.esperaTexto("Todavia no hay que graficar")
 
         compose.onNode(pestana("Habitos")).performClick()
@@ -84,7 +84,7 @@ class NavegacionTest {
         compose.onNodeWithContentDescription("Ajustes").performClick()
         compose.esperaTexto("Metas del día")
 
-        compose.onNodeWithText("Categorias").performScrollTo().performClick()
+        compose.onNodeWithText("Categorías").performScrollTo().performClick()
         compose.esperaDescripcion("Nueva categoría")
         compose.onNodeWithContentDescription("Volver").performClick()
         compose.esperaTexto("Metas del día")
