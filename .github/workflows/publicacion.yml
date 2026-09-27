@@ -34,7 +34,7 @@ jobs:
       version: ${{ steps.leer.outputs.version }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: La etiqueta tiene que encabezar el CHANGELOG
         id: leer
@@ -97,7 +97,7 @@ jobs:
           cat notas.md
 
       - name: Guardar las notas para el paso de publicar
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: notas-de-version
           path: notas.md
@@ -128,14 +128,14 @@ jobs:
     timeout-minutes: 30
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v5
 
       # La virtualizacion por hardware no viene activada en los runners de
       # Linux; sin esto el emulador arranca en modo software y tarda de mas.
@@ -160,7 +160,7 @@ jobs:
 
       - name: Guardar el informe
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: informe-migraciones
           path: app/build/reports/androidTests/
@@ -196,16 +196,16 @@ jobs:
       VERSION: ${{ needs.etiqueta.outputs.version }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v5
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: notas-de-version
 
@@ -340,7 +340,7 @@ jobs:
       actions: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Desplegar desde main
         env:

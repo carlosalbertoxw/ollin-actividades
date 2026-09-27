@@ -28,19 +28,19 @@ jobs:
     timeout-minutes: 45
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # JDK 21 y no 17: Gradle 8.14.5 no interpreta las versiones 25 y 26 de
       # Java y falla al compilar los .kts antes de tocar el codigo fuente. El
       # `jvmTarget` del proyecto sigue siendo 17; son cosas distintas.
       - name: Preparar JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
 
       - name: Preparar Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v5
 
       # Todo en una invocacion para que Gradle reutilice la configuracion y las
       # tareas comunes en vez de arrancar cuatro veces.
@@ -61,7 +61,7 @@ jobs:
 
       - name: Guardar los informes
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: informes-app
           path: |
@@ -76,10 +76,10 @@ jobs:
     timeout-minutes: 15
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Preparar Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '22'
           cache: npm

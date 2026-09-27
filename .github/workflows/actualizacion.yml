@@ -36,16 +36,16 @@ jobs:
 
     steps:
       # Con historia y etiquetas: la version anterior se saca de la ultima.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v5
 
       - name: Cual es la version anterior
         id: anterior
@@ -112,7 +112,7 @@ jobs:
 
       - name: Guardar el log
         if: always() && steps.anterior.outputs.hay == 'si'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: log-actualizacion
           path: ${{ runner.temp }}/logcat-*.txt
