@@ -76,7 +76,7 @@ class AjustesYArchivoTest {
     @Test
     fun `la_meta_de_trabajo_se_guarda_con_lo_que_se_escriba`() {
         montaAjustes()
-        compose.esperaTexto("Metas del dia")
+        compose.esperaTexto("Metas del día")
 
         // 300 minutos es la jornada por omision.
         compose.onNode(campo("Trabajo")).performTextReplacement("420")
@@ -111,7 +111,7 @@ class AjustesYArchivoTest {
         montaArchivo()
         compose.esperaTexto("Exportar", subcadena = true)
 
-        compose.onNodeWithText("Todavia no hay actividades que exportar.").assertExists()
+        compose.onNodeWithText("Todavía no hay actividades que exportar.").assertExists()
         compose.onNodeWithText("  Exportar 6 pestañas").assertIsNotEnabled()
     }
 

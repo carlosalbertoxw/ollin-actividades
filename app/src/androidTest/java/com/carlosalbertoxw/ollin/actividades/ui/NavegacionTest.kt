@@ -29,7 +29,7 @@ class NavegacionTest {
 
     private fun montaRaiz() {
         compose.setContent { TemaOllin(oscuro = true) { OllinRaiz(banco.contenedor) } }
-        compose.esperaTexto("Que estas haciendo")
+        compose.esperaTexto("Qué estás haciendo")
     }
 
     @Test
@@ -41,16 +41,16 @@ class NavegacionTest {
         }
 
         compose.onNode(pestana("Registro")).performClick()
-        compose.esperaTexto("Buscar por titulo o nota")
+        compose.esperaTexto("Buscar por título o nota")
 
         compose.onNode(pestana("Analitica")).performClick()
         compose.esperaTexto("Todavia no hay que graficar")
 
         compose.onNode(pestana("Habitos")).performClick()
-        compose.esperaTexto("Sin habitos todavia")
+        compose.esperaTexto("Sin hábitos todavía")
 
         compose.onNode(pestana("Hoy")).performClick()
-        compose.esperaTexto("Que estas haciendo")
+        compose.esperaTexto("Qué estás haciendo")
     }
 
     @Test
@@ -61,7 +61,7 @@ class NavegacionTest {
         compose.esperaTexto("Nueva actividad")
 
         compose.onNodeWithContentDescription("Cerrar").performClick()
-        compose.esperaTexto("Que estas haciendo")
+        compose.esperaTexto("Qué estás haciendo")
     }
 
     /**
@@ -73,7 +73,7 @@ class NavegacionTest {
         montaRaiz()
 
         compose.onNode(pestana("Habitos")).performClick()
-        compose.esperaDescripcion("Nuevo habito")
+        compose.esperaDescripcion("Nuevo hábito")
         compose.espera("se retira el boton de registrar") { !compose.hayDescripcion("Registrar") }
     }
 
@@ -82,17 +82,17 @@ class NavegacionTest {
         montaRaiz()
 
         compose.onNodeWithContentDescription("Ajustes").performClick()
-        compose.esperaTexto("Metas del dia")
+        compose.esperaTexto("Metas del día")
 
         compose.onNodeWithText("Categorias").performScrollTo().performClick()
-        compose.esperaDescripcion("Nueva categoria")
+        compose.esperaDescripcion("Nueva categoría")
         compose.onNodeWithContentDescription("Volver").performClick()
-        compose.esperaTexto("Metas del dia")
+        compose.esperaTexto("Metas del día")
 
         compose.onNodeWithText("Archivo").performScrollTo().performClick()
         compose.esperaTexto("Importar")
         compose.onNodeWithContentDescription("Volver").performClick()
-        compose.esperaTexto("Metas del dia")
+        compose.esperaTexto("Metas del día")
 
         compose.onNodeWithText("Acerca de Ollin").performScrollTo().performClick()
         compose.esperaTexto("Que quiere decir Ollin")

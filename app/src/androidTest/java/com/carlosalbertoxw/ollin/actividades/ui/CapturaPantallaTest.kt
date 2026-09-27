@@ -53,7 +53,7 @@ class CapturaPantallaTest {
 
         compose.onNodeWithText("Guardar").performScrollTo().performClick()
 
-        compose.esperaTexto("Ponle un titulo para poder guardarlo", subcadena = true)
+        compose.esperaTexto("Ponle un título para poder guardarlo", subcadena = true)
         assertFalse(cerrada)
         assertTrue(runBlocking { banco.db.actividadDao().todas() }.isEmpty())
     }
@@ -62,7 +62,7 @@ class CapturaPantallaTest {
     fun `una_actividad_nueva_se_guarda_con_su_duracion_y_cierra_la_pantalla`() {
         monta()
 
-        compose.onNode(campo("Que hiciste")).performTextInput("Correr en el parque")
+        compose.onNode(campo("Qué hiciste")).performTextInput("Correr en el parque")
         compose.onNodeWithText("45 min").performScrollTo().performClick()
         compose.onNodeWithText("Guardar").performScrollTo().performClick()
 
@@ -78,12 +78,12 @@ class CapturaPantallaTest {
     @Test
     fun `en_curso_se_retira_el_campo_de_duracion`() {
         monta()
-        compose.esperaTexto("Duracion en minutos", subcadena = true)
+        compose.esperaTexto("Duración en minutos", subcadena = true)
 
         compose.onNodeWithText("En curso").performScrollTo().performClick()
 
-        compose.esperaTexto("Mientras corre, la duracion la lleva el cronometro.")
-        assertFalse(compose.hayTexto("Duracion en minutos", subcadena = true))
+        compose.esperaTexto("Mientras corre, la duración la lleva el cronómetro.")
+        assertFalse(compose.hayTexto("Duración en minutos", subcadena = true))
     }
 
     @Test
@@ -105,7 +105,7 @@ class CapturaPantallaTest {
         compose.esperaTexto("Editar actividad")
         compose.espera("carga el titulo guardado") { compose.hayTexto("Redactar", subcadena = true) }
 
-        compose.onNode(campo("Que hiciste")).performTextReplacement("Redactar el informe")
+        compose.onNode(campo("Qué hiciste")).performTextReplacement("Redactar el informe")
         compose.onNodeWithText("Guardar").performScrollTo().performClick()
         compose.espera("se cierra la pantalla") { cerrada }
 

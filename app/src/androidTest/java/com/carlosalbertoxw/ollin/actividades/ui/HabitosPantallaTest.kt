@@ -41,25 +41,25 @@ class HabitosPantallaTest {
                 )
             }
         }
-        compose.esperaDescripcion("Nuevo habito")
+        compose.esperaDescripcion("Nuevo hábito")
     }
 
     @Test
     fun `sin_habitos_explica_que_es_un_habito`() {
         monta()
-        compose.esperaTexto("Sin habitos todavia")
+        compose.esperaTexto("Sin hábitos todavía")
     }
 
     @Test
     fun `el_dialogo_da_de_alta_un_habito_con_su_cadencia`() {
         monta()
-        compose.esperaTexto("Sin habitos todavia")
+        compose.esperaTexto("Sin hábitos todavía")
 
-        compose.onNodeWithContentDescription("Nuevo habito").performClick()
+        compose.onNodeWithContentDescription("Nuevo hábito").performClick()
         compose.esperaTexto("Cada cuando")
 
         compose.onNode(campo("Nombre")).performTextInput("Regar las plantas")
-        compose.onNodeWithText("Cada tantos dias").performClick()
+        compose.onNodeWithText("Cada tantos días").performClick()
         compose.onNodeWithText("Guardar").performClick()
 
         compose.esperaTexto("Cada quincena", subcadena = true)
@@ -76,11 +76,11 @@ class HabitosPantallaTest {
     fun `el_selector_de_dias_solo_aparece_en_dias_elegidos`() {
         monta()
 
-        compose.onNodeWithContentDescription("Nuevo habito").performClick()
+        compose.onNodeWithContentDescription("Nuevo hábito").performClick()
         compose.esperaTexto("Cada cuando")
         assertFalse(compose.hayTexto("X"))
 
-        compose.onNodeWithText("Dias elegidos").performClick()
+        compose.onNodeWithText("Días elegidos").performClick()
         compose.esperaTexto("X")
     }
 
@@ -91,11 +91,11 @@ class HabitosPantallaTest {
 
         compose.esperaTexto("Sobra")
         compose.onNodeWithText("Sobra").performClick()
-        compose.esperaTexto("Editar habito")
+        compose.esperaTexto("Editar hábito")
 
         compose.onNodeWithContentDescription("Eliminar").performClick()
 
-        compose.esperaTexto("Sin habitos todavia")
+        compose.esperaTexto("Sin hábitos todavía")
         assertTrue(runBlocking { banco.db.habitoDao().todos() }.isEmpty())
     }
 
@@ -111,7 +111,7 @@ class HabitosPantallaTest {
         compose.esperaTexto("En pausa")
         compose.esperaTexto("Correr")
 
-        compose.onNodeWithContentDescription("Reanudar habito").performClick()
+        compose.onNodeWithContentDescription("Reanudar hábito").performClick()
 
         compose.esperaSinTexto("En pausa")
         assertTrue(runBlocking { banco.db.habitoDao().todos() }.single().activo)

@@ -62,17 +62,17 @@ class HoyPantallaTest {
     fun `sin_nada_registrado_invita_a_escribir_y_no_deja_iniciar_en_blanco`() {
         monta()
 
-        compose.esperaTexto("Que estas haciendo")
-        compose.esperaTexto("Sin tiempo registrado todavia")
+        compose.esperaTexto("Qué estás haciendo")
+        compose.esperaTexto("Sin tiempo registrado todavía")
         compose.onNodeWithText("Iniciar").assertIsNotEnabled()
     }
 
     @Test
     fun `escribir_un_titulo_e_iniciar_deja_el_cronometro_corriendo`() {
         monta()
-        compose.esperaTexto("Que estas haciendo")
+        compose.esperaTexto("Qué estás haciendo")
 
-        compose.onNodeWithText("Reunion de diseno, correr 5 km...").performTextInput("Enfoque profundo")
+        compose.onNodeWithText("Reunión de diseño, correr 5 km…").performTextInput("Enfoque profundo")
         compose.onNodeWithText("Iniciar").performClick()
 
         compose.esperaTexto("Detener")
@@ -92,7 +92,7 @@ class HoyPantallaTest {
         compose.esperaTexto("Detener")
         compose.onNodeWithText("Detener").performClick()
 
-        compose.esperaTexto("Que estas haciendo")
+        compose.esperaTexto("Qué estás haciendo")
 
         val todas = runBlocking { banco.db.actividadDao().todas() }
         assertEquals(1, todas.size)
@@ -109,7 +109,7 @@ class HoyPantallaTest {
         }
         monta()
 
-        compose.esperaTexto("Habitos de hoy")
+        compose.esperaTexto("Hábitos de hoy")
         compose.esperaTexto("Sin racha activa", subcadena = true)
 
         compose.onNodeWithContentDescription("Marcar").performClick()
@@ -132,7 +132,7 @@ class HoyPantallaTest {
         }
         monta()
 
-        compose.esperaTexto("Racha de 1 dias", subcadena = true)
+        compose.esperaTexto("Racha de 1 días", subcadena = true)
 
         // Cancelar no borra nada: la paloma y el deshacer comparten pixel, y
         // pulsarlo de mas no puede costar un registro.
@@ -140,7 +140,7 @@ class HoyPantallaTest {
         compose.esperaTexto("Deshacer «Leer»")
         compose.onNodeWithText("Cancelar").performClick()
 
-        compose.esperaTexto("Racha de 1 dias", subcadena = true)
+        compose.esperaTexto("Racha de 1 días", subcadena = true)
         assertEquals(1, runBlocking { banco.db.actividadDao().todas() }.size)
 
         // Confirmando si, y sin pasar por ninguna pantalla.
