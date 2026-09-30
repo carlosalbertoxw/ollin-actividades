@@ -43,46 +43,61 @@ object CalendarioHabito {
      * lista **se corta en la primera ocurrencia sin cumplir**, y tiene que ser
      * asi: mientras eso siga pendiente no hay desde donde contar la siguiente.
      * Un habito cada quince dias que lleva dos meses sin hacerse tiene una sola
-     * ocurrencia vencida, no cuatro.
+     * ocurrencia vencida, no cuatro. Ver [desdeUltimo] para lo que pasa si se
+     * hace antes de tiempo.
      */
     fun ocurrencias(
         habito: Habito,
         cumplidos: Set<LocalDate>,
         hasta: LocalDate
     ): List<LocalDate> {
-        val ancla = habito.anclaEfectiva()
-        if (ancla.isAfter(hasta)) return emptyList()
-
-        val lista = mutableListOf<LocalDate>()
-        var fecha = ancla
-
-        while (!fecha.isAfter(hasta) && lista.size < LIMITE_OCURRENCIAS) {
-            lista += fecha
-            fecha = siguienteTras(habito, ancla, lista.size, fecha, cumplidos) ?: break
-        }
-        return lista
+        if (habito.anclaEfectiva().isAfter(hasta)) return emptyList()
+        return secuencia(habito, cumplidos).takeWhile { !it.isAfter(hasta) }.toList()
     }
 
     /**
-     * La ocurrencia que sigue a la que empieza en [actual], o nula si todavia
-     * no se puede saber.
+     * Todas las ocurrencias en orden, desde el ancla. En [ModoCiclo.DESDE_ULTIMO]
+     * se acaba donde la siguiente todavia no se puede saber.
      */
-    private fun siguienteTras(
-        habito: Habito,
-        ancla: LocalDate,
-        yaContadas: Int,
-        actual: LocalDate,
-        cumplidos: Set<LocalDate>
-    ): LocalDate? = when (habito.modoCiclo) {
-        ModoCiclo.CALENDARIO -> habito.ocurrencia(ancla, yaContadas.toLong())
+    private fun secuencia(habito: Habito, cumplidos: Set<LocalDate>): Sequence<LocalDate> {
+        val ancla = habito.anclaEfectiva()
+        val todas = when (habito.modoCiclo) {
+            ModoCiclo.CALENDARIO -> generateSequence(0L) { it + 1 }
+                .map { habito.ocurrencia(ancla, it) }
 
-        ModoCiclo.DESDE_ULTIMO -> cumplidoDesde(cumplidos, actual)
-            ?.let { habito.ocurrencia(it, 1) }
+            ModoCiclo.DESDE_ULTIMO -> desdeUltimo(habito, ancla, cumplidos)
+        }
+        return todas.take(LIMITE_OCURRENCIAS)
     }
 
-    /** El primer cumplimiento en [desde] o despues. Nulo si aun no lo hay. */
-    private fun cumplidoDesde(cumplidos: Set<LocalDate>, desde: LocalDate): LocalDate? =
-        cumplidos.filter { !it.isBefore(desde) }.minOrNull()
+    /**
+     * Las ocurrencias contando desde el ultimo cumplimiento.
+     *
+     * Cada cumplimiento cierra el ciclo abierto **aunque llegue antes de la
+     * fecha que tocaba**, y entonces la ocurrencia es el dia en que se hizo: el
+     * intervalo vuelve a empezar cada vez que se cumple, no cada vez que toca.
+     * Antes solo contaba lo hecho en la fecha o despues, y un filtro cambiado un
+     * dia antes de tiempo volvia a salir pendiente al dia siguiente, con el
+     * trabajo ya hecho y la fecha de despues contada desde el dia equivocado.
+     *
+     * El ancla es la excepcion: lo hecho antes de ella no cuenta. Mover el ancla
+     * es decir "empieza a contar desde aqui", y un cumplimiento viejo no puede
+     * desmentirlo.
+     */
+    private fun desdeUltimo(
+        habito: Habito,
+        ancla: LocalDate,
+        cumplidos: Set<LocalDate>
+    ): Sequence<LocalDate> = sequence {
+        val hechos = cumplidos.filter { !it.isBefore(ancla) }.sorted()
+        var toca = ancla
+        for (hecho in hechos) {
+            yield(if (hecho.isBefore(toca)) hecho else toca)
+            toca = habito.ocurrencia(hecho, 1)
+        }
+        // La que sigue al ultimo cumplimiento, todavia abierta.
+        yield(toca)
+    }
 
     /**
      * Los dias, dentro de la ventana, en que **toca exactamente**.
@@ -166,18 +181,7 @@ object CalendarioHabito {
                 .firstOrNull { habito.tocaHoy(it) }
         }
 
-        val ancla = habito.anclaEfectiva()
-        if (ancla.isAfter(dia)) return ancla
-
-        var fecha = ancla
-        var contadas = 0
-        while (contadas < LIMITE_OCURRENCIAS) {
-            contadas++
-            val siguiente = siguienteTras(habito, ancla, contadas, fecha, cumplidos) ?: return null
-            if (siguiente.isAfter(dia)) return siguiente
-            fecha = siguiente
-        }
-        return null
+        return secuencia(habito, cumplidos).firstOrNull { it.isAfter(dia) }
     }
 
     /**

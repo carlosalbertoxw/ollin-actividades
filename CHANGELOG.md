@@ -16,6 +16,10 @@ Los enlaces van con dirección completa: el mismo texto se lee en GitHub, en el 
 
 ## [Sin publicar]
 
+### Corregido
+
+- **Hacer un hábito antes de tiempo ya cuenta en el modo «desde que lo hice».** Si tocaba el 16 y lo hacías el 15, el 16 volvía a salir pendiente como si no lo hubieras hecho, y la fecha siguiente se contaba desde el día equivocado. Ahora el ciclo se cierra el día en que lo hiciste y los quince días siguientes empiezan ahí: tocará el 30. Tampoco suena el recordatorio del 16. Lo hecho antes del ancla sigue sin contar, y en **fechas fijas** hacerlo antes no mueve el calendario, igual que hacerlo tarde.
+
 ## [1.2.0] - 2026-09-06
 
 ### Añadido

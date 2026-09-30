@@ -91,6 +91,64 @@ class CalendarioHabitoTest {
         )
     }
 
+    /**
+     * El caso que se reporto: tocaba el 16, se hizo el 15, y el 16 volvio a
+     * salir pendiente como si no se hubiera hecho.
+     */
+    @Test
+    fun `contando desde el ultimo, hacerlo antes de tiempo cierra el ciclo`() {
+        val habito = cadaQuince(ModoCiclo.DESDE_ULTIMO)
+        val cumplidos = dias(1, 15)
+
+        assertFalse(
+            "El 16 ya no esta pendiente: se hizo un dia antes",
+            CalendarioHabito.pendienteEl(habito, cumplidos, LocalDate.of(2026, 8, 16))
+        )
+        assertEquals(
+            "Y el siguiente cuenta quince dias desde el 15, no desde el 16",
+            LocalDate.of(2026, 8, 30),
+            CalendarioHabito.proximaTras(habito, cumplidos, LocalDate.of(2026, 8, 16))
+        )
+        assertTrue(
+            "El 30 vuelve a tocar",
+            CalendarioHabito.pendienteEl(habito, cumplidos, LocalDate.of(2026, 8, 30))
+        )
+    }
+
+    @Test
+    fun `contando desde el ultimo, lo hecho antes de tiempo no avisa el dia que tocaba`() {
+        val habito = cadaQuince(ModoCiclo.DESDE_ULTIMO)
+        val cumplidos = dias(1, 15)
+
+        val fechas = CalendarioHabito.fechasEn(
+            habito,
+            cumplidos,
+            LocalDate.of(2026, 8, 16),
+            LocalDate.of(2026, 9, 10)
+        )
+
+        assertEquals(setOf(LocalDate.of(2026, 8, 30)), fechas)
+    }
+
+    @Test
+    fun `contando desde el ultimo, lo hecho antes del ancla no cuenta`() {
+        val habito = cadaQuince(ModoCiclo.DESDE_ULTIMO)
+        // El 31 de julio es anterior al ancla: el primer ciclo sigue abierto.
+        val cumplidos = setOf(LocalDate.of(2026, 7, 31))
+
+        assertTrue(CalendarioHabito.pendienteEl(habito, cumplidos, agosto1))
+    }
+
+    @Test
+    fun `hacerlo antes de tiempo no rompe la racha`() {
+        val habito = cadaQuince(ModoCiclo.DESDE_ULTIMO)
+        val cumplidos = mapOf(agosto1 to 1, LocalDate.of(2026, 8, 15) to 1)
+
+        val racha = Rachas.calcula(habito, cumplidos, LocalDate.of(2026, 8, 16))
+
+        assertEquals("Dos ciclos seguidos", 2, racha.actual)
+    }
+
     // ------------------------------------------------------------ vencido
 
     @Test

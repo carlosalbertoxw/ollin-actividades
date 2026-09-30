@@ -34,6 +34,8 @@ Con el ejemplo de siempre —cada quince días, anclado al 1 de agosto— tocaba
 - **Fechas fijas:** el siguiente sigue siendo el 31. Once días después, no quince.
 - **Desde que lo hice:** el siguiente pasa a ser el 4 de septiembre.
 
+**Hacerlo antes de tiempo también cuenta en «desde que lo hice».** Si tocaba el 16 y se hizo el 15, ese ciclo queda cerrado el 15 —el 16 no sale pendiente— y el siguiente toca quince días después del 15: el 30. El intervalo vuelve a empezar cada vez que se cumple, no cada vez que toca. La única excepción es el ancla: lo hecho antes de ella no cuenta, porque mover el ancla es decir «empieza a contar desde aquí». Con **fechas fijas** hacerlo antes no mueve nada, igual que hacerlo tarde.
+
 Nace en **fechas fijas**, que es lo que hacían todos los hábitos antes de que existiera la opción: actualizar la app no le mueve el calendario a nadie.
 
 El cálculo vive en [`CalendarioHabito`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/domain/usecase/CalendarioHabito.kt) y no en la entidad, porque en el segundo modo **el calendario depende de lo cumplido**, y eso es historia que `Habito` no tiene ni debe tener.
