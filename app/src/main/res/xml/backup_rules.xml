@@ -10,4 +10,5 @@
     <!-- Envoltura de la llave y huella del PIN: nada de esto sale del telefono. -->
     <exclude domain="sharedpref" path="ollin_llave.xml" />
     <exclude domain="file" path="datastore/ollin_actividades_ajustes.preferences_pb" />
+    <exclude domain="file" path="ultimo-fallo.txt" />
 </full-backup-content>

@@ -51,8 +51,14 @@ class MainActivity : FragmentActivity() {
             val bloqueado by bloqueo.bloqueado.collectAsStateWithLifecycle()
             val fallo by app.arranqueFallido.collectAsStateWithLifecycle()
 
-            LifecycleEventEffect(Lifecycle.Event.ON_STOP) { bloqueo.alIrAlFondo() }
-            LifecycleEventEffect(Lifecycle.Event.ON_START) { bloqueo.alVolverAlFrente() }
+            LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
+                bloqueo.alIrAlFondo()
+                contenedor.avisoDeRespaldo.alIrAlFondo()
+            }
+            LifecycleEventEffect(Lifecycle.Event.ON_START) {
+                bloqueo.alVolverAlFrente()
+                contenedor.avisoDeRespaldo.alVolverAlFrente()
+            }
 
             // Con candado puesto se marca la ventana como segura: ni capturas de
             // pantalla ni miniatura en la vista de apps recientes, que es donde

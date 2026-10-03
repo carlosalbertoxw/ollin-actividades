@@ -7,6 +7,7 @@ import com.carlosalbertoxw.ollin.actividades.data.db.Categoria
 import com.carlosalbertoxw.ollin.actividades.data.db.Habito
 import com.carlosalbertoxw.ollin.actividades.data.prefs.Ajustes
 import com.carlosalbertoxw.ollin.actividades.data.prefs.AjustesRepositorio
+import com.carlosalbertoxw.ollin.actividades.data.recordatorios.AvisoDeRespaldo
 import com.carlosalbertoxw.ollin.actividades.data.repo.ActividadesRepositorio
 import com.carlosalbertoxw.ollin.actividades.data.repo.HabitoConAvance
 import com.carlosalbertoxw.ollin.actividades.domain.model.Ambito
@@ -16,6 +17,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
@@ -28,7 +30,8 @@ import java.time.LocalDate
 @OptIn(ExperimentalCoroutinesApi::class)
 class HoyVm(
     private val repo: ActividadesRepositorio,
-    preferencias: AjustesRepositorio
+    preferencias: AjustesRepositorio,
+    private val avisoDeRespaldo: AvisoDeRespaldo = AvisoDeRespaldo()
 ) : ViewModel() {
 
     /**
@@ -98,6 +101,27 @@ class HoyVm(
 
     val ajustes: StateFlow<Ajustes> = preferencias.ajustes
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), Ajustes())
+
+    /**
+     * El titulo del aviso de respaldo, o nulo si no toca.
+     *
+     * La hora se toma al combinar. No hace falta un reloj que avise: al irse
+     * la app al fondo se deja de escuchar, y al volver se recalcula con la hora
+     * de ese momento. Exportar escribe el ultimo respaldo en DataStore, y eso
+     * basta para que el aviso desaparezca solo.
+     *
+     * Nulo de entrada, y no calculado sobre `Ajustes()`: el estado inicial no
+     * viene del disco, y decidir sobre el haria parpadear el aviso al abrir.
+     */
+    val avisoRespaldo: StateFlow<String?> = combine(
+        preferencias.ajustes,
+        repo.observaConteoActividades(),
+        avisoDeRespaldo.descartado
+    ) { actuales, conteo, descartado ->
+        AvisoDeRespaldo.texto(actuales, conteo > 0, descartado, Tiempo.ahora())
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    fun descartaAvisoRespaldo() = avisoDeRespaldo.descarta()
 
     /** Minutos completados hoy por ambito. Es el resumen de la jornada. */
     val minutosPorAmbito: StateFlow<Map<Ambito?, Int>> = dia

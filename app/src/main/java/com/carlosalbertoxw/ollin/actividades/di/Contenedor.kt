@@ -7,6 +7,7 @@ import com.carlosalbertoxw.ollin.actividades.data.actualizaciones.Version
 import com.carlosalbertoxw.ollin.actividades.data.db.OllinDatabase
 import com.carlosalbertoxw.ollin.actividades.data.db.Sembrador
 import com.carlosalbertoxw.ollin.actividades.data.prefs.AjustesRepositorio
+import com.carlosalbertoxw.ollin.actividades.data.recordatorios.AvisoDeRespaldo
 import com.carlosalbertoxw.ollin.actividades.data.recordatorios.CoordinadorRecordatorios
 import com.carlosalbertoxw.ollin.actividades.data.recordatorios.PlanificadorRecordatorios
 import com.carlosalbertoxw.ollin.actividades.data.repo.ActividadesRepositorio
@@ -40,6 +41,8 @@ class Contenedor(
     val ajustes: AjustesRepositorio by lazy { AjustesRepositorio(app) }
 
     val controlBloqueo: ControlBloqueo by lazy { ControlBloqueo(ajustes) }
+
+    val avisoDeRespaldo: AvisoDeRespaldo by lazy { AvisoDeRespaldo() }
 
     val sembrador: Sembrador by lazy { Sembrador(baseDeDatos.categoriaDao()) }
 
