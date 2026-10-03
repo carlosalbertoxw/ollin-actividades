@@ -71,8 +71,12 @@ fun OllinRaiz(contenedor: Contenedor) {
                             },
                             icon = { Icon(destino.icono, contentDescription = destino.titulo) },
                             label = { Text(destino.titulo) },
+                            // La etiqueta se fija a mano: Material 3 cambio su color
+                            // por omision al secundario, y la pestaña elegida ya se
+                            // distingue por el indicador.
                             colors = NavigationBarItemDefaults.colors(
                                 selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                selectedTextColor = MaterialTheme.colorScheme.onSurface,
                                 indicatorColor = MaterialTheme.colorScheme.primaryContainer
                             )
                         )
@@ -112,7 +116,8 @@ fun OllinRaiz(contenedor: Contenedor) {
                         alRegistrarHabito = { habitoId, dia ->
                             nav.navigate(Rutas.capturaDeHabito(habitoId, dia))
                         },
-                        alAbrirAjustes = { nav.navigate(Rutas.AJUSTES) }
+                        alAbrirAjustes = { nav.navigate(Rutas.AJUSTES) },
+                        alAbrirArchivo = { nav.navigate(Rutas.ARCHIVO) }
                     )
                 }
 
