@@ -36,16 +36,16 @@ jobs:
 
     steps:
       # Con historia y etiquetas: la version anterior se saca de la ultima.
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
           distribution: temurin
           java-version: '21'
 
-      - uses: gradle/actions/setup-gradle@v5
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
 
       - name: Cual es la version anterior
         id: anterior
@@ -102,7 +102,7 @@ jobs:
 
       - name: Instalar una encima de la otra
         if: steps.anterior.outputs.hay == 'si'
-        uses: reactivecircus/android-emulator-runner@v2
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
           api-level: 34
           target: google_apis
@@ -112,7 +112,7 @@ jobs:
 
       - name: Guardar el log
         if: always() && steps.anterior.outputs.hay == 'si'
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: log-actualizacion
           path: ${{ runner.temp }}/logcat-*.txt

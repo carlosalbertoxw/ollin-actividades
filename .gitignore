@@ -27,3 +27,7 @@ web/dist/
 *.jks
 /keystore.properties
 !debug.keystore
+# El almacen en base64 que se pega en el secreto de Actions. Es el .jks
+# entero, solo que en texto: se borra en cuanto se copia, y mientras tanto
+# no puede entrar a un commit.
+*.b64

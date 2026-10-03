@@ -2,6 +2,7 @@
 
 [![Pruebas](https://github.com/carlosalbertoxw/ollin-actividades/actions/workflows/pruebas.yml/badge.svg)](https://github.com/carlosalbertoxw/ollin-actividades/actions/workflows/pruebas.yml)
 [![Versión](https://img.shields.io/github/v/release/carlosalbertoxw/ollin-actividades?label=versi%C3%B3n)](https://github.com/carlosalbertoxw/ollin-actividades/releases/latest)
+[![Licencia](https://img.shields.io/github/license/carlosalbertoxw/ollin-actividades?label=licencia)](https://github.com/carlosalbertoxw/ollin-actividades/blob/main/LICENSE)
 
 **Tu tiempo, anotado.**
 
@@ -23,6 +24,25 @@ que se descarga. Comprobarla antes de instalar es una línea:
 sha256sum -c checksums.txt
 ```
 
+### Comprobar que el APK es el bueno
+
+La huella del archivo dice que no se corrompió en el camino, pero viaja por el mismo
+camino que el APK: quien pudiera cambiar uno cambiaría el otro. Por eso cuenta más la
+firma. Todas las versiones van firmadas con la misma llave, y esta es la huella de su
+certificado; está aquí —en el repositorio, no solo en el sitio— para que se pueda comparar
+por un camino distinto del que trajo el archivo:
+
+SHA-256 del certificado de firma: `ef04928146061db10bfc915544e7384550c68ab1f4fcef0f95925d9b1d2f8f23`
+
+```bash
+apksigner verify --print-certs ollin-actividades-x.y.z.apk
+```
+
+La línea `certificate SHA-256 digest` tiene que decir exactamente eso. Si no coincide, no
+lo instales. En el teléfono, sin computadora, lo comprueba también
+[AppVerifier](https://github.com/soupslurpr/AppVerifier). El flujo de publicación se niega
+a publicar un APK firmado con otra llave.
+
 [Ollin Finanzas](https://github.com/carlosalbertoxw/ollin-finanzas) es la app hermana —un
 libro de finanzas personales— y comparte estas convenciones: la versión sale del
 `CHANGELOG`, la firma de variables de entorno, y los mismos cuatro flujos de publicación.
@@ -42,7 +62,7 @@ Lo que se aprende manteniendo una se aplica a la otra.
 | **Analítica sobre lo completado** | Minutos por día, por categoría y por ámbito en ventanas de 7, 30 o 90 días. Lo pendiente no infla ninguna cifra: solo suma lo que cerraste. |
 | **Recordatorios de lo que falta** | Un aviso por cada hábito que toque y todavía no hayas cumplido, a la hora que le pongas, y por cada tarea pendiente a su hora de inicio. Se calculan al vuelo y se arma una sola alarma, la del más próximo: una tabla de avisos habría que invalidarla en seis sitios y el primero que se olvidara dejaría fantasmas. |
 | **Bajo llave si quieres** | Con la credencial del teléfono —patrón, PIN, huella— o con un PIN propio de Ollin, con espera creciente ante los intentos fallidos y `FLAG_SECURE` mientras hay candado puesto. |
-| **Importar y exportar .xlsx** | Tu respaldo es un libro de Excel que tú decides dónde guardar. Y como es el único que hay —la base va cifrada con una llave que no se restaura en otro teléfono—, Ollin te lo recuerda cada semana si no has exportado, y otra vez cuando encuentra una versión nueva, que es justo antes de instalar algo encima. |
+| **Importar y exportar .xlsx** | Tu respaldo es un libro de Excel que tú decides dónde guardar. Y como es el único que hay —la base va cifrada con una llave que no se restaura en otro teléfono—, Ollin te lo recuerda cada semana si no has exportado —con una notificación y con un aviso arriba de Hoy cada vez que la abres, hasta que exportes—, y otra vez cuando encuentra una versión nueva, que es justo antes de instalar algo encima. El libro no va cifrado: tiene que abrirse en Excel. |
 
 Los instantes se guardan en **UTC** y el día local **aparte**, en su propia columna. Un
 instante es un punto en la línea del tiempo y no debe moverse al viajar; "cuánto trabajé
@@ -170,36 +190,24 @@ cuenta: cuando hay versión nueva, *Acerca de* enseña un botón que abre el sit
 
 ## Compilar
 
-Requiere **JDK 21** para correr Gradle y Android SDK 36. Gradle 8.14.5 no sabe interpretar
-las versiones 25 y 26 de Java y falla al compilar `build.gradle.kts` antes de tocar una
-línea de código fuente.
-
-El síntoma cuesta reconocerlo, porque el mensaje entero es el número de la versión que
-encontró:
-
-```
-* What went wrong:
-26.0.1
-```
-
-No falta ningún componente ni hay nada que instalar: ese `26.0.1` es el JDK del `PATH`.
-Ojo con el JBR que trae Android Studio, que en instalaciones recientes ya es 25 y falla
-igual, con un `25.0.2` igual de escueto. Apunta `JAVA_HOME` a un JDK 21 — Android Studio
-suele dejar uno en `~/.jdks/`.
+Requiere **JDK 17 o superior** y el Android SDK 37 instalado. Hasta la 1.2.1 hacía falta
+justo un JDK 21, porque Kotlin 2.1.20 moría con un mensaje que era solo el número de
+versión (`* What went wrong: 26.0.1`); desde Kotlin 2.4 y Gradle 9.8 eso quedó atrás. Ver
+[el JDK de Gradle](docs/desarrollo.md#el-jdk-de-gradle).
 
 ```bash
-JAVA_HOME="$HOME/.jdks/jbr-21.0.11" ./gradlew :app:assembleDebug
+./gradlew :app:assembleDebug
 ```
 
 ```bash
-JAVA_HOME="$HOME/.jdks/jbr-21.0.11" ./gradlew :app:testDebugUnitTest
+./gradlew :app:testDebugUnitTest
 ```
 
 Las pruebas unitarias corren en la JVM con Robolectric, sin emulador. Las de interfaz y las
 de migración necesitan un teléfono o un emulador conectado:
 
 ```bash
-JAVA_HOME="$HOME/.jdks/jbr-21.0.11" ./gradlew :app:connectedDebugAndroidTest
+./gradlew :app:connectedDebugAndroidTest
 ```
 
 La ruta del SDK va en `local.properties`, que no se versiona:
@@ -219,6 +227,17 @@ El sitio es un proyecto aparte y no pasa por Gradle:
 cd web && npm install && npm run dev
 ```
 
-- `minSdk` 26 · `targetSdk` 36 · Kotlin 2.1.20 · AGP 8.10.0 · Gradle 8.14.5
+- `minSdk` 26 · `targetSdk` 36 · `compileSdk` 37 · Kotlin 2.4.20 · AGP 9.4.1 · Gradle 9.8.0
 
 Entorno, comandos y convenciones con más detalle en [Desarrollo](docs/desarrollo.md).
+
+---
+
+## Licencia
+
+[MIT](LICENSE) © 2026 Carlos Alberto.
+
+Puedes usar, copiar, modificar y redistribuir el código, incluso con fines comerciales,
+mientras conserves el aviso de copyright. La app se entrega sin garantía de ningún tipo.
+Las bibliotecas de terceros que viajan en el APK tienen sus propias licencias; están en
+*Acerca de → Licencias de terceros*.

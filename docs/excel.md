@@ -45,7 +45,7 @@ El libro incluye además anchos de columna, panel congelado en el encabezado, au
 | Archivo | Papel |
 |---|---|
 | [`ModeloHoja.kt`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/data/excel/ModeloHoja.kt) | `Celda` (texto, número, fecha, hora, booleano, fórmula), `Hoja`, anchos, validaciones, tablas y los índices de estilo |
-| [`Ooxml.kt`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/data/excel/Ooxml.kt) | Seriales de fecha, letras de columna, escape de XML, saneo de nombres de hoja |
+| [`Ooxml.kt`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/data/excel/Ooxml.kt) | Seriales de fecha, letras de columna, escape de XML, criterios literales de `SUMIFS`, saneo de nombres de hoja |
 | [`XlsxEscritor.kt`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/data/excel/XlsxEscritor.kt) | Serializa el paquete OOXML completo dentro de un ZIP |
 | [`XlsxLector.kt`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/data/excel/XlsxLector.kt) | Lee un `.xlsx` con el SAX del JDK |
 | [`ExportadorExcel.kt`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/data/excel/ExportadorExcel.kt) | Arma las hojas a partir de `DatosExportacion` |
@@ -57,12 +57,16 @@ Excel cuenta los días desde el 30/12/1899 (desplazamiento 25 569) y la hora es 
 
 El lector carga el paquete completo en memoria porque `sharedStrings.xml` puede venir después de las hojas dentro del ZIP; para una bitácora personal el costo es irrelevante y evita necesitar acceso aleatorio. Hay un tope de 64 MB por archivo.
 
+Las fórmulas de *Por categoría* comparan el nombre de la categoría **literal**, con [`Ooxml.criterioLiteral`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/data/excel/Ooxml.kt). Un criterio de `SUMIFS` no es texto: `*`, `?` y `~` son comodines, y un `<` o `>` al principio es un operador. Una categoría «Lectura\*» sumaba también «Lectura técnica» en cuanto la suite recalculaba, aunque el valor en caché —el que calcula la app— saliera bien. El criterio fuerza la igualdad con un `=` delante y escapa los comodines con la tilde.
+
 ### Un `.xlsx` es entrada externa
 
 Aunque el archivo lo elija el propio usuario, es lo único que entra a la app desde fuera, y se trata como tal:
 
 - **El tope se aplica mientras se lee**, no después. Descomprimir la entrada entera para luego mirar cuánto ocupa deja sin defensa contra una hoja de relación 1000:1: la memoria se agota antes de llegar a la comprobación.
-- **El SAX va con las entidades externas cerradas** (`disallow-doctype-decl`, entidades generales y de parámetro, DTD externa) y con un `EntityResolver` que devuelve la cadena vacía. No toda implementación reconoce esas banderas y algunas lanzan al pedirlas, así que el resolutor es el cinturón que no depende de ninguna. Una hoja de cálculo no declara DTD; lo que sí hace un XML preparado es leer un archivo del teléfono y dejarlo caer en una celda, o expandirse en cascada hasta tumbar la app.
+- **Un DOCTYPE se rechaza antes de parsear**, leyendo el prólogo a mano. Una hoja de cálculo no declara DTD; lo que sí hace un XML preparado es leer un archivo del teléfono y dejarlo caer en una celda, o declarar entidades que se expanden en cascada hasta tumbar la app. Las banderas del SAX (`disallow-doctype-decl`, entidades generales y de parámetro, DTD externa) se piden igual, pero en Android **ninguna** se reconoce: su `SAXParserFactory` está hecha sobre Expat y solo admite las de namespaces. El `EntityResolver` vacío cubre las entidades externas, no las que se declaran dentro del propio archivo. Por eso la defensa de verdad es la comprobación sobre los bytes, que se comporta igual en el teléfono y en la JVM, y que lee el prólogo con su juego de caracteres: en UTF-16 cada letra va con un cero al lado y una comparación byte a byte no vería el DOCTYPE.
+- **Hasta 2 000 partes XML.** Un libro real trae una veintena; un ZIP con cientos de miles de partes vacías no pesa nada y aun así llena la memoria.
+- **Filas y columnas dentro de los límites de Excel** (1 048 576 y XFD). El lector rellena los huecos que el archivo se salta, así que el número de fila decide cuánta memoria se pide, no los bytes del archivo: un `<row r="2000000000">` en un libro de un kilobyte pedía dos mil millones de renglones. Lo que pasa de esos límites no lo escribió ninguna hoja de cálculo y se rechaza con un mensaje.
 
 ## Importación
 
