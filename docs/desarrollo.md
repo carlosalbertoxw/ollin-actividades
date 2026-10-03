@@ -4,26 +4,39 @@
 
 | Pieza | Versión |
 |---|---|
-| Gradle wrapper | 8.14.5 |
-| Android Gradle Plugin | 8.10.0 |
-| Kotlin / KSP | 2.1.20 / 2.1.20-2.0.1 |
-| Compose BOM | 2025.04.01 |
-| Room | 2.7.1 |
+| Gradle wrapper | 9.8.0 |
+| Android Gradle Plugin | 9.4.1 (con Kotlin integrado) |
+| Kotlin / KSP | 2.4.20 / 2.3.12 |
+| Compose BOM | 2026.09.00 |
+| Room | 2.8.5 |
+| SQLCipher | 4.19.0 |
 | JDK del proyecto | 17 (`sourceCompatibility`, `jvmTarget`) |
-| JDK para correr Gradle | **21** |
-| compileSdk / targetSdk / minSdk | 36 / 36 / 26 |
+| JDK para correr Gradle | 17 o superior (probado con 21 y 26) |
+| compileSdk / targetSdk / minSdk | 37 / 36 / 26 |
 | Node (solo para el sitio) | 22 |
 | Vite | 6 |
 
 ### El JDK de Gradle
 
-Gradle 8.14.5 no sabe interpretar las versiones 25 y 26 de Java y falla al compilar `build.gradle.kts` con `IllegalArgumentException`, antes de tocar una sola línea de código fuente. Hay que apuntar `JAVA_HOME` a un JDK 21:
+Cualquier JDK desde el 17 sirve; está probado con el 21 —el que usan los flujos de GitHub— y con el 26.
 
-```bash
-JAVA_HOME="$HOME/.jdks/jbr-21.0.11" ./gradlew tasks
+Hasta octubre de 2026 no era así. Gradle 8.14.5 y Kotlin 2.1.20 no sabían interpretar las versiones 25 y 26 de Java, y la compilación moría antes de tocar una línea de código con un mensaje que era solo el número de versión (`* What went wrong: 26.0.1`). Desde Gradle 9.8 y Kotlin 2.4 eso quedó atrás. Si vuelve a pasar con un JDK más nuevo que el compilador, el síntoma es ese mismo.
+
+Para fijar el JDK, si hace falta, se pone una sola vez en el `gradle.properties` del usuario (`~/.gradle/gradle.properties`, no el del proyecto, que sí se versiona):
+
+```
+org.gradle.java.home=C:/Users/<usuario>/.jdks/jbr-21.0.11
 ```
 
 Android Studio usa su propio ajuste de *Gradle JDK* y no se ve afectado.
+
+### AGP 9
+
+Desde Android Gradle Plugin 9 el plugin de Android compila Kotlin por sí mismo, así que no se aplica `org.jetbrains.kotlin.android`: los dos juntos son un error de configuración. `compileSdk` es 37 porque lo exige AndroidX 2026.09, pero `targetSdk` sigue en 36: subirlo cambia cómo se porta la app en el teléfono y va aparte, con sus propias pruebas.
+
+### Versiones mínimas del build
+
+[`settings.gradle.kts`](../settings.gradle.kts) obliga a unas versiones mínimas de bibliotecas que el build arrastra y que tienen fallos conocidos: Bouncy Castle, commons-lang3, httpclient, jose4j y jdom2, que traen AGP, su Lint y Robolectric. Ninguna viaja en el APK, pero corren en la máquina que firma la release, y Bouncy Castle es justo lo que lee el almacén de claves. La regla solo sube versiones, nunca baja; cuando AGP traiga por sí solo versiones iguales o mayores, sobra y se quita.
 
 ## Comandos
 
@@ -127,7 +140,7 @@ Viven en `app/src/androidTest/java/com/carlosalbertoxw/ollin/actividades/ui/`, *
 
 ## Integración continua
 
-Cinco flujos, en [`.github/workflows/`](../.github/workflows/):
+Siete flujos, en [`.github/workflows/`](../.github/workflows/):
 
 | Flujo | Cuándo | Qué hace |
 |---|---|---|
@@ -136,6 +149,14 @@ Cinco flujos, en [`.github/workflows/`](../.github/workflows/):
 | [`sitio.yml`](../.github/workflows/sitio.yml) | Cambios en `web/`, a mano, y al publicar | Compila el sitio y lo despliega en GitHub Pages |
 | [`pruebas-instrumentadas.yml`](../.github/workflows/pruebas-instrumentadas.yml) | Lunes y a mano | La suite de interfaz completa, en emuladores API 26 y 34 |
 | [`actualizacion.yml`](../.github/workflows/actualizacion.yml) | Al etiquetar, lunes y a mano | Instala la versión nueva sobre la anterior y comprueba que abre |
+| [`codeql.yml`](../.github/workflows/codeql.yml) | Push a `main`, cada PR y los lunes | Análisis estático de seguridad de Kotlin, del sitio y de los propios flujos |
+| [`dependencias.yml`](../.github/workflows/dependencias.yml) | Push a `main` que toque Gradle, y a mano | Envía a GitHub el grafo real de dependencias de Gradle, para que lleguen sus alertas |
+
+CodeQL va como **configuración avanzada** y no con el *default setup* del repositorio: Kotlin hay que compilarlo para analizarlo, y así se compila con el mismo JDK y Gradle que el resto de los flujos. Los dos no conviven —con el default setup encendido, GitHub rechaza lo que sube `codeql.yml`—, así que en *Settings → Code security* el default setup tiene que estar apagado.
+
+Las acciones van **fijadas por SHA**, con la versión en un comentario (`@<sha> # v7.0.1`). Una etiqueta como `@v7` la puede mover quien controle esa acción, y el job que firma la release corre con las contraseñas del almacén en el entorno: una acción alterada podría llevárselas. [Dependabot](../.github/dependabot.yml) propone cada lunes las versiones nuevas de las acciones, de Gradle y del sitio, así que fijar no significa congelar. El wrapper lleva también `distributionSha256Sum`, para que Gradle compruebe la distribución que descarga.
+
+El job del sitio en `pruebas.yml` comprueba además que el `version.json` generado siga trayendo `version`, `apk` y `sitio` como los lee la app. Es un contrato con cada APK ya instalado, que no se puede corregir desde fuera: renombrar un campo apagaría el aviso de actualización en todos sin que nada fallara.
 
 Tres decisiones que explican el reparto:
 

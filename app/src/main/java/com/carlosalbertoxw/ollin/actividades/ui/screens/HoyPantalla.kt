@@ -1,6 +1,7 @@
 package com.carlosalbertoxw.ollin.actividades.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,7 +21,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.SaveAlt
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.Card
@@ -78,9 +81,14 @@ fun HoyPantalla(
     alAbrirActividad: (Long) -> Unit,
     /** Abre la captura del habito en el dia que se esta viendo, no siempre hoy. */
     alRegistrarHabito: (Long, LocalDate) -> Unit,
-    alAbrirAjustes: () -> Unit
+    alAbrirAjustes: () -> Unit,
+    /** Lo abre el aviso de respaldo. */
+    alAbrirArchivo: () -> Unit = {}
 ) {
-    val vm = recuerdaVm("hoy") { HoyVm(contenedor.repositorio, contenedor.ajustes) }
+    val vm = recuerdaVm("hoy") {
+        HoyVm(contenedor.repositorio, contenedor.ajustes, contenedor.avisoDeRespaldo)
+    }
+    val avisoRespaldo by vm.avisoRespaldo.collectAsStateWithLifecycle()
     val dia by vm.dia.collectAsStateWithLifecycle()
     val enCurso by vm.enCurso.collectAsStateWithLifecycle()
     val delDia by vm.delDia.collectAsStateWithLifecycle()
@@ -136,6 +144,19 @@ fun HoyPantalla(
                 IconButton(onClick = alAbrirAjustes) {
                     Icon(Icons.Filled.Settings, contentDescription = "Ajustes")
                 }
+            }
+        }
+
+        // Arriba de todo lo demas: es lo unico de esta pantalla que, si se
+        // ignora, puede costar la bitacora entera.
+        avisoRespaldo?.let { titulo ->
+            item(key = "aviso-respaldo") {
+                AvisoRespaldo(
+                    titulo = titulo,
+                    alExportar = alAbrirArchivo,
+                    alQuitar = vm::descartaAvisoRespaldo,
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp)
+                )
             }
         }
 
@@ -555,6 +576,47 @@ private fun RenglonHabitoHoy(
                 contentDescription = if (cumplido) "Deshacer" else "Marcar",
                 tint = if (cumplido) colores.textoTenue else colores.completado
             )
+        }
+    }
+}
+
+/**
+ * La tarjeta del aviso de respaldo. Toda ella lleva a Archivo, igual que la
+ * notificacion; la cruz la quita hasta la siguiente vez que se abra la app.
+ */
+@Composable
+private fun AvisoRespaldo(
+    titulo: String,
+    alExportar: () -> Unit,
+    alQuitar: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier.fillMaxWidth().clickable(onClick = alExportar),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+            contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+        )
+    ) {
+        Row(
+            Modifier.padding(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Icon(Icons.Filled.SaveAlt, contentDescription = null)
+            Column(Modifier.weight(1f).padding(vertical = 8.dp)) {
+                Text(titulo, style = MaterialTheme.typography.titleSmall)
+                Text(
+                    "Exporta a Excel: es el único respaldo que hay de tu bitácora.",
+                    style = MaterialTheme.typography.bodySmall
+                )
+                TextButton(onClick = alExportar, contentPadding = PaddingValues(0.dp)) {
+                    Text("Exportar ahora")
+                }
+            }
+            IconButton(onClick = alQuitar, modifier = Modifier.align(Alignment.Top)) {
+                Icon(Icons.Filled.Close, contentDescription = "Quitar el aviso")
+            }
         }
     }
 }

@@ -118,29 +118,6 @@ class CoordinadorRecordatorios(
     }
 
     /**
-     * El titulo lleva la cuenta de dias, no una formula.
-     *
-     * "Acuérdate de respaldar" deja de leerse a la tercera semana: no dice nada
-     * que quien lo ve no sepa ya. "Tu último respaldo es de hace 21 días" si
-     * mueve, porque pone delante el numero que uno no tenia en la cabeza. Va en
-     * el titulo y no en el detalle porque es lo unico que se ve sin desplegar
-     * la notificacion.
-     *
-     * Y quien no ha respaldado nunca no puede leer "hace N dias" de algo que no
-     * existe, asi que ese caso tiene su propia frase.
-     */
-    private fun tituloDelRespaldo(ultimoRespaldo: Long, ahora: Instant): String {
-        if (ultimoRespaldo <= 0L) return "Todavía no has respaldado tu bitácora"
-
-        val dias = Duration.between(Instant.ofEpochMilli(ultimoRespaldo), ahora).toDays()
-        return when {
-            dias <= 0L -> "Tu último respaldo es de hoy"
-            dias == 1L -> "Tu último respaldo es de ayer"
-            else -> "Tu último respaldo es de hace $dias días"
-        }
-    }
-
-    /**
      * Avisa de que hay version nueva, una sola vez por version.
      *
      * Va aqui y no en el comprobador porque es una notificacion, y el
@@ -208,6 +185,29 @@ class CoordinadorRecordatorios(
          * que no se vuelva ruido de fondo.
          */
         const val PLAZO_RESPALDO_DIAS = 7L
+
+        /**
+         * El titulo lleva la cuenta de dias, no una formula.
+         *
+         * "Acuérdate de respaldar" deja de leerse a la tercera semana: no dice nada
+         * que quien lo ve no sepa ya. "Tu último respaldo es de hace 21 días" si
+         * mueve, porque pone delante el numero que uno no tenia en la cabeza. Va en
+         * el titulo y no en el detalle porque es lo unico que se ve sin desplegar
+         * la notificacion.
+         *
+         * Y quien no ha respaldado nunca no puede leer "hace N dias" de algo que no
+         * existe, asi que ese caso tiene su propia frase.
+         */
+        fun tituloDelRespaldo(ultimoRespaldo: Long, ahora: Instant): String {
+            if (ultimoRespaldo <= 0L) return "Todavía no has respaldado tu bitácora"
+
+            val dias = Duration.between(Instant.ofEpochMilli(ultimoRespaldo), ahora).toDays()
+            return when {
+                dias <= 0L -> "Tu último respaldo es de hoy"
+                dias == 1L -> "Tu último respaldo es de ayer"
+                else -> "Tu último respaldo es de hace $dias días"
+            }
+        }
 
         fun de(contexto: Context): CoordinadorRecordatorios =
             (contexto.applicationContext as OllinApp).contenedor.recordatorios

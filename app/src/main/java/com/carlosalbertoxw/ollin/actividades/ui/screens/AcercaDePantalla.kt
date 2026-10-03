@@ -1,5 +1,7 @@
 package com.carlosalbertoxw.ollin.actividades.ui.screens
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,6 +24,7 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.SystemUpdateAlt
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -37,21 +40,31 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.carlosalbertoxw.ollin.actividades.BuildConfig
 import com.carlosalbertoxw.ollin.actividades.R
+import com.carlosalbertoxw.ollin.actividades.data.diagnostico.RegistroDeFallos
 import com.carlosalbertoxw.ollin.actividades.di.Contenedor
 import com.carlosalbertoxw.ollin.actividades.domain.model.Tiempo
 import com.carlosalbertoxw.ollin.actividades.ui.recuerdaVm
 import com.carlosalbertoxw.ollin.actividades.ui.theme.LocalColoresOllin
 import java.time.Instant
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * Que es Ollin y con que reglas trabaja.
@@ -73,6 +86,16 @@ fun AcercaDePantalla(contenedor: Contenedor, alCerrar: () -> Unit) {
     }
     val version by vm.estado.collectAsStateWithLifecycle()
     val colores = LocalColoresOllin.current
+    val contexto = LocalContext.current
+
+    // Del disco y fuera del hilo principal. `revision` obliga a releer despues
+    // de borrar el informe.
+    var revision by remember { mutableIntStateOf(0) }
+    val fallo by produceState<String?>(null, revision) {
+        value = withContext(Dispatchers.IO) { RegistroDeFallos.lee(contexto) }
+    }
+    var verFallo by remember { mutableStateOf(false) }
+    var verLicencias by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -214,10 +237,30 @@ fun AcercaDePantalla(contenedor: Contenedor, alCerrar: () -> Unit) {
                 "Por lo mismo el respaldo automatico del sistema esta desactivado para la " +
                     "base: una llave del Keystore no se puede restaurar en otro telefono y " +
                     "la copia llegaria ilegible. Tu respaldo es la exportacion a .xlsx, que " +
-                    "decides tu donde guardar.",
+                    "decides tu donde guardar. Ese archivo no va cifrado —tiene que poder " +
+                    "abrirse en Excel—, asi que guardalo donde guardarias tu bitacora en papel.",
                 style = MaterialTheme.typography.bodySmall,
                 color = colores.textoTenue
             )
+
+            fallo?.let {
+                Spacer(Modifier.height(20.dp))
+                HorizontalDivider(color = colores.trazoSuave)
+                Spacer(Modifier.height(20.dp))
+
+                Text("La app se cerró sola", style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "La última vez que Ollin Actividades se cerró por un error, guardó un " +
+                        "informe aquí, en el teléfono. No se manda a ningún lado: puedes " +
+                        "leerlo, copiarlo para reportarlo o borrarlo.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colores.textoTenue
+                )
+                TextButton(onClick = { verFallo = true }, modifier = Modifier.fillMaxWidth()) {
+                    Text("Ver el informe")
+                }
+            }
 
             Spacer(Modifier.height(20.dp))
             HorizontalDivider(color = colores.trazoSuave)
@@ -235,7 +278,15 @@ fun AcercaDePantalla(contenedor: Contenedor, alCerrar: () -> Unit) {
                 color = colores.textoTenue
             )
 
-            Spacer(Modifier.height(28.dp))
+            Spacer(Modifier.height(20.dp))
+            HorizontalDivider(color = colores.trazoSuave)
+            Spacer(Modifier.height(8.dp))
+
+            TextButton(onClick = { verLicencias = true }, modifier = Modifier.fillMaxWidth()) {
+                Text("Licencias de terceros")
+            }
+
+            Spacer(Modifier.height(20.dp))
             Text(
                 "Hecho en Mexico, sin prisa.",
                 style = MaterialTheme.typography.bodySmall,
@@ -245,6 +296,79 @@ fun AcercaDePantalla(contenedor: Contenedor, alCerrar: () -> Unit) {
             )
         }
     }
+
+    val informe = fallo
+    if (verFallo && informe != null) {
+        DialogoDeTexto(
+            titulo = "Informe del último fallo",
+            texto = informe,
+            monoespaciado = true,
+            alCerrar = { verFallo = false },
+            accion = "Copiar" to {
+                contexto.getSystemService(ClipboardManager::class.java)
+                    ?.setPrimaryClip(ClipData.newPlainText("Informe de Ollin Actividades", informe))
+            },
+            otraAccion = "Borrar" to {
+                RegistroDeFallos.borra(contexto)
+                verFallo = false
+                revision++
+            }
+        )
+    }
+
+    if (verLicencias) {
+        val licencias = remember {
+            contexto.resources.openRawResource(R.raw.licencias_terceros)
+                .bufferedReader().use { it.readText() }
+        }
+        DialogoDeTexto(
+            titulo = "Licencias de terceros",
+            texto = licencias,
+            alCerrar = { verLicencias = false }
+        )
+    }
+}
+
+/**
+ * Un texto largo para leer, con desplazamiento. Lo usan el informe de fallo y
+ * las licencias: los dos se leen tal cual, sin formato.
+ *
+ * Monoespaciado solo para el informe, donde las trazas se alinean por columnas.
+ * Las licencias van en letra normal y en parrafos sin saltos fijos: en una
+ * pantalla de telefono, un renglon partido a 76 columnas se vuelve a partir a
+ * la mitad.
+ */
+@Composable
+private fun DialogoDeTexto(
+    titulo: String,
+    texto: String,
+    alCerrar: () -> Unit,
+    monoespaciado: Boolean = false,
+    accion: Pair<String, () -> Unit>? = null,
+    otraAccion: Pair<String, () -> Unit>? = null
+) {
+    AlertDialog(
+        onDismissRequest = alCerrar,
+        title = { Text(titulo) },
+        text = {
+            Text(
+                texto,
+                style = if (monoespaciado) {
+                    MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace)
+                } else {
+                    MaterialTheme.typography.bodySmall
+                },
+                modifier = Modifier.verticalScroll(rememberScrollState())
+            )
+        },
+        confirmButton = {
+            Row {
+                otraAccion?.let { (etiqueta, haz) -> TextButton(onClick = haz) { Text(etiqueta) } }
+                accion?.let { (etiqueta, haz) -> TextButton(onClick = haz) { Text(etiqueta) } }
+                TextButton(onClick = alCerrar) { Text("Cerrar") }
+            }
+        }
+    )
 }
 
 /**

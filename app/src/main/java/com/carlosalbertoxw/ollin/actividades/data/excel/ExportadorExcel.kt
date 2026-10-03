@@ -295,8 +295,10 @@ class ExportadorExcel(
         // Lo que no tiene categoria sale con la celda vacia en Registros, y a una
         // celda vacia no la encuentra el nombre del renglon: hay que preguntar
         // literalmente por el vacio. Sin esto la fila mostraria cero en cuanto
-        // Excel recalculara, que es de entrada por `fullCalcOnLoad`.
-        val criterio = if (categoria != null) "\$A$fila" else "\"\""
+        // Excel recalculara, que es de entrada por `fullCalcOnLoad`. El nombre va
+        // como literal: tal cual seria un patron, y «Lectura*» sumaria tambien
+        // «Lectura tecnica».
+        val criterio = if (categoria != null) Ooxml.criterioLiteral("\$A$fila") else "\"\""
 
         return listOf(
         Celda.Texto(categoria?.nombre ?: "(sin categoria)"),

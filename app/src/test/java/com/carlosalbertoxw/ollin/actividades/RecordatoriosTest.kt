@@ -6,6 +6,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.carlosalbertoxw.ollin.actividades.data.db.Actividad
 import com.carlosalbertoxw.ollin.actividades.data.db.Habito
 import com.carlosalbertoxw.ollin.actividades.data.db.OllinDatabase
+import com.carlosalbertoxw.ollin.actividades.data.recordatorios.Notificaciones
 import com.carlosalbertoxw.ollin.actividades.data.recordatorios.PlanificadorRecordatorios
 import com.carlosalbertoxw.ollin.actividades.data.recordatorios.Recordatorio
 import com.carlosalbertoxw.ollin.actividades.domain.model.DiasSemana
@@ -15,6 +16,7 @@ import com.carlosalbertoxw.ollin.actividades.domain.model.Tiempo
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -254,5 +256,42 @@ class RecordatoriosTest {
         val vacio = planificador.entre(temprano, temprano.plus(Duration.ofHours(2)))
 
         assertTrue(vacio.isEmpty())
+    }
+
+    // ---------------------------------------------------- texto del aviso
+
+    @Test
+    fun `sin candado el aviso dice de que habito se trata`() {
+        val aviso = Recordatorio(Recordatorio.Clase.HABITO, 1, "Terapia", "Te toca hoy", Tiempo.ahora())
+
+        assertEquals("Terapia" to "Te toca hoy", Notificaciones.textoVisible(aviso, discreto = false))
+    }
+
+    /**
+     * Con candado puesto el aviso no puede saltarselo: con el ajuste de fabrica
+     * de Android, la notificacion se lee entera en la pantalla de bloqueo.
+     */
+    @Test
+    fun `con candado el aviso no ensena el nombre ni el detalle`() {
+        listOf(Recordatorio.Clase.HABITO, Recordatorio.Clase.TAREA).forEach { clase ->
+            val aviso = Recordatorio(clase, 1, "Terapia", "Con la doctora Ruiz", Tiempo.ahora())
+
+            val (titulo, detalle) = Notificaciones.textoVisible(aviso, discreto = true)
+
+            listOf(titulo, detalle).forEach {
+                assertFalse("Se colo el nombre: $it", it.contains("Terapia"))
+                assertFalse("Se colo el detalle: $it", it.contains("Ruiz"))
+            }
+        }
+    }
+
+    /** El respaldo no dice nada de la bitacora, y callarlo solo le quitaria utilidad. */
+    @Test
+    fun `con candado el aviso de respaldo sale igual`() {
+        val aviso = Recordatorio(
+            Recordatorio.Clase.RESPALDO, 0, "Tu último respaldo es de hace 8 días", "Exporta", Tiempo.ahora()
+        )
+
+        assertEquals(aviso.titulo to aviso.detalle, Notificaciones.textoVisible(aviso, discreto = true))
     }
 }

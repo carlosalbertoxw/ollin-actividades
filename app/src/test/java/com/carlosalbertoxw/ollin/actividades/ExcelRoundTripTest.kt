@@ -279,4 +279,17 @@ class ExcelRoundTripTest {
             assertTrue("Nombre de hoja demasiado largo: ${it.nombre}", it.nombre.length <= 31)
         }
     }
+
+    /**
+     * Un nombre con comodines u operadores no puede convertirse en un patron:
+     * "Lectura*" sumaria tambien "Lectura tecnica" al recalcular la hoja. El
+     * criterio fuerza la igualdad y escapa la tilde antes que los comodines.
+     */
+    @Test
+    fun `el criterio de SUMIFS compara el nombre literal`() {
+        assertEquals(
+            "\"=\"&SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(\$A5,\"~\",\"~~\"),\"*\",\"~*\"),\"?\",\"~?\")",
+            Ooxml.criterioLiteral("\$A5")
+        )
+    }
 }

@@ -119,8 +119,16 @@ class ArchivoVm(
             is SecurityException -> "Ya no hay permiso sobre ese archivo. Vuelve a elegirlo."
             is java.io.IOException -> "No se pudo leer o escribir el archivo. Revisa que haya " +
                 "espacio libre y que la ubicación siga disponible."
-            is OutOfMemoryError -> "El libro es demasiado grande para la memoria del teléfono. " +
-                "Exporta menos pestañas desde \"Solo datos\"."
+            // El consejo depende de hacia donde iba el libro: al exportar se
+            // puede generar menos; al importar no hay nada que quitarle desde
+            // aqui.
+            is OutOfMemoryError -> if (accion == "exportar") {
+                "El libro es demasiado grande para la memoria del teléfono. " +
+                    "Exporta menos pestañas desde \"Solo datos\"."
+            } else {
+                "El libro es demasiado grande para la memoria del teléfono. " +
+                    "Si lo editaste en otra suite, guárdalo solo con la hoja Registros."
+            }
             else -> "No se pudo $accion. Inténtalo de nuevo."
         }
     }

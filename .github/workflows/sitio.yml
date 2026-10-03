@@ -41,13 +41,13 @@ jobs:
       url: ${{ steps.despliegue.outputs.page_url }}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       # Antes de compilar: de aqui sale la direccion publica del sitio, que el
       # version.json anuncia a la app y la pagina usa para resolver sus assets.
       - name: Preparar Pages
         id: pages
-        uses: actions/configure-pages@v6
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
 
       # Se normalizan aqui y no en la plantilla de `env` porque un sitio de
       # usuario (usuario.github.io) tiene `base_path` igual a "/", y pegarle
@@ -66,7 +66,7 @@ jobs:
           echo "base=${BASE_PATH%/}/" >> "$GITHUB_OUTPUT"
 
       - name: Preparar Node
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: '22'
           cache: npm
@@ -133,10 +133,10 @@ jobs:
         run: npm run build
 
       - name: Subir el sitio
-        uses: actions/upload-pages-artifact@v5
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: web/dist
 
       - name: Desplegar
         id: despliegue
-        uses: actions/deploy-pages@v5
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

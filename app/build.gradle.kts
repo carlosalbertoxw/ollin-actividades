@@ -1,8 +1,9 @@
 import java.util.Properties
 
 plugins {
+    // Sin `kotlin.android`: desde AGP 9 el plugin de Android compila Kotlin por
+    // si mismo, y aplicar los dos es un error de configuracion.
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
 }
@@ -95,7 +96,10 @@ val urlDeActualizaciones = providers
 
 android {
     namespace = "com.carlosalbertoxw.ollin.actividades"
-    compileSdk = 36
+    // 37 para compilar y 36 para el comportamiento: AndroidX 2026.09 exige
+    // compilar contra la API 37, pero subir targetSdk cambia como se porta la
+    // app en el telefono, y eso va aparte y con sus propias pruebas.
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.carlosalbertoxw.ollin.actividades"
@@ -211,6 +215,10 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.activity.compose)
     implementation(libs.kotlinx.coroutines.android)
+    // No la usa la app directamente: la trae Navigation. Va explicita para
+    // subirla a la que pide room-migration en las pruebas de migracion; ver
+    // libs.versions.toml.
+    implementation(libs.kotlinx.serialization.core)
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)

@@ -45,6 +45,12 @@ Tres reglas que lo separan de una molestia:
 
 Exportar desde `Ajustes → Archivo` reinicia el plazo. Se marca al terminar bien y no al empezar: un libro que no llegó a escribirse no es un respaldo.
 
+### También en Hoy
+
+La notificación se pierde entre las demás, y una vez descartada no vuelve hasta la semana siguiente. Por eso, mientras toque respaldar, el mismo aviso sale también **arriba de Hoy cada vez que se abre la app**, con el mismo título y casi las mismas reglas: el interruptor de Ajustes, la bitácora con algo dentro y los 7 días. La diferencia es que el plazo cuenta solo desde el último respaldo o el primer arranque, no desde la última notificación: esa marca existe para no repetir la notificación cada día, y si contara aquí el aviso se apagaría justo cuando sale la notificación que se descartó sin exportar. Tocarlo lleva a Archivo, y **en cuanto se exporta desaparece solo**, porque exportar guarda la fecha del último respaldo y Hoy la está escuchando.
+
+La cruz lo quita **solo por esta vez**: «ahora no» no es «nunca». Vuelve la siguiente vez que se abra la app, que aquí significa arrancarla de cero o regresar después de más de un minuto fuera. Es la misma gracia del candado y por la misma razón: importar y exportar abren el selector de archivos del sistema, que manda la app al fondo, y volver de ahí no es abrirla otra vez. Las reglas están en [`AvisoDeRespaldo`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/data/recordatorios/AvisoDeRespaldo.kt), que vive en el contenedor para que girar el teléfono no lo traiga de vuelta.
+
 ## El aviso de versión nueva
 
 Cuando la [comprobación diaria](actualizaciones.md) encuentra algo más reciente, se notifica **una vez por versión**. Hasta ahora había que entrar a *Acerca de* a mirarlo, así que enterarse dependía de ir a buscarlo.
@@ -105,7 +111,9 @@ Ajustes enseña una advertencia **solo cuando alguno de los dos falta**, con el 
 
 ## Privacidad
 
-Con candado configurado, los avisos van con `VISIBILITY_PRIVATE`: en la pantalla de bloqueo se ve que hay una notificación de Ollin, no de qué.
+Con candado configurado, los avisos de hábitos y tareas no dicen de qué se trata: *«Tienes un hábito pendiente»*, sin nombre ni detalle ([`Notificaciones.textoVisible`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/data/recordatorios/Notificaciones.kt)). El de respaldo y el de versión nueva salen igual, porque no dicen nada de la bitácora.
+
+No basta con `VISIBILITY_PRIVATE`, que también llevan. Android solo oculta el contenido en la pantalla de bloqueo si la persona eligió «ocultar contenido sensible», que no es lo que viene de fábrica, y la cortina se puede bajar sin desbloquear. Por eso el texto ya sale callado desde la app, y la versión pública —*«Ollin Actividades · Tienes un aviso pendiente»*— cubre a quien sí ocultó el contenido, que de otro modo vería un «contenido oculto» sin saber de qué app.
 
 Sería incoherente marcar la ventana con `FLAG_SECURE` para que la bitácora no salga ni en las apps recientes y a la vez anunciar «Terapia, te toca hoy» a quien mire el teléfono encima de la mesa. Ver [seguridad](seguridad.md).
 

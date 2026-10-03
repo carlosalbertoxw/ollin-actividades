@@ -4,7 +4,7 @@
 # abre. Es la prueba que le falto a Ollin Actividades el dia que una version se
 # cerraba al arrancar en los telefonos que venian de la anterior.
 #
-# Lo corre el emulador de .github/workflows/pruebas-instrumentadas.yml, con los
+# Lo corre el emulador de .github/workflows/actualizacion.yml, con los
 # dos APK ya compilados en $RUNNER_TEMP. Se puede correr en local contra un
 # telefono o un emulador conectado:
 #

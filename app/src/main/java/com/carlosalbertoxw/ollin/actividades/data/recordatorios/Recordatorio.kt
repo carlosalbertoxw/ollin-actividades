@@ -73,7 +73,7 @@ class PlanificadorRecordatorios(
      * tabla, valga o no lo mismo el numero. El valor sobra; interesa el aviso.
      */
     val cambios: Flow<Unit> =
-        combine(habitos.observaConteo(), actividades.observaConteo()) { _, _ -> Unit }
+        combine(habitos.observaConteo(), actividades.observaConteo()) { _, _ -> }
 
     /**
      * Los avisos que caen dentro de la ventana, del mas proximo al mas lejano.

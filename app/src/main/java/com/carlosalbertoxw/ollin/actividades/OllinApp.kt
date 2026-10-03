@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import com.carlosalbertoxw.ollin.actividades.data.actualizaciones.Resultado
+import com.carlosalbertoxw.ollin.actividades.data.diagnostico.RegistroDeFallos
 import com.carlosalbertoxw.ollin.actividades.data.recordatorios.Notificaciones
 import com.carlosalbertoxw.ollin.actividades.di.Contenedor
 
@@ -35,6 +36,9 @@ class OllinApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        // Lo primero, para que tambien quede rastro de un fallo al construir
+        // el contenedor o al abrir la base.
+        RegistroDeFallos.instala(this, BuildConfig.VERSION_NAME)
         contenedor = Contenedor(this)
 
         alcance.launch {
@@ -69,6 +73,10 @@ class OllinApp : Application() {
                 // es un UnsatisfiedLinkError, y ese es justo el caso en que la
                 // app no puede hacer nada y tiene que decirlo bien.
                 Log.e(BITACORA, "El arranque no pudo completarse", fallo)
+                // No cierra el proceso, asi que el manejador de RegistroDeFallos
+                // no lo ve. Se guarda a mano: es justo el fallo que mas importa
+                // poder contar despues.
+                RegistroDeFallos.guarda(this@OllinApp, fallo, BuildConfig.VERSION_NAME)
                 _arranqueFallido.value = fallo
                 return@launch
             }
