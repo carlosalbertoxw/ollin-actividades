@@ -67,10 +67,23 @@ object Notificaciones {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        // Lo que ensena la pantalla de bloqueo cuando la persona eligio en
+        // Android "ocultar contenido sensible": sin version publica, el sistema
+        // pondria un "contenido oculto" sin decir de que app. Con el ajuste de
+        // fabrica ("mostrar todo") Android ignora esta version y ensena el aviso
+        // completo; por eso, con candado puesto, el aviso ya viene sin nombres
+        // desde [textoVisible].
+        val publico = NotificationCompat.Builder(contexto, CANAL)
+            .setSmallIcon(R.drawable.ic_recordatorio)
+            .setContentTitle(contexto.getString(R.string.app_name))
+            .setContentText("Tienes un aviso pendiente.")
+            .build()
+
+        val (titulo, detalle) = textoVisible(recordatorio, discreto)
         val aviso = NotificationCompat.Builder(contexto, CANAL)
             .setSmallIcon(R.drawable.ic_recordatorio)
-            .setContentTitle(recordatorio.titulo)
-            .setContentText(recordatorio.detalle)
+            .setContentTitle(titulo)
+            .setContentText(detalle)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             // Con candado puesto, el contenido no se ensena en la pantalla de
@@ -82,6 +95,7 @@ object Notificaciones {
                 if (discreto) NotificationCompat.VISIBILITY_PRIVATE
                 else NotificationCompat.VISIBILITY_PUBLIC
             )
+            .setPublicVersion(publico)
             .setAutoCancel(true)
             .setContentIntent(abrir)
             .build()
@@ -89,5 +103,31 @@ object Notificaciones {
         // El try no sobra: entre la comprobacion y el envio el permiso puede
         // haberse revocado, y eso lanza SecurityException.
         runCatching { NotificationManagerCompat.from(contexto).notify(recordatorio.idNotificacion, aviso) }
+    }
+
+    /**
+     * Titulo y texto con que sale el aviso.
+     *
+     * [discreto] va encendido cuando la app tiene candado. `VISIBILITY_PRIVATE`
+     * no basta para callar el contenido: Android solo lo oculta en la pantalla
+     * de bloqueo si la persona eligio "ocultar contenido sensible", que no es
+     * lo que viene de fabrica, y la cortina se puede bajar sin desbloquear.
+     * Quien le puso candado a su bitacora no deberia encontrarse "Terapia" en
+     * la pantalla del telefono, asi que el aviso dice que hay algo pendiente y
+     * nada mas.
+     *
+     * El respaldo y la version nueva salen igual con candado: no dicen nada de
+     * lo que hay en la bitacora.
+     */
+    fun textoVisible(recordatorio: Recordatorio, discreto: Boolean): Pair<String, String> {
+        if (!discreto) return recordatorio.titulo to recordatorio.detalle
+        return when (recordatorio.clase) {
+            Recordatorio.Clase.HABITO ->
+                "Tienes un hábito pendiente" to "Abre Ollin Actividades para verlo."
+            Recordatorio.Clase.TAREA ->
+                "Tienes una tarea por empezar" to "Abre Ollin Actividades para verla."
+            Recordatorio.Clase.RESPALDO, Recordatorio.Clase.VERSION ->
+                recordatorio.titulo to recordatorio.detalle
+        }
     }
 }

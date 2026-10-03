@@ -6,12 +6,13 @@ import android.content.Context
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK
+import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
 import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
 import androidx.biometric.BiometricPrompt
 import androidx.compose.runtime.Composable
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
+import com.carlosalbertoxw.ollin.actividades.data.seguridad.LlaveDeDesbloqueo
 
 /** Hay patron, PIN o contrasena que pedir prestada. */
 fun telefonoAsegurado(contexto: Context): Boolean =
@@ -24,6 +25,16 @@ fun telefonoAsegurado(contexto: Context): Boolean =
  * confirmar que eres tu antes de quitar el candado. Antes de Android 11 el
  * dialogo unificado no admite credencial del dispositivo, asi que ahi se abre
  * la pantalla de desbloqueo del sistema.
+ *
+ * Desde Android 11 el exito no se cree por el callback: se exige que el
+ * cifrador de [LlaveDeDesbloqueo], que solo el Keystore habilita tras una
+ * autenticacion real, logre cifrar. Por eso la huella tiene que ser de clase
+ * fuerte; las debiles no pueden habilitar una llave, y quien solo tenga una
+ * entra con el patron o el PIN del telefono.
+ *
+ * Si el Keystore no deja preparar la llave en algun telefono, se cae a la
+ * pantalla de desbloqueo del sistema en vez de dejar a nadie fuera de su
+ * bitacora.
  */
 @Composable
 fun pedirCredencialDelSistema(
@@ -32,10 +43,12 @@ fun pedirCredencialDelSistema(
     alLograr: () -> Unit,
     alFallar: (String) -> Unit,
     /**
-     * Se invoca solo en el camino anterior a Android 11, que es el unico que
-     * abre una actividad y por lo tanto manda Ollin al fondo. El dialogo
-     * unificado de Android 11 en adelante se monta encima sin detenerla, asi
-     * que avisar ahi dejaria concedida una gracia que nadie va a gastar.
+     * Se invoca solo cuando se abre la pantalla de desbloqueo del sistema --antes
+     * de Android 11, o si el Keystore no deja preparar la llave--, que es el
+     * unico camino que abre una actividad y por lo tanto manda Ollin al fondo.
+     * El dialogo unificado de Android 11 en adelante se monta encima sin
+     * detenerla, asi que avisar ahi dejaria concedida una gracia que nadie va a
+     * gastar.
      */
     alSalirAlSistema: () -> Unit = {}
 ): () -> Unit {
@@ -46,40 +59,55 @@ fun pedirCredencialDelSistema(
         else alFallar("No se pudo verificar. Inténtalo de nuevo.")
     }
 
+    val pantallaDelSistema: () -> Unit = {
+        val guardia = actividad.getSystemService(KeyguardManager::class.java)
+        @Suppress("DEPRECATION")
+        val intencion = guardia?.createConfirmDeviceCredentialIntent(
+            titulo,
+            "Usa tu patron, PIN o contrasena"
+        )
+        if (intencion != null) {
+            alSalirAlSistema()
+            lanzador.launch(intencion)
+        } else {
+            alFallar("Tu teléfono ya no tiene patrón ni PIN configurado.")
+        }
+    }
+
     return {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            BiometricPrompt(
-                actividad,
-                ContextCompat.getMainExecutor(actividad),
-                object : BiometricPrompt.AuthenticationCallback() {
-                    override fun onAuthenticationSucceeded(
-                        resultado: BiometricPrompt.AuthenticationResult
-                    ) = alLograr()
+            val preparado = runCatching {
+                val cifrador = LlaveDeDesbloqueo.cifradorNuevo()
+                BiometricPrompt(
+                    actividad,
+                    ContextCompat.getMainExecutor(actividad),
+                    object : BiometricPrompt.AuthenticationCallback() {
+                        override fun onAuthenticationSucceeded(
+                            resultado: BiometricPrompt.AuthenticationResult
+                        ) {
+                            if (LlaveDeDesbloqueo.demuestraAutenticacion(resultado.cryptoObject?.cipher)) {
+                                alLograr()
+                            } else {
+                                alFallar("No se pudo verificar. Inténtalo de nuevo.")
+                            }
+                        }
 
-                    override fun onAuthenticationError(codigo: Int, descripcion: CharSequence) {
-                        alFallar(descripcion.toString())
+                        override fun onAuthenticationError(codigo: Int, descripcion: CharSequence) {
+                            alFallar(descripcion.toString())
+                        }
                     }
-                }
-            ).authenticate(
-                BiometricPrompt.PromptInfo.Builder()
-                    .setTitle(titulo)
-                    .setSubtitle("Usa tu huella, patrón o PIN")
-                    .setAllowedAuthenticators(BIOMETRIC_WEAK or DEVICE_CREDENTIAL)
-                    .build()
-            )
-        } else {
-            val guardia = actividad.getSystemService(KeyguardManager::class.java)
-            @Suppress("DEPRECATION")
-            val intencion = guardia?.createConfirmDeviceCredentialIntent(
-                titulo,
-                "Usa tu patron, PIN o contrasena"
-            )
-            if (intencion != null) {
-                alSalirAlSistema()
-                lanzador.launch(intencion)
-            } else {
-                alFallar("Tu teléfono ya no tiene patrón ni PIN configurado.")
+                ).authenticate(
+                    BiometricPrompt.PromptInfo.Builder()
+                        .setTitle(titulo)
+                        .setSubtitle("Usa tu huella, patrón o PIN")
+                        .setAllowedAuthenticators(BIOMETRIC_STRONG or DEVICE_CREDENTIAL)
+                        .build(),
+                    BiometricPrompt.CryptoObject(cifrador)
+                )
             }
+            if (preparado.isFailure) pantallaDelSistema()
+        } else {
+            pantallaDelSistema()
         }
     }
 }

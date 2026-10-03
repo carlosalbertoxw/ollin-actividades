@@ -13,6 +13,9 @@ object Ooxml {
 
     private const val SEGUNDOS_POR_DIA = 86_400.0
 
+    /** Muy por encima de XFD (16 384): basta para saber que se paso. */
+    private const val LIMITE_COLUMNA = 1_000_000
+
     fun aSerial(fecha: LocalDate): Long = fecha.toEpochDay() + DESPLAZAMIENTO_SERIAL
 
     fun desdeSerial(serial: Double): LocalDate =
@@ -50,6 +53,10 @@ object Ooxml {
         for (c in letras.uppercase()) {
             if (c !in 'A'..'Z') continue
             n = n * 26 + (c - 'A' + 1)
+            // Sin tope, siete letras ya desbordan el Int y la columna sale
+            // negativa. Cualquier cosa por encima de XFD es igual de invalida,
+            // asi que basta con no seguir creciendo.
+            if (n > LIMITE_COLUMNA) return LIMITE_COLUMNA
         }
         return n
     }
@@ -62,6 +69,24 @@ object Ooxml {
         val numero = ref.dropWhile { it.isLetter() }.toIntOrNull() ?: 0
         return letras to numero
     }
+
+    /**
+     * Criterio de SUMIFS/COUNTIFS que compara el texto de [ref] tal cual.
+     *
+     * Un criterio no es texto literal: `*`, `?` y `~` son comodines, y un
+     * `<`, `>` o `=` al principio es un operador. Una categoria llamada
+     * "Lectura*" sumaria tambien "Lectura tecnica", y un habito "<30 min"
+     * compararia numeros. El valor en cache sale bien porque lo calcula la app;
+     * el error aparece en cuanto la suite recalcula, que con `fullCalcOnLoad`
+     * es al abrir.
+     *
+     * El "=" delante obliga a comparar por igualdad aunque el nombre empiece
+     * con un operador, y la tilde escapa los comodines (primero la propia
+     * tilde, para no escapar dos veces). Funciona igual en Excel, LibreOffice,
+     * WPS y Sheets.
+     */
+    fun criterioLiteral(ref: String): String =
+        "\"=\"&SUBSTITUTE(SUBSTITUTE(SUBSTITUTE($ref,\"~\",\"~~\"),\"*\",\"~*\"),\"?\",\"~?\")"
 
     fun escapaXml(texto: String): String {
         val sb = StringBuilder(texto.length + 16)

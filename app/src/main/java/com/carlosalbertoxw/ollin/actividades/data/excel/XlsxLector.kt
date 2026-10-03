@@ -3,10 +3,12 @@ package com.carlosalbertoxw.ollin.actividades.data.excel
 import org.xml.sax.Attributes
 import org.xml.sax.EntityResolver
 import org.xml.sax.InputSource
+import org.xml.sax.SAXException
 import org.xml.sax.helpers.DefaultHandler
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
+import java.io.InputStreamReader
 import java.io.StringReader
 import java.util.zip.ZipInputStream
 import javax.xml.parsers.SAXParserFactory
@@ -48,8 +50,27 @@ data class LibroLeido(val hojas: List<HojaLeida>) {
  */
 object XlsxLector {
 
-    private const val LIMITE_BYTES = 64L * 1024 * 1024
+    /** Lo que pueden sumar descomprimidas todas las partes XML del libro. */
+    internal const val LIMITE_BYTES = 64L * 1024 * 1024
     private const val BYTES_BUFFER = 64 * 1024
+
+    /**
+     * Partes XML que se aceptan. Un libro real trae una veintena; un zip con
+     * cientos de miles de partes vacias no pesa nada y aun asi llena el mapa.
+     */
+    private const val LIMITE_PARTES = 2_000
+
+    /**
+     * Los topes de una hoja de Excel: 1 048 576 filas y 16 384 columnas (XFD).
+     *
+     * El lector rellena los huecos que el archivo se salta, asi que el numero
+     * de fila y la letra de columna deciden cuanta memoria se pide, no los
+     * bytes que ocupa el archivo. Un `<row r="2000000000">` en un libro de un
+     * kilobyte pedia dos mil millones de renglones. Nada escrito por una hoja
+     * de calculo pasa de estos numeros, asi que lo que los pasa no es un libro.
+     */
+    internal const val MAXIMO_FILAS = 1_048_576
+    internal const val MAXIMO_COLUMNAS = 16_384
 
     /** Todo lo que permitiria a un XML de fuera hacer algo mas que describir celdas. */
     private val BANDERAS_CERRADAS = listOf(
@@ -88,6 +109,7 @@ object XlsxLector {
     private fun descomprime(entrada: InputStream): Map<String, ByteArray> {
         val partes = HashMap<String, ByteArray>()
         var total = 0L
+        var leidas = 0
         try {
             ZipInputStream(entrada.buffered()).use { zip ->
                 while (true) {
@@ -98,6 +120,7 @@ object XlsxLector {
                     if (!nombre.endsWith(".xml") && !nombre.endsWith(".rels")) {
                         zip.closeEntry(); continue
                     }
+                    if (++leidas > LIMITE_PARTES) throw demasiadoGrande()
                     val bytes = leeAcotado(zip, LIMITE_BYTES - total)
                     total += bytes.size
                     partes[nombre] = bytes
@@ -134,15 +157,19 @@ object XlsxLector {
             val leidos = zip.read(buffer)
             if (leidos <= 0) break
             disponible -= leidos
-            if (disponible < 0) {
-                throw ArchivoInvalido(
-                    "El archivo es demasiado grande para procesarse en el teléfono."
-                )
-            }
+            if (disponible < 0) throw demasiadoGrande()
             salida.write(buffer, 0, leidos)
         }
         return salida.toByteArray()
     }
+
+    private fun demasiadoGrande() =
+        ArchivoInvalido("El archivo es demasiado grande para procesarse en el teléfono.")
+
+    private fun fueraDeLaHoja() = ArchivoInvalido(
+        "El archivo trae celdas más allá del tamaño máximo de una hoja de Excel. " +
+            "Vuelve a guardarlo como .xlsx desde tu hoja de cálculo."
+    )
 
     private fun normalizaRuta(destino: String): String {
         val limpio = destino.removePrefix("/")
@@ -161,11 +188,16 @@ object XlsxLector {
      * declaran DTD— asi que se apagan todas.
      *
      * Las banderas van en `runCatching` porque no toda implementacion las
-     * reconoce y algunas lanzan al pedirlas; el [EntityResolver] vacio es el
-     * cinturon que no depende de que ninguna este disponible: aunque el parser
-     * decida resolver una entidad, lo que recibe es la cadena vacia.
+     * reconoce y algunas lanzan al pedirlas. En Android no las reconoce
+     * **ninguna**: su SAXParserFactory esta hecha sobre Expat y solo admite las
+     * de namespaces. El [EntityResolver] vacio cubre las entidades externas,
+     * pero no las internas, que se declaran y se expanden dentro del propio
+     * archivo. Por eso la defensa de verdad es [rechazaDoctype]: sin DOCTYPE no
+     * hay entidades que declarar, y la comprobacion se hace sobre los bytes,
+     * igual en el telefono que en la JVM.
      */
     private fun parsea(bytes: ByteArray, handler: DefaultHandler) {
+        rechazaDoctype(bytes)
         val factory = SAXParserFactory.newInstance().apply {
             isNamespaceAware = false
             // Cada blindaje va suelto y tolerado: ninguno puede tumbar una
@@ -182,7 +214,86 @@ object XlsxLector {
         lector.contentHandler = handler
         lector.errorHandler = handler
         lector.entityResolver = EntityResolver { _, _ -> InputSource(StringReader("")) }
-        lector.parse(InputSource(ByteArrayInputStream(bytes)))
+        try {
+            lector.parse(InputSource(ByteArrayInputStream(bytes)))
+        } catch (e: SAXException) {
+            // Lo que lanza un handler --los topes de filas y columnas-- llega
+            // envuelto: el parser solo deja salir SAXException. Se desenvuelve
+            // para que el mensaje escrito para la persona no se pierda.
+            (e.exception as? ArchivoInvalido)?.let { throw it }
+            throw e
+        }
+    }
+
+    /**
+     * Recorre el prologo --lo que va antes del elemento raiz-- y aborta si
+     * encuentra un DOCTYPE. Solo mira ahi: mas adelante un `<` literal viaja
+     * escapado como `&lt;`, asi que la secuencia no puede aparecer en el texto
+     * de una celda y buscarla en todo el archivo daria falsos positivos.
+     *
+     * Se lee con el juego de caracteres del archivo y no byte a byte: un XML en
+     * UTF-16 intercala ceros entre las letras, y comparar bytes dejaria pasar
+     * su DOCTYPE sin verlo.
+     */
+    private fun rechazaDoctype(bytes: ByteArray) {
+        val lector = InputStreamReader(ByteArrayInputStream(bytes), codificacion(bytes)).buffered()
+        while (true) {
+            val c = lector.read()
+            if (c < 0) return
+            if (c.toChar().isWhitespace() || c == 0xFEFF) continue
+            if (c.toChar() != '<') return
+            lector.mark(16)
+            val siguiente = CharArray(8).let { it.concatToString(0, lector.read(it, 0, 8).coerceAtLeast(0)) }
+            when {
+                // Declaracion XML o instruccion de proceso: <? ... ?>
+                siguiente.startsWith("?") -> {
+                    lector.reset(); lector.read()
+                    if (!saltaHasta(lector, "?>")) return
+                }
+                // Comentario: <!-- ... -->
+                siguiente.startsWith("!--") -> {
+                    lector.reset(); repeat(3) { lector.read() }
+                    if (!saltaHasta(lector, "-->")) return
+                }
+                siguiente.startsWith("!DOCTYPE", ignoreCase = true) -> throw ArchivoInvalido(
+                    "El archivo declara un DOCTYPE, que Ollin Actividades no acepta. " +
+                        "Vuelve a guardarlo como .xlsx desde tu hoja de cálculo."
+                )
+                // Cualquier otra cosa ya es el elemento raiz: el prologo acabo.
+                else -> return
+            }
+        }
+    }
+
+    /** Consume hasta justo despues de [cierre]; falso si el archivo se acaba antes. */
+    private fun saltaHasta(lector: java.io.Reader, cierre: String): Boolean {
+        // Una ventana con los ultimos caracteres leidos, y no un contador de
+        // coincidencias: con "-->" un contador que se reinicia se pierde el
+        // cierre de "--->", porque el tercer guion ya era el principio.
+        val ventana = StringBuilder()
+        while (true) {
+            val c = lector.read()
+            if (c < 0) return false
+            ventana.append(c.toChar())
+            if (ventana.length > cierre.length) ventana.deleteCharAt(0)
+            if (ventana.contentEquals(cierre)) return true
+        }
+    }
+
+    /**
+     * El juego de caracteres por la marca de orden de bytes, o por como viene
+     * escrito el primer `<` si no la trae. Sin ninguna de las dos, UTF-8, que es
+     * lo que escriben todas las hojas de calculo.
+     */
+    private fun codificacion(bytes: ByteArray): java.nio.charset.Charset {
+        fun b(i: Int) = bytes.getOrNull(i)?.toInt()?.and(0xFF) ?: -1
+        return when {
+            b(0) == 0xFF && b(1) == 0xFE -> Charsets.UTF_16LE
+            b(0) == 0xFE && b(1) == 0xFF -> Charsets.UTF_16BE
+            b(0) == 0x3C && b(1) == 0x00 -> Charsets.UTF_16LE
+            b(0) == 0x00 && b(1) == 0x3C -> Charsets.UTF_16BE
+            else -> Charsets.UTF_8
+        }
     }
 
     private fun leeSharedStrings(bytes: ByteArray): List<String> {
@@ -271,11 +382,13 @@ object XlsxLector {
                         filaActual = HashMap()
                         maxColFila = 0
                         numeroFilaActual = attrs?.getValue("r")?.toIntOrNull() ?: (filas.size + 1)
+                        if (numeroFilaActual > MAXIMO_FILAS) throw fueraDeLaHoja()
                     }
                     "c" -> {
                         val ref = attrs?.getValue("r")
                         columnaCelda = if (ref != null) Ooxml.indiceColumna(Ooxml.partesReferencia(ref).first)
                         else columnaCelda + 1
+                        if (columnaCelda > MAXIMO_COLUMNAS) throw fueraDeLaHoja()
                         if (columnaCelda > maxColFila) maxColFila = columnaCelda
                         tipoCelda = attrs?.getValue("t")
                         valor.setLength(0)
