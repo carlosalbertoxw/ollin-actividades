@@ -92,8 +92,11 @@ object Notificaciones {
             // anunciar "Terapia, te toca hoy" a quien mire el telefono encima
             // de la mesa. Se ve que hay un aviso de Ollin, no de que.
             .setVisibility(
-                if (discreto) NotificationCompat.VISIBILITY_PRIVATE
-                else NotificationCompat.VISIBILITY_PUBLIC
+                if (discreto) {
+                    NotificationCompat.VISIBILITY_PRIVATE
+                } else {
+                    NotificationCompat.VISIBILITY_PUBLIC
+                }
             )
             .setPublicVersion(publico)
             .setAutoCancel(true)
@@ -102,7 +105,9 @@ object Notificaciones {
 
         // El try no sobra: entre la comprobacion y el envio el permiso puede
         // haberse revocado, y eso lanza SecurityException.
-        runCatching { NotificationManagerCompat.from(contexto).notify(recordatorio.idNotificacion, aviso) }
+        runCatching {
+            NotificationManagerCompat.from(contexto).notify(recordatorio.idNotificacion, aviso)
+        }
     }
 
     /**
@@ -124,8 +129,10 @@ object Notificaciones {
         return when (recordatorio.clase) {
             Recordatorio.Clase.HABITO ->
                 "Tienes un hábito pendiente" to "Abre Ollin Actividades para verlo."
+
             Recordatorio.Clase.TAREA ->
                 "Tienes una tarea por empezar" to "Abre Ollin Actividades para verla."
+
             Recordatorio.Clase.RESPALDO, Recordatorio.Clase.VERSION ->
                 recordatorio.titulo to recordatorio.detalle
         }

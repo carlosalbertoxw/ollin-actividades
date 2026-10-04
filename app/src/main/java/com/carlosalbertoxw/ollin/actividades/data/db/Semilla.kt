@@ -9,11 +9,7 @@ import com.carlosalbertoxw.ollin.actividades.domain.model.Ambito
  */
 object Semilla {
 
-    data class PlantillaCategoria(
-        val nombre: String,
-        val ambito: Ambito,
-        val colorHex: String
-    )
+    data class PlantillaCategoria(val nombre: String, val ambito: Ambito, val colorHex: String)
 
     val CATEGORIAS: List<PlantillaCategoria> = listOf(
         PlantillaCategoria("Enfoque profundo", Ambito.TRABAJO, "#3D6DB5"),

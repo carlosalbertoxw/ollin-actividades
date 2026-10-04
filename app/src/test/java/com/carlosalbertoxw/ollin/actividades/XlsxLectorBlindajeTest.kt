@@ -81,26 +81,27 @@ abstract class FabricaDelegante : SAXParserFactory() {
     override fun newSAXParser(): SAXParser = real.newSAXParser()
     override fun setFeature(nombre: String, valor: Boolean) = real.setFeature(nombre, valor)
     override fun getFeature(nombre: String): Boolean = real.getFeature(nombre)
-    override fun setNamespaceAware(valor: Boolean) { real.isNamespaceAware = valor }
+    override fun setNamespaceAware(valor: Boolean) {
+        real.isNamespaceAware = valor
+    }
     override fun isNamespaceAware(): Boolean = real.isNamespaceAware
-    override fun setValidating(valor: Boolean) { real.isValidating = valor }
+    override fun setValidating(valor: Boolean) {
+        real.isValidating = valor
+    }
     override fun isValidating(): Boolean = real.isValidating
 }
 
 /** Como Android: la clase base lanza al pedirle XInclude. */
 class FabricaSinXInclude : FabricaDelegante() {
-    override fun setXIncludeAware(valor: Boolean) {
+    override fun setXIncludeAware(valor: Boolean): Unit =
         throw UnsupportedOperationException("This parser does not support XInclude")
-    }
 }
 
 /** El caso extremo: ni XInclude ni ninguna de las banderas de seguridad. */
 class FabricaSinBanderas : FabricaDelegante() {
-    override fun setXIncludeAware(valor: Boolean) {
+    override fun setXIncludeAware(valor: Boolean): Unit =
         throw UnsupportedOperationException("This parser does not support XInclude")
-    }
 
-    override fun setFeature(nombre: String, valor: Boolean) {
+    override fun setFeature(nombre: String, valor: Boolean): Unit =
         throw org.xml.sax.SAXNotRecognizedException(nombre)
-    }
 }

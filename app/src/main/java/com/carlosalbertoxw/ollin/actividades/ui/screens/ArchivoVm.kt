@@ -26,10 +26,8 @@ sealed interface EstadoArchivo {
     data class Fallo(val mensaje: String) : EstadoArchivo
 }
 
-class ArchivoVm(
-    private val repo: ActividadesRepositorio,
-    private val prefs: AjustesRepositorio
-) : ViewModel() {
+class ArchivoVm(private val repo: ActividadesRepositorio, private val prefs: AjustesRepositorio) :
+    ViewModel() {
 
     val ajustes: StateFlow<Ajustes> = prefs.ajustes
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), Ajustes())
@@ -116,9 +114,13 @@ class ArchivoVm(
         return when (fallo) {
             // Los suyos si estan escritos para leerse; el resto no.
             is XlsxLector.ArchivoInvalido -> fallo.message ?: "El archivo no se pudo leer."
+
             is SecurityException -> "Ya no hay permiso sobre ese archivo. Vuelve a elegirlo."
-            is java.io.IOException -> "No se pudo leer o escribir el archivo. Revisa que haya " +
-                "espacio libre y que la ubicación siga disponible."
+
+            is java.io.IOException ->
+                "No se pudo leer o escribir el archivo. Revisa que haya " +
+                    "espacio libre y que la ubicación siga disponible."
+
             // El consejo depende de hacia donde iba el libro: al exportar se
             // puede generar menos; al importar no hay nada que quitarle desde
             // aqui.
@@ -129,13 +131,18 @@ class ArchivoVm(
                 "El libro es demasiado grande para la memoria del teléfono. " +
                     "Si lo editaste en otra suite, guárdalo solo con la hoja Registros."
             }
+
             else -> "No se pudo $accion. Inténtalo de nuevo."
         }
     }
 
-    fun limpia() { _estado.value = EstadoArchivo.Reposo }
+    fun limpia() {
+        _estado.value = EstadoArchivo.Reposo
+    }
 
-    fun avisa(mensaje: String) { _estado.value = EstadoArchivo.Fallo(mensaje) }
+    fun avisa(mensaje: String) {
+        _estado.value = EstadoArchivo.Fallo(mensaje)
+    }
 
     fun nombreSugerido(): String = "Actividades-${LocalDate.now()}.xlsx"
 }

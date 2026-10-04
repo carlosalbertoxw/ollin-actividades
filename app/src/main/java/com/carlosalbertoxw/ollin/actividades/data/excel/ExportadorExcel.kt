@@ -69,8 +69,11 @@ class ExportadorExcel(
             filas = filas,
             anchos = anchosRegistros(),
             congelarTrasFila = 1,
-            validaciones = if (HojaExportable.DICCIONARIOS in hojasElegidas) validaciones()
-            else emptyList(),
+            validaciones = if (HojaExportable.DICCIONARIOS in hojasElegidas) {
+                validaciones()
+            } else {
+                emptyList()
+            },
             // Tabla de Excel de verdad: el filtro y el formato crecen solos al
             // agregar renglones a mano.
             tabla = TablaExcel(
@@ -111,9 +114,13 @@ class ExportadorExcel(
             AnchoColumna(7, 9.0), AnchoColumna(8, 10.0), AnchoColumna(9, 11.0),
             AnchoColumna(10, 14.0), AnchoColumna(11, 22.0), AnchoColumna(12, 34.0)
         )
+
         EsquemaExportacion.COMPACTO -> listOf(
-            AnchoColumna(1, 12.0), AnchoColumna(2, 32.0), AnchoColumna(3, 22.0),
-            AnchoColumna(4, 13.0), AnchoColumna(5, 10.0)
+            AnchoColumna(1, 12.0),
+            AnchoColumna(2, 32.0),
+            AnchoColumna(3, 22.0),
+            AnchoColumna(4, 13.0),
+            AnchoColumna(5, 10.0)
         )
     }
 
@@ -211,8 +218,10 @@ class ExportadorExcel(
             nombre = "Por dia",
             filas = filas,
             anchos = listOf(
-                AnchoColumna(1, 14.0), AnchoColumna(2, 12.0),
-                AnchoColumna(3, 10.0), AnchoColumna(4, 12.0)
+                AnchoColumna(1, 14.0),
+                AnchoColumna(2, 12.0),
+                AnchoColumna(3, 10.0),
+                AnchoColumna(4, 12.0)
             ),
             congelarTrasFila = 4
         )
@@ -242,7 +251,10 @@ class ExportadorExcel(
             .map { it to datos.minutosDeCategoria(it.id) }
             .filter { (_, minutos) -> minutos > 0 }
             .sortedByDescending { (_, minutos) -> minutos }
-            .forEach { (categoria, minutos) -> filas += filaCategoria(categoria, minutos, filas.size + 1, total) }
+            .forEach { (categoria, minutos) ->
+                filas +=
+                    filaCategoria(categoria, minutos, filas.size + 1, total)
+            }
 
         val sueltas = datos.minutosDeCategoria(null)
         if (sueltas > 0) filas += filaCategoria(null, sueltas, filas.size + 1, total)
@@ -279,8 +291,12 @@ class ExportadorExcel(
             nombre = "Por categoria",
             filas = filas,
             anchos = listOf(
-                AnchoColumna(1, 26.0), AnchoColumna(2, 18.0), AnchoColumna(3, 12.0),
-                AnchoColumna(4, 10.0), AnchoColumna(5, 12.0), AnchoColumna(6, 12.0)
+                AnchoColumna(1, 26.0),
+                AnchoColumna(2, 18.0),
+                AnchoColumna(3, 12.0),
+                AnchoColumna(4, 10.0),
+                AnchoColumna(5, 12.0),
+                AnchoColumna(6, 12.0)
             ),
             congelarTrasFila = 4
         )
@@ -301,24 +317,24 @@ class ExportadorExcel(
         val criterio = if (categoria != null) Ooxml.criterioLiteral("\$A$fila") else "\"\""
 
         return listOf(
-        Celda.Texto(categoria?.nombre ?: "(sin categoria)"),
-        Celda.Texto(categoria?.ambito?.etiqueta ?: ""),
-        Celda.Formula(
-            sumaMinutos(criterio, columna = colCategoria),
-            cache = minutos.toDouble(),
-            estilo = Estilo.ENTERO
-        ),
-        Celda.Formula("C$fila/60", cache = minutos / 60.0, estilo = Estilo.DECIMAL),
-        Celda.Formula(
-            cuentaSesiones(criterio, columna = colCategoria),
-            cache = datos.sesionesDeCategoria(categoria?.id).toDouble(),
-            estilo = Estilo.ENTERO
-        ),
-        Celda.Formula(
-            "IFERROR(C$fila/${totalMinutosFormula()},0)",
-            cache = minutos.toDouble() / total,
-            estilo = Estilo.PORCENTAJE
-        )
+            Celda.Texto(categoria?.nombre ?: "(sin categoria)"),
+            Celda.Texto(categoria?.ambito?.etiqueta ?: ""),
+            Celda.Formula(
+                sumaMinutos(criterio, columna = colCategoria),
+                cache = minutos.toDouble(),
+                estilo = Estilo.ENTERO
+            ),
+            Celda.Formula("C$fila/60", cache = minutos / 60.0, estilo = Estilo.DECIMAL),
+            Celda.Formula(
+                cuentaSesiones(criterio, columna = colCategoria),
+                cache = datos.sesionesDeCategoria(categoria?.id).toDouble(),
+                estilo = Estilo.ENTERO
+            ),
+            Celda.Formula(
+                "IFERROR(C$fila/${totalMinutosFormula()},0)",
+                cache = minutos.toDouble() / total,
+                estilo = Estilo.PORCENTAJE
+            )
         )
     }
 
@@ -425,8 +441,11 @@ class ExportadorExcel(
             nombre = "Categorias",
             filas = filas,
             anchos = listOf(
-                AnchoColumna(1, 26.0), AnchoColumna(2, 18.0),
-                AnchoColumna(3, 12.0), AnchoColumna(4, 12.0), AnchoColumna(5, 9.0)
+                AnchoColumna(1, 26.0),
+                AnchoColumna(2, 18.0),
+                AnchoColumna(3, 12.0),
+                AnchoColumna(4, 12.0),
+                AnchoColumna(5, 9.0)
             ),
             congelarTrasFila = 1,
             autoFiltro = "A1:E${maxOf(filas.size, 2)}"

@@ -15,7 +15,9 @@ import kotlinx.coroutines.launch
 class HabitosVm(private val repo: ActividadesRepositorio) : ViewModel() {
 
     /** Con los pausados incluidos: esta es la pantalla donde se administran. */
-    val habitos: StateFlow<List<HabitoConAvance>> = repo.observaHabitosConAvance(soloActivos = false)
+    val habitos: StateFlow<List<HabitoConAvance>> = repo.observaHabitosConAvance(
+        soloActivos = false
+    )
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     val categorias: StateFlow<List<Categoria>> = repo.observaCategorias()

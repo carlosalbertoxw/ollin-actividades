@@ -2,12 +2,12 @@ package com.carlosalbertoxw.ollin.actividades
 
 import android.app.Application
 import androidx.test.core.app.ApplicationProvider
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.test.runTest
 import com.carlosalbertoxw.ollin.actividades.data.excel.EsquemaExportacion
 import com.carlosalbertoxw.ollin.actividades.data.excel.HojaExportable
 import com.carlosalbertoxw.ollin.actividades.data.prefs.Ajustes
 import com.carlosalbertoxw.ollin.actividades.data.prefs.AjustesRepositorio
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -42,7 +42,7 @@ class AjustesRepositorioTest {
     fun `los valores de fabrica son los que documenta la pantalla de ajustes`() {
         val a = Ajustes()
 
-        assertNull(a.temaOscuro)        // sigue al sistema
+        assertNull(a.temaOscuro) // sigue al sistema
         assertEquals(false, a.colorDinamico)
         assertEquals(300, a.metaTrabajoMinutos)
         assertEquals(30, a.metaFisicoMinutos)

@@ -9,18 +9,20 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
 import com.carlosalbertoxw.ollin.actividades.data.excel.EsquemaExportacion
 import com.carlosalbertoxw.ollin.actividades.data.excel.HojaExportable
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 private val Context.almacen by preferencesDataStore(name = "ollin_actividades_ajustes")
 
 /** Con que se desbloquea Ollin al abrirla. */
 enum class ModoBloqueo(val etiqueta: String) {
     NINGUNO("Sin bloqueo"),
+
     /** El patron, PIN, contrasena o huella del propio telefono. */
     SISTEMA("Del teléfono"),
+
     /** Un PIN exclusivo de Ollin, distinto al del telefono. */
     PIN("PIN propio")
 }
@@ -31,7 +33,7 @@ enum class ModoBloqueo(val etiqueta: String) {
  * por eso se pueden mover.
  */
 data class Ajustes(
-    val temaOscuro: Boolean? = null,          // null = sigue al sistema
+    val temaOscuro: Boolean? = null, // null = sigue al sistema
     val colorDinamico: Boolean = false,
     /** Minutos de trabajo que se consideran una jornada completa. */
     val metaTrabajoMinutos: Int = 300,
@@ -343,18 +345,16 @@ class AjustesRepositorio(private val contexto: Context) {
     }
 
     /** Lo que dijo el sitio y cuando se le pregunto, de una sola escritura. */
-    suspend fun guardaComprobacion(
-        cuando: Long,
-        version: String,
-        url: String,
-        notas: String?
-    ) {
+    suspend fun guardaComprobacion(cuando: Long, version: String, url: String, notas: String?) {
         contexto.almacen.edit {
             it[Claves.ULTIMA_COMPROBACION] = cuando
             it[Claves.VERSION_DISPONIBLE] = version
             it[Claves.URL_DESCARGA] = url
-            if (notas.isNullOrBlank()) it.remove(Claves.NOTAS_VERSION)
-            else it[Claves.NOTAS_VERSION] = notas
+            if (notas.isNullOrBlank()) {
+                it.remove(Claves.NOTAS_VERSION)
+            } else {
+                it[Claves.NOTAS_VERSION] = notas
+            }
         }
     }
 
@@ -437,6 +437,5 @@ class AjustesRepositorio(private val contexto: Context) {
  * red de abajo, para que el dia que se olvide no cueste una version publicada,
  * como le costo a Ollin Finanzas entre su 1.0.0 y su 1.0.1.
  */
-private inline fun <reified T> Map<Preferences.Key<*>, Any>.lee(
-    clave: Preferences.Key<T>
-): T? = this[clave] as? T
+private inline fun <reified T> Map<Preferences.Key<*>, Any>.lee(clave: Preferences.Key<T>): T? =
+    this[clave] as? T

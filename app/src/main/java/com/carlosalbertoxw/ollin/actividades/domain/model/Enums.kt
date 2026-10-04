@@ -41,10 +41,13 @@ enum class Unidad(val etiqueta: String, val abreviatura: String, val decimales: 
     fun formatea(cantidad: Double): String {
         // Locale explicito: con el del sistema, "5.25 km" se volveria "5,25 km"
         // en un telefono en aleman y las pruebas dependerian de donde corren.
-        val texto = if (decimales == 0) cantidad.toLong().toString()
-        else String.format(Locale.forLanguageTag("es-MX"), "%.${decimales}f", cantidad)
-            .trimEnd('0')
-            .trimEnd('.', ',')
+        val texto = if (decimales == 0) {
+            cantidad.toLong().toString()
+        } else {
+            String.format(Locale.forLanguageTag("es-MX"), "%.${decimales}f", cantidad)
+                .trimEnd('0')
+                .trimEnd('.', ',')
+        }
         return if (abreviatura.isEmpty()) texto else "$texto $abreviatura"
     }
 }

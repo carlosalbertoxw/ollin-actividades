@@ -31,8 +31,14 @@ object AlarmaRecordatorios {
         // unos minutos de retraso sigue sirviendo; uno que no llega, no.
         if (puedeSerExacta(gestor)) {
             runCatching {
-                gestor.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, disparo, intento(contexto))
-            }.onFailure { gestor.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, disparo, intento(contexto)) }
+                gestor.setExactAndAllowWhileIdle(
+                    AlarmManager.RTC_WAKEUP,
+                    disparo,
+                    intento(contexto)
+                )
+            }.onFailure {
+                gestor.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, disparo, intento(contexto))
+            }
         } else {
             gestor.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, disparo, intento(contexto))
         }

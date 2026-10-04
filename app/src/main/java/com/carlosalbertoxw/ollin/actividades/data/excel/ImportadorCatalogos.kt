@@ -46,7 +46,8 @@ internal class ImportadorCatalogos(
 
     private companion object {
         val COLUMNAS_CATEGORIA: Map<String, List<String>> = mapOf(
-            "nombre" to listOf("categoria", "categorias", "nombre", "nombre de la categoria", "category"),
+            "nombre" to
+                listOf("categoria", "categorias", "nombre", "nombre de la categoria", "category"),
             "ambito" to listOf("ambito", "area", "tipo", "scope"),
             "color" to listOf("color", "colorhex", "color hex", "hex"),
             "archivada" to listOf("archivada", "archivado", "oculta", "archived"),
@@ -58,15 +59,25 @@ internal class ImportadorCatalogos(
             "categoria" to listOf("categoria", "category", "rubro"),
             "cadencia" to listOf("cadencia", "frecuencia", "periodicidad"),
             "ancla" to listOf(
-                "cuenta desde", "ancla", "desde", "fecha de inicio", "inicio del ciclo",
-                "fecha ancla", "anchor"
+                "cuenta desde",
+                "ancla",
+                "desde",
+                "fecha de inicio",
+                "inicio del ciclo",
+                "fecha ancla",
+                "anchor"
             ),
             "modociclo" to listOf(
-                "si se hace tarde", "modo", "modo de ciclo", "recuenta", "recuento"
+                "si se hace tarde",
+                "modo",
+                "modo de ciclo",
+                "recuenta",
+                "recuento"
             ),
             "meta" to listOf("meta diaria", "meta", "veces al dia"),
             "minutos" to listOf("minutos sugeridos", "minutos", "duracion sugerida"),
-            "recordatorio" to listOf("recordatorio", "aviso", "hora", "hora del recordatorio", "avisar"),
+            "recordatorio" to
+                listOf("recordatorio", "aviso", "hora", "hora del recordatorio", "avisar"),
             "activo" to listOf("activo", "activa", "vigente"),
             "orden" to listOf("orden", "posicion", "order"),
             "notas" to listOf("notas", "nota", "comentario", "comentarios", "observaciones")
@@ -128,7 +139,8 @@ internal class ImportadorCatalogos(
     private var habitosActualizados = 0
 
     suspend fun aplica(libro: LibroLeido, opciones: OpcionesImportacion): ResumenCatalogos {
-        categorias = categoriaDao.todas().associateByTo(mutableMapOf()) { it.nombre.normalizaClave() }
+        categorias =
+            categoriaDao.todas().associateByTo(mutableMapOf()) { it.nombre.normalizaClave() }
         habitos = habitoDao.todos().associateByTo(mutableMapOf()) { it.nombre.normalizaClave() }
 
         // Categorias primero: un habito puede apuntar a una de ellas.
@@ -304,6 +316,7 @@ internal class ImportadorCatalogos(
     /** Deja en el habito solo lo que la cadencia leida sabe; el resto no se toca. */
     private fun Habito.con(cadencia: Cadencia?): Habito = when (cadencia) {
         null -> this
+
         else -> copy(
             frecuencia = cadencia.frecuencia,
             metaSemanal = cadencia.metaSemanal ?: metaSemanal,
@@ -367,7 +380,9 @@ internal class ImportadorCatalogos(
 
         DIAS_FIJOS[clave]?.let { return Cadencia(Frecuencia.DIAS_ELEGIDOS, diasSemana = it) }
         CADA_TANTOS_DIAS[clave]?.let { return Cadencia(Frecuencia.CADA_DIAS, intervaloDias = it) }
-        CADA_TANTOS_MESES[clave]?.let { return Cadencia(Frecuencia.CADA_MESES, intervaloMeses = it) }
+        CADA_TANTOS_MESES[clave]?.let {
+            return Cadencia(Frecuencia.CADA_MESES, intervaloMeses = it)
+        }
 
         POR_SEMANA.find(clave)?.let {
             return Cadencia(Frecuencia.SEMANAL, metaSemanal = it.groupValues[1].toInt())

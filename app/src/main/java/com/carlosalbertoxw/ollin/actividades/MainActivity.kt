@@ -64,10 +64,14 @@ class MainActivity : FragmentActivity() {
             // pantalla ni miniatura en la vista de apps recientes, que es donde
             // el sistema deja tu bitacora a la vista de cualquiera. Mientras no
             // se sabe se asume que si: quitarlo de mas es peor que ponerlo.
-            val protegerVentana = preferencias?.modoBloqueo?.let { it != ModoBloqueo.NINGUNO } ?: true
+            val protegerVentana =
+                preferencias?.modoBloqueo?.let { it != ModoBloqueo.NINGUNO } ?: true
             LaunchedEffect(protegerVentana) {
-                if (protegerVentana) window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
-                else window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                if (protegerVentana) {
+                    window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                } else {
+                    window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                }
             }
 
             TemaOllin(

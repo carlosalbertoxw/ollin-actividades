@@ -3,7 +3,6 @@ package com.carlosalbertoxw.ollin.actividades
 import android.app.Application
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
-import kotlinx.coroutines.test.runTest
 import com.carlosalbertoxw.ollin.actividades.data.db.Actividad
 import com.carlosalbertoxw.ollin.actividades.data.db.Categoria
 import com.carlosalbertoxw.ollin.actividades.data.db.Habito
@@ -21,6 +20,7 @@ import com.carlosalbertoxw.ollin.actividades.domain.model.Ambito
 import com.carlosalbertoxw.ollin.actividades.domain.model.EstadoActividad
 import com.carlosalbertoxw.ollin.actividades.domain.model.Tiempo
 import com.carlosalbertoxw.ollin.actividades.domain.model.Unidad
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -54,7 +54,7 @@ class ImportadorTest {
      * al reducirla a milisegundos. Simula un archivo corrupto que no revienta
      * hasta que la escritura ya empezo.
      */
-    private val SERIAL_IMPOSIBLE = 360_000_000_000.0
+    private val serialImposible = 360_000_000_000.0
 
     @Before
     fun abre() {
@@ -123,8 +123,13 @@ class ImportadorTest {
             Categoria(id = 1, nombre = "Correr", ambito = Ambito.FISICO)
         )
         val original = completada(
-            1, "Correr 5 km", hoy, LocalTime.of(6, 45), 32,
-            cantidad = 5.0, unidad = Unidad.KILOMETROS
+            1,
+            "Correr 5 km",
+            hoy,
+            LocalTime.of(6, 45),
+            32,
+            cantidad = 5.0,
+            unidad = Unidad.KILOMETROS
         )
 
         val resultado = importador.importa(
@@ -165,20 +170,21 @@ class ImportadorTest {
     }
 
     @Test
-    fun `no se duplica una categoria que ya existe aunque cambien acentos y mayusculas`() = runTest {
-        db.categoriaDao().inserta(Categoria(nombre = "Reunión", ambito = Ambito.TRABAJO))
+    fun `no se duplica una categoria que ya existe aunque cambien acentos y mayusculas`() =
+        runTest {
+            db.categoriaDao().inserta(Categoria(nombre = "Reunión", ambito = Ambito.TRABAJO))
 
-        importador.importa(
-            libroDe(
-                listOf(Categoria(id = 1, nombre = "reunion", ambito = Ambito.TRABAJO)),
-                emptyList(),
-                listOf(completada(1, "Junta semanal", hoy, LocalTime.of(10, 0), 60))
-            ).inputStream()
-        )
+            importador.importa(
+                libroDe(
+                    listOf(Categoria(id = 1, nombre = "reunion", ambito = Ambito.TRABAJO)),
+                    emptyList(),
+                    listOf(completada(1, "Junta semanal", hoy, LocalTime.of(10, 0), 60))
+                ).inputStream()
+            )
 
-        assertEquals(1, db.categoriaDao().todas().size)
-        assertEquals(1, db.actividadDao().todas().size)
-    }
+            assertEquals(1, db.categoriaDao().todas().size)
+            assertEquals(1, db.actividadDao().todas().size)
+        }
 
     @Test
     fun `el habito del archivo se crea y queda enlazado al registro`() = runTest {
@@ -226,7 +232,8 @@ class ImportadorTest {
 
         importador.importa(
             libroDe(
-                emptyList(), emptyList(),
+                emptyList(),
+                emptyList(),
                 listOf(completada(1, "Lo del archivo", hoy, LocalTime.of(9, 0), 30, null))
             ).inputStream(),
             OpcionesImportacion(reemplazarTodo = true)
@@ -256,14 +263,20 @@ class ImportadorTest {
     @Test
     fun `si la importacion falla despues de borrar, la bitacora anterior sigue ahi`() = runTest {
         db.actividadDao().inserta(completada(0, "Lo de antes", hoy, LocalTime.of(8, 0), 15, null))
-        db.actividadDao().inserta(completada(0, "Y esto tambien", hoy, LocalTime.of(9, 0), 20, null))
+        db.actividadDao().inserta(
+            completada(0, "Y esto tambien", hoy, LocalTime.of(9, 0), 20, null)
+        )
 
         val libro = libroCrudo(
             Hoja(
                 nombre = "Registros",
                 filas = listOf(
                     listOf(Celda.Texto("Fecha"), Celda.Texto("Titulo"), Celda.Texto("Minutos")),
-                    listOf(Celda.Numero(SERIAL_IMPOSIBLE), Celda.Texto("Fila envenenada"), Celda.Numero(30.0))
+                    listOf(
+                        Celda.Numero(serialImposible),
+                        Celda.Texto("Fila envenenada"),
+                        Celda.Numero(30.0)
+                    )
                 )
             )
         )
@@ -284,7 +297,8 @@ class ImportadorTest {
 
         importador.importa(
             libroDe(
-                emptyList(), emptyList(),
+                emptyList(),
+                emptyList(),
                 listOf(completada(1, "Lo del archivo", hoy, LocalTime.of(9, 0), 30, null))
             ).inputStream(),
             OpcionesImportacion(reemplazarTodo = false)

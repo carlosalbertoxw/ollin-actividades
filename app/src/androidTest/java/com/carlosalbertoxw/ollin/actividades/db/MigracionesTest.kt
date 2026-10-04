@@ -57,7 +57,8 @@ class MigracionesTest {
         ayudante.runMigrationsAndValidate(
             NOMBRE,
             Migraciones.VERSION,
-            /* validateDroppedTables = */ true,
+            /* validateDroppedTables = */
+            true,
             *Migraciones.TODAS
         ).close()
     }

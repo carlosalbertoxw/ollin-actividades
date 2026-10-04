@@ -126,8 +126,11 @@ object Tiempo {
         val h = s / 3600
         val m = (s % 3600) / 60
         val seg = s % 60
-        return if (h > 0) String.format(ES, "%d:%02d:%02d", h, m, seg)
-        else String.format(ES, "%02d:%02d", m, seg)
+        return if (h > 0) {
+            String.format(ES, "%d:%02d:%02d", h, m, seg)
+        } else {
+            String.format(ES, "%02d:%02d", m, seg)
+        }
     }
 }
 
@@ -139,19 +142,22 @@ object Tiempo {
 object DiasSemana {
     const val TODOS = 0b1111111
 
-    fun contiene(mascara: Int, dia: DayOfWeek): Boolean =
-        mascara and (1 shl (dia.value - 1)) != 0
+    fun contiene(mascara: Int, dia: DayOfWeek): Boolean = mascara and (1 shl (dia.value - 1)) != 0
 
-    fun alterna(mascara: Int, dia: DayOfWeek): Int =
-        mascara xor (1 shl (dia.value - 1))
+    fun alterna(mascara: Int, dia: DayOfWeek): Int = mascara xor (1 shl (dia.value - 1))
 
     fun etiqueta(mascara: Int): String = when {
         mascara and TODOS == TODOS -> "Todos los días"
+
         mascara == 0 -> "Ningún día"
+
         mascara and 0b0011111 == 0b0011111 && mascara and 0b1100000 == 0 -> "Entre semana"
+
         mascara and 0b1100000 == 0b1100000 && mascara and 0b0011111 == 0 -> "Fin de semana"
-        else -> DayOfWeek.entries
-            .filter { contiene(mascara, it) }
-            .joinToString(" ") { Tiempo.inicialDia(it) }
+
+        else ->
+            DayOfWeek.entries
+                .filter { contiene(mascara, it) }
+                .joinToString(" ") { Tiempo.inicialDia(it) }
     }
 }

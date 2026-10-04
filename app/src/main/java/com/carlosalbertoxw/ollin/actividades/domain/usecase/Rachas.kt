@@ -18,11 +18,7 @@ enum class UnidadRacha(val etiqueta: String) {
     VECES("veces")
 }
 
-data class ResumenRacha(
-    val actual: Int,
-    val mejor: Int,
-    val unidadRacha: UnidadRacha
-) {
+data class ResumenRacha(val actual: Int, val mejor: Int, val unidadRacha: UnidadRacha) {
     val unidad: String get() = unidadRacha.etiqueta
 }
 
@@ -116,8 +112,11 @@ object Rachas {
         // esta corriendo, todavia no se falla.
         var actual = 0
         for (i in cumplidos.indices.reversed()) {
-            if (cumplidos[i]) actual++
-            else if (i != cumplidos.lastIndex) break
+            if (cumplidos[i]) {
+                actual++
+            } else if (i != cumplidos.lastIndex) {
+                break
+            }
         }
 
         return ResumenRacha(actual, maxOf(mejor, actual), UnidadRacha.VECES)
@@ -136,8 +135,11 @@ object Rachas {
         var cursor = hoy
         while (!cursor.isBefore(primero)) {
             if (aplica(cursor)) {
-                if (cursor in dias) actual++
-                else if (cursor != hoy) break
+                if (cursor in dias) {
+                    actual++
+                } else if (cursor != hoy) {
+                    break
+                }
             }
             cursor = cursor.minusDays(1)
         }
@@ -174,8 +176,11 @@ object Rachas {
         var actual = 0
         var cursor = semanaActual
         while (true) {
-            if (cursor in cumplidas) actual++
-            else if (cursor != semanaActual) break
+            if (cursor in cumplidas) {
+                actual++
+            } else if (cursor != semanaActual) {
+                break
+            }
             cursor = cursor.minusWeeks(1)
             if (cursor.isBefore(cumplidas.min())) break
         }

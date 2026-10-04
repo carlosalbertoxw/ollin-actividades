@@ -173,7 +173,10 @@ class XlsxLectorSeguridadTest {
     @Test
     fun `una fila mas alla del tope de Excel se rechaza`() {
         val e = rechaza(
-            libro(filas = """<row r="2000000000"><c r="A2000000000" t="inlineStr"><is><t>x</t></is></c></row>"""),
+            libro(
+                filas = """<row r="2000000000">""" +
+                    """<c r="A2000000000" t="inlineStr"><is><t>x</t></is></c></row>"""
+            ),
             "Una fila fuera de la hoja no debe leerse"
         )
 
@@ -184,7 +187,9 @@ class XlsxLectorSeguridadTest {
     @Test
     fun `una columna mas alla de XFD se rechaza`() {
         val e = rechaza(
-            libro(filas = """<row r="1"><c r="ZZZZZZZZ1" t="inlineStr"><is><t>x</t></is></c></row>"""),
+            libro(
+                filas = """<row r="1"><c r="ZZZZZZZZ1" t="inlineStr"><is><t>x</t></is></c></row>"""
+            ),
             "Una columna fuera de la hoja no debe leerse"
         )
 
@@ -196,7 +201,9 @@ class XlsxLectorSeguridadTest {
     fun `la ultima celda de una hoja de Excel se lee`() {
         val leido = XlsxLector.lee(
             ByteArrayInputStream(
-                libro(filas = """<row r="3"><c r="XFD3" t="inlineStr"><is><t>fin</t></is></c></row>""")
+                libro(
+                    filas = """<row r="3"><c r="XFD3" t="inlineStr"><is><t>fin</t></is></c></row>"""
+                )
             )
         )
 

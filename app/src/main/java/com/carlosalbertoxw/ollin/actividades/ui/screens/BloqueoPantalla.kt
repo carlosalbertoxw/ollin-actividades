@@ -31,7 +31,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
-import kotlinx.coroutines.launch
 import com.carlosalbertoxw.ollin.actividades.data.prefs.Ajustes
 import com.carlosalbertoxw.ollin.actividades.data.prefs.AjustesRepositorio
 import com.carlosalbertoxw.ollin.actividades.data.prefs.ModoBloqueo
@@ -40,6 +39,7 @@ import com.carlosalbertoxw.ollin.actividades.ui.seguridad.pedirCredencialDelSist
 import com.carlosalbertoxw.ollin.actividades.ui.seguridad.segundosDeEsperaPin
 import com.carlosalbertoxw.ollin.actividades.ui.seguridad.textoDeEspera
 import com.carlosalbertoxw.ollin.actividades.ui.theme.LocalColoresOllin
+import kotlinx.coroutines.launch
 
 /**
  * Lo unico que se ve mientras Ollin esta cerrada con llave.
@@ -75,7 +75,9 @@ fun BloqueoPantalla(
 
             when (ajustes.modoBloqueo) {
                 ModoBloqueo.SISTEMA -> DesbloqueoSistema(actividad, alDesbloquear)
+
                 ModoBloqueo.PIN -> DesbloqueoPin(ajustes, preferencias, alDesbloquear)
+
                 // Transitorio: aun no se leen las preferencias del disco.
                 ModoBloqueo.NINGUNO -> Unit
             }
@@ -93,7 +95,10 @@ private fun DesbloqueoSistema(actividad: FragmentActivity, alDesbloquear: () -> 
         alLograr = alDesbloquear,
         alFallar = { mensaje = it }
     )
-    val pide: () -> Unit = { mensaje = null; pedir() }
+    val pide: () -> Unit = {
+        mensaje = null
+        pedir()
+    }
 
     // Se pide sola al entrar: un boton de mas antes del candado no aporta nada.
     LaunchedEffect(Unit) { pide() }
@@ -159,7 +164,11 @@ private fun DesbloqueoPin(
 
     error?.let {
         Spacer(Modifier.height(8.dp))
-        Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
+        Text(
+            it,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.error
+        )
     }
 
     if (espera > 0) {

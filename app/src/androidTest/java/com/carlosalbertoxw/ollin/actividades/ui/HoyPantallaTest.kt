@@ -6,7 +6,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
-import kotlinx.coroutines.runBlocking
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.carlosalbertoxw.ollin.actividades.data.db.Actividad
 import com.carlosalbertoxw.ollin.actividades.data.db.Categoria
 import com.carlosalbertoxw.ollin.actividades.data.db.Habito
@@ -15,13 +15,13 @@ import com.carlosalbertoxw.ollin.actividades.domain.model.EstadoActividad
 import com.carlosalbertoxw.ollin.actividades.domain.model.Tiempo
 import com.carlosalbertoxw.ollin.actividades.ui.screens.HoyPantalla
 import com.carlosalbertoxw.ollin.actividades.ui.theme.TemaOllin
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.runner.RunWith
 import java.time.LocalDate
 
@@ -72,7 +72,9 @@ class HoyPantallaTest {
         monta()
         compose.esperaTexto("Qué estás haciendo")
 
-        compose.onNodeWithText("Reunión de diseño, correr 5 km…").performTextInput("Enfoque profundo")
+        compose.onNodeWithText(
+            "Reunión de diseño, correr 5 km…"
+        ).performTextInput("Enfoque profundo")
         compose.onNodeWithText("Iniciar").performClick()
 
         compose.esperaTexto("Detener")

@@ -82,7 +82,10 @@ private val EsquemaClaro = lightColorScheme(
  */
 private val Tipografia = Typography().let { base ->
     base.copy(
-        displaySmall = base.displaySmall.copy(fontWeight = FontWeight.Bold, letterSpacing = (-1).sp),
+        displaySmall = base.displaySmall.copy(
+            fontWeight = FontWeight.Bold,
+            letterSpacing = (-1).sp
+        ),
         headlineMedium = base.headlineMedium.copy(fontWeight = FontWeight.SemiBold),
         headlineSmall = base.headlineSmall.copy(fontWeight = FontWeight.SemiBold),
         titleLarge = base.titleLarge.copy(fontWeight = FontWeight.SemiBold),
@@ -110,7 +113,9 @@ fun TemaOllin(
     val esquema = when {
         colorDinamico && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
             if (oscuro) dynamicDarkColorScheme(contexto) else dynamicLightColorScheme(contexto)
+
         oscuro -> EsquemaOscuro
+
         else -> EsquemaClaro
     }
     val semanticos = if (oscuro) ColoresOscuros else ColoresClaros

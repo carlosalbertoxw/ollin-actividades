@@ -1,7 +1,7 @@
 package com.carlosalbertoxw.ollin.actividades
 
-import kotlinx.coroutines.test.runTest
 import com.carlosalbertoxw.ollin.actividades.data.seguridad.ClavePin
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals

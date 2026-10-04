@@ -20,6 +20,13 @@ ij_kotlin_allow_trailing_comma_on_call_site = false
 ij_kotlin_name_count_to_use_star_import = 2147483647
 ij_kotlin_name_count_to_use_star_import_for_members = 2147483647
 ij_kotlin_packages_to_use_import_on_demand = unset
+# ktlint lee este mismo archivo. Su estilo `intellij_idea` es el oficial de
+# Kotlin, el de arriba; el suyo propio (`ktlint_official`) es mas estricto y
+# pediria reescribir medio proyecto sin ganar nada.
+ktlint_code_style = intellij_idea
+# Las funciones @Composable se nombran como clases: es la convencion de
+# Compose, no un descuido.
+ktlint_function_naming_ignore_when_annotated_with = Composable
 
 [*.{xml,json}]
 indent_size = 4

@@ -45,10 +45,9 @@ abstract class OllinDatabase : RoomDatabase() {
          * No hay camino sin cifrar. Si SQLCipher no arranca, la app no abre: es
          * preferible a que una bitacora personal quede en claro sin avisar.
          */
-        fun obten(contexto: Context): OllinDatabase =
-            instancia ?: synchronized(this) {
-                instancia ?: construye(contexto.applicationContext).also { instancia = it }
-            }
+        fun obten(contexto: Context): OllinDatabase = instancia ?: synchronized(this) {
+            instancia ?: construye(contexto.applicationContext).also { instancia = it }
+        }
 
         private fun construye(app: Context): OllinDatabase {
             System.loadLibrary("sqlcipher")

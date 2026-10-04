@@ -20,7 +20,8 @@ class AjustesVm(private val repo: AjustesRepositorio) : ViewModel() {
     fun metaTrabajo(minutos: Int) = viewModelScope.launch { repo.guardaMetaTrabajo(minutos) }
     fun metaFisico(minutos: Int) = viewModelScope.launch { repo.guardaMetaFisico(minutos) }
     fun duracionRapida(minutos: Int) = viewModelScope.launch { repo.guardaDuracionRapida(minutos) }
-    fun completadasEnHoy(valor: Boolean) = viewModelScope.launch { repo.guardaMuestraCompletadas(valor) }
+    fun completadasEnHoy(valor: Boolean) =
+        viewModelScope.launch { repo.guardaMuestraCompletadas(valor) }
 
     fun recordatorios(valor: Boolean) = viewModelScope.launch { repo.guardaRecordatorios(valor) }
 

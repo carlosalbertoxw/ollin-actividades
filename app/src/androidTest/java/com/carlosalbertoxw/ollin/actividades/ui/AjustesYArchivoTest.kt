@@ -7,8 +7,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.carlosalbertoxw.ollin.actividades.data.db.Actividad
 import com.carlosalbertoxw.ollin.actividades.data.excel.HojaExportable
 import com.carlosalbertoxw.ollin.actividades.domain.model.EstadoActividad
@@ -17,11 +16,12 @@ import com.carlosalbertoxw.ollin.actividades.ui.components.Tutorial
 import com.carlosalbertoxw.ollin.actividades.ui.screens.AjustesPantalla
 import com.carlosalbertoxw.ollin.actividades.ui.screens.ArchivoPantalla
 import com.carlosalbertoxw.ollin.actividades.ui.theme.TemaOllin
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Rule
 import org.junit.Test
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.runner.RunWith
 
 /**
@@ -99,9 +99,13 @@ class AjustesYArchivoTest {
         runBlocking { banco.contenedor.ajustes.ocultaTutorial(Tutorial.HOY.clave) }
 
         compose.esperaTexto("Volver a mostrar todos los tutoriales")
-        compose.onNodeWithText("Volver a mostrar todos los tutoriales").performScrollTo().performClick()
+        compose.onNodeWithText(
+            "Volver a mostrar todos los tutoriales"
+        ).performScrollTo().performClick()
 
-        compose.espera("se restauran los tutoriales") { ajustesGuardados().tutorialesOcultos.isEmpty() }
+        compose.espera("se restauran los tutoriales") {
+            ajustesGuardados().tutorialesOcultos.isEmpty()
+        }
         assertEquals(true, ajustesGuardados().muestraTutoriales)
         assertFalse(compose.hayTexto("Volver a mostrar todos los tutoriales"))
     }
@@ -143,7 +147,10 @@ class AjustesYArchivoTest {
 
         compose.onNodeWithText("Solo datos").performScrollTo().performClick()
 
-        compose.espera("se guarda la seleccion minima") { ajustesGuardados().hojas == HojaExportable.MINIMA }
+        compose.espera("se guarda la seleccion minima") {
+            ajustesGuardados().hojas ==
+                HojaExportable.MINIMA
+        }
         assertEquals(HojaExportable.MINIMA, ajustesGuardados().hojas)
         compose.esperaTexto("  Exportar 4 pestañas")
     }

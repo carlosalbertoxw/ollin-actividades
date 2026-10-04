@@ -175,7 +175,9 @@ fun CategoriasPantalla(contenedor: Contenedor, alCerrar: () -> Unit) {
                 vm.guarda(it)
                 editando = null
             },
-            alEliminar = if (categoria.id == 0L) null else {
+            alEliminar = if (categoria.id == 0L) {
+                null
+            } else {
                 {
                     vm.elimina(categoria)
                     editando = null
@@ -242,7 +244,11 @@ private fun DialogoCategoria(
                 )
 
                 Spacer(Modifier.height(12.dp))
-                Text("Ambito", style = MaterialTheme.typography.labelLarge, color = colores.textoTenue)
+                Text(
+                    "Ambito",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = colores.textoTenue
+                )
                 Spacer(Modifier.height(6.dp))
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Ambito.entries.forEach { opcion ->
@@ -262,7 +268,11 @@ private fun DialogoCategoria(
                 }
 
                 Spacer(Modifier.height(12.dp))
-                Text("Color", style = MaterialTheme.typography.labelLarge, color = colores.textoTenue)
+                Text(
+                    "Color",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = colores.textoTenue
+                )
                 Spacer(Modifier.height(6.dp))
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     PALETA.chunked(6).forEach { fila ->

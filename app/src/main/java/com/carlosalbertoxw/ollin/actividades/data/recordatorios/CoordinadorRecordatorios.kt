@@ -9,12 +9,12 @@ import com.carlosalbertoxw.ollin.actividades.domain.model.Tiempo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.time.Duration
 import java.time.Instant
@@ -71,8 +71,11 @@ class CoordinadorRecordatorios(
         }
 
         val siguiente = futuros.firstOrNull()?.cuando
-        if (siguiente != null) AlarmaRecordatorios.programa(contexto, siguiente)
-        else AlarmaRecordatorios.cancela(contexto)
+        if (siguiente != null) {
+            AlarmaRecordatorios.programa(contexto, siguiente)
+        } else {
+            AlarmaRecordatorios.cancela(contexto)
+        }
     }
 
     /**

@@ -12,7 +12,7 @@ import java.time.LocalDate
 
 class RachasTest {
 
-    private val lunes = LocalDate.of(2026, 8, 3)   // lunes
+    private val lunes = LocalDate.of(2026, 8, 3) // lunes
     private val diario = Habito(id = 1, nombre = "Leer")
 
     private fun dias(vararg fechas: LocalDate) = fechas.associateWith { 1 }

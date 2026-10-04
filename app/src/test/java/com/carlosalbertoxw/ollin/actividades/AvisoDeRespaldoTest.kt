@@ -39,7 +39,12 @@ class AvisoDeRespaldoTest {
     fun `sale a la semana sin respaldo, con el titulo de la notificacion`() {
         val ahora = desde.plus(plazo)
 
-        val texto = AvisoDeRespaldo.texto(ajustes(), hayBitacora = true, descartado = false, ahora = ahora)
+        val texto = AvisoDeRespaldo.texto(
+            ajustes(),
+            hayBitacora = true,
+            descartado = false,
+            ahora = ahora
+        )
 
         assertEquals(CoordinadorRecordatorios.tituloDelRespaldo(0L, ahora), texto)
     }
@@ -55,9 +60,13 @@ class AvisoDeRespaldoTest {
         assertNotNull(AvisoDeRespaldo.texto(ajustes(), true, false, ahora))
 
         // Lo que deja escrito marcaRespaldo: el ancla y el ultimo respaldo, ahora.
-        val respaldado = ajustes(respaldoDesde = ahora.toEpochMilli(), ultimo = ahora.toEpochMilli())
+        val respaldado =
+            ajustes(respaldoDesde = ahora.toEpochMilli(), ultimo = ahora.toEpochMilli())
 
-        assertNull("Con un respaldo de hoy ya no toca", AvisoDeRespaldo.texto(respaldado, true, false, ahora))
+        assertNull(
+            "Con un respaldo de hoy ya no toca",
+            AvisoDeRespaldo.texto(respaldado, true, false, ahora)
+        )
     }
 
     /**
@@ -69,7 +78,10 @@ class AvisoDeRespaldoTest {
         val ahora = desde.plus(Duration.ofDays(10))
 
         val texto = AvisoDeRespaldo.texto(
-            ajustes(ultimoAviso = ahora.minusSeconds(60).toEpochMilli()), true, false, ahora
+            ajustes(ultimoAviso = ahora.minusSeconds(60).toEpochMilli()),
+            true,
+            false,
+            ahora
         )
 
         assertNotNull(texto)
@@ -77,24 +89,42 @@ class AvisoDeRespaldoTest {
 
     @Test
     fun `apagar el recordatorio en Ajustes tambien lo apaga aqui`() {
-        assertNull(AvisoDeRespaldo.texto(ajustes(avisa = false), true, false, desde.plus(Duration.ofDays(30))))
+        assertNull(
+            AvisoDeRespaldo.texto(
+                ajustes(avisa = false),
+                true,
+                false,
+                desde.plus(Duration.ofDays(30))
+            )
+        )
     }
 
     /** Una instalacion sin nada registrado no tiene nada que perder. */
     @Test
     fun `sin bitacora no sale`() {
-        assertNull(AvisoDeRespaldo.texto(ajustes(), hayBitacora = false, descartado = false, ahora = desde.plus(plazo)))
+        assertNull(
+            AvisoDeRespaldo.texto(
+                ajustes(),
+                hayBitacora = false,
+                descartado = false,
+                ahora = desde.plus(plazo)
+            )
+        )
     }
 
     /** Sin ancla todavia: la estrena la notificacion, no este aviso. */
     @Test
     fun `antes del primer plazo no sale`() {
-        assertNull(AvisoDeRespaldo.texto(ajustes(respaldoDesde = 0L), true, false, desde.plus(plazo)))
+        assertNull(
+            AvisoDeRespaldo.texto(ajustes(respaldoDesde = 0L), true, false, desde.plus(plazo))
+        )
     }
 
     @Test
     fun `quitado no sale aunque toque`() {
-        assertNull(AvisoDeRespaldo.texto(ajustes(), true, descartado = true, ahora = desde.plus(plazo)))
+        assertNull(
+            AvisoDeRespaldo.texto(ajustes(), true, descartado = true, ahora = desde.plus(plazo))
+        )
     }
 
     // ------------------------------------------------- cuanto dura quitarlo

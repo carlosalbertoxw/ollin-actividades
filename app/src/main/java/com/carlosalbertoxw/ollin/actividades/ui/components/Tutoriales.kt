@@ -38,11 +38,7 @@ import com.carlosalbertoxw.ollin.actividades.ui.theme.LocalColoresOllin
  * La clave se guarda en preferencias, asi que renombrarla haria reaparecer una
  * tarjeta que alguien ya habia descartado. Los textos si se pueden cambiar.
  */
-enum class Tutorial(
-    val clave: String,
-    val titulo: String,
-    val texto: String
-) {
+enum class Tutorial(val clave: String, val titulo: String, val texto: String) {
     HOY(
         "hoy",
         "Esta es tu pantalla del día",
@@ -94,11 +90,7 @@ enum class Tutorial(
  * clave fija, asi que las seis comparten una sola instancia.
  */
 @Composable
-fun AyudaDePantalla(
-    contenedor: Contenedor,
-    tutorial: Tutorial,
-    modifier: Modifier = Modifier
-) {
+fun AyudaDePantalla(contenedor: Contenedor, tutorial: Tutorial, modifier: Modifier = Modifier) {
     val vm = recuerdaVm("tutorial") { TutorialVm(contenedor.ajustes) }
     val ajustes by vm.ajustes.collectAsStateWithLifecycle()
 

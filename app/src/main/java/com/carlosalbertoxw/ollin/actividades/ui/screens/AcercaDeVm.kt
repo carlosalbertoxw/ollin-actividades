@@ -91,11 +91,14 @@ class AcercaDeVm(
         viewModelScope.launch {
             val aviso = when (val resultado = comprobador.compruebaAhora()) {
                 is Resultado.HayVersionNueva -> null
+
                 Resultado.AlDia -> "Ya tienes la última versión."
+
                 // El motivo real —tiempo agotado, DNS, un 503— no le dice nada
                 // a quien mira la pantalla y de paso cuenta como esta hecha la
                 // app. El detalle se queda en el resultado; aqui va la frase.
                 is Resultado.Fallo -> resultado.motivo
+
                 Resultado.NoTocaba -> "La búsqueda de actualizaciones está apagada."
             }
             volatil.value = Volatil(consultando = false, aviso = aviso)
