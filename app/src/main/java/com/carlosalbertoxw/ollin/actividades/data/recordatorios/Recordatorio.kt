@@ -76,14 +76,6 @@ class PlanificadorRecordatorios(
         combine(habitos.observaConteo(), actividades.observaConteo()) { _, _ -> }
 
     /**
-     * Los avisos que caen dentro de la ventana, del mas proximo al mas lejano.
-     *
-     * [desde] inclusive y [hasta] exclusive. Se pide una ventana y no "el
-     * siguiente" porque quien llama necesita las dos cosas: lo ya vencido para
-     * notificarlo y lo venidero para programar la alarma, y las dos salen del
-     * mismo recorrido.
-     */
-    /**
      * Si hay algo en la bitacora que valga la pena respaldar.
      *
      * Una instalacion recien estrenada no tiene nada que perder, y recordarle
@@ -92,6 +84,14 @@ class PlanificadorRecordatorios(
      */
     suspend fun hayBitacora(): Boolean = actividades.cuenta() > 0
 
+    /**
+     * Los avisos que caen dentro de la ventana, del mas proximo al mas lejano.
+     *
+     * [desde] inclusive y [hasta] exclusive. Se pide una ventana y no "el
+     * siguiente" porque quien llama necesita las dos cosas: lo ya vencido para
+     * notificarlo y lo venidero para programar la alarma, y las dos salen del
+     * mismo recorrido.
+     */
     suspend fun entre(desde: Instant, hasta: Instant): List<Recordatorio> =
         (deHabitos(desde, hasta) + deTareas(desde, hasta)).sortedBy { it.cuando }
 
@@ -142,7 +142,7 @@ class PlanificadorRecordatorios(
         id = habito.id,
         titulo = habito.nombre,
         detalle = habito.minutosSugeridos
-            ?.let { "Te toca hoy · ${it} min" }
+            ?.let { "Te toca hoy · $it min" }
             ?: "Te toca hoy",
         cuando = momento
     )

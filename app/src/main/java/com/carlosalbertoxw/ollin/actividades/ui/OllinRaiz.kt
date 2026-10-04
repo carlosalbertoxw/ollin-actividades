@@ -108,7 +108,6 @@ fun OllinRaiz(contenedor: Contenedor) {
                 .padding(relleno)
         ) {
             NavHost(navController = nav, startDestination = Destino.HOY.ruta) {
-
                 composable(Destino.HOY.ruta) {
                     HoyPantalla(
                         contenedor = contenedor,
@@ -144,8 +143,14 @@ fun OllinRaiz(contenedor: Contenedor) {
                 composable(
                     route = Rutas.CAPTURA,
                     arguments = listOf(
-                        navArgument("id") { type = NavType.LongType; defaultValue = 0L },
-                        navArgument("habito") { type = NavType.LongType; defaultValue = 0L },
+                        navArgument("id") {
+                            type = NavType.LongType
+                            defaultValue = 0L
+                        },
+                        navArgument("habito") {
+                            type = NavType.LongType
+                            defaultValue = 0L
+                        },
                         navArgument("dia") {
                             type = NavType.LongType
                             defaultValue = Rutas.SIN_DIA

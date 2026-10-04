@@ -9,11 +9,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import java.time.LocalDate
 
 /** Las cuatro pestañas de abajo. Todo lo demas cuelga de ellas. */
-enum class Destino(
-    val ruta: String,
-    val titulo: String,
-    val icono: ImageVector
-) {
+enum class Destino(val ruta: String, val titulo: String, val icono: ImageVector) {
     HOY("hoy", "Hoy", Icons.Filled.Today),
     ACTIVIDADES("actividades", "Registro", Icons.AutoMirrored.Filled.ListAlt),
     HABITOS("habitos", "Habitos", Icons.Filled.Repeat),

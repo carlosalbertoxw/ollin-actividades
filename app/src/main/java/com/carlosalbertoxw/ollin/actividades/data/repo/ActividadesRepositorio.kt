@@ -2,18 +2,6 @@ package com.carlosalbertoxw.ollin.actividades.data.repo
 
 import android.content.ContentResolver
 import android.net.Uri
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.withContext
-import com.carlosalbertoxw.ollin.actividades.data.excel.DatosExportacion
-import com.carlosalbertoxw.ollin.actividades.data.excel.EsquemaExportacion
-import com.carlosalbertoxw.ollin.actividades.data.excel.ExportadorExcel
-import com.carlosalbertoxw.ollin.actividades.data.excel.HojaExportable
-import com.carlosalbertoxw.ollin.actividades.data.excel.ImportadorExcel
-import com.carlosalbertoxw.ollin.actividades.data.excel.OpcionesImportacion
-import com.carlosalbertoxw.ollin.actividades.data.excel.ResultadoImportacion
 import com.carlosalbertoxw.ollin.actividades.data.db.Actividad
 import com.carlosalbertoxw.ollin.actividades.data.db.ActividadDetallada
 import com.carlosalbertoxw.ollin.actividades.data.db.Categoria
@@ -24,6 +12,13 @@ import com.carlosalbertoxw.ollin.actividades.data.db.OllinDatabase
 import com.carlosalbertoxw.ollin.actividades.data.db.TotalAmbito
 import com.carlosalbertoxw.ollin.actividades.data.db.TotalCategoria
 import com.carlosalbertoxw.ollin.actividades.data.db.TotalDia
+import com.carlosalbertoxw.ollin.actividades.data.excel.DatosExportacion
+import com.carlosalbertoxw.ollin.actividades.data.excel.EsquemaExportacion
+import com.carlosalbertoxw.ollin.actividades.data.excel.ExportadorExcel
+import com.carlosalbertoxw.ollin.actividades.data.excel.HojaExportable
+import com.carlosalbertoxw.ollin.actividades.data.excel.ImportadorExcel
+import com.carlosalbertoxw.ollin.actividades.data.excel.OpcionesImportacion
+import com.carlosalbertoxw.ollin.actividades.data.excel.ResultadoImportacion
 import com.carlosalbertoxw.ollin.actividades.domain.model.Ambito
 import com.carlosalbertoxw.ollin.actividades.domain.model.EstadoActividad
 import com.carlosalbertoxw.ollin.actividades.domain.model.Tiempo
@@ -31,6 +26,11 @@ import com.carlosalbertoxw.ollin.actividades.domain.model.Unidad
 import com.carlosalbertoxw.ollin.actividades.domain.usecase.CalendarioHabito
 import com.carlosalbertoxw.ollin.actividades.domain.usecase.Rachas
 import com.carlosalbertoxw.ollin.actividades.domain.usecase.ResumenRacha
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.withContext
 import java.io.OutputStream
 import java.time.Instant
 import java.time.LocalDate
@@ -68,10 +68,7 @@ data class HabitoConAvance(
  * Toda la escritura pasa por aqui. Las pantallas no tocan los DAO, y asi las
  * reglas que mantienen coherentes las marcas de tiempo viven en un solo lugar.
  */
-class ActividadesRepositorio(
-    private val db: OllinDatabase,
-    private val resolver: ContentResolver
-) {
+class ActividadesRepositorio(private val db: OllinDatabase, private val resolver: ContentResolver) {
 
     private val categorias = db.categoriaDao()
     private val habitos = db.habitoDao()
@@ -155,48 +152,47 @@ class ActividadesRepositorio(
     fun observaHabitosConAvance(
         dia: LocalDate = Tiempo.hoy(),
         soloActivos: Boolean = true
-    ): Flow<List<HabitoConAvance>> =
-        combine(
-            if (soloActivos) habitos.observaActivos() else habitos.observaTodos(),
-            actividades.observaCumplimientosDesde(dia.minusDays(VENTANA_RACHA))
-        ) { lista, cumplimientos ->
-            val porHabito = cumplimientos.groupBy { it.habitoId }
-            lista.map { habito ->
-                val historia = porHabito[habito.id].orEmpty()
-                val hoy = historia.firstOrNull { it.dia == dia }
-                val porDia = historia.associate { it.dia to it.veces }
+    ): Flow<List<HabitoConAvance>> = combine(
+        if (soloActivos) habitos.observaActivos() else habitos.observaTodos(),
+        actividades.observaCumplimientosDesde(dia.minusDays(VENTANA_RACHA))
+    ) { lista, cumplimientos ->
+        val porHabito = cumplimientos.groupBy { it.habitoId }
+        lista.map { habito ->
+            val historia = porHabito[habito.id].orEmpty()
+            val hoy = historia.firstOrNull { it.dia == dia }
+            val porDia = historia.associate { it.dia to it.veces }
 
-                // Los dias que cuentan como cumplidos, con la misma vara que usa
-                // la racha: un habito con meta de tres no esta hecho con uno.
-                val meta = habito.metaDiaria.coerceAtLeast(1)
-                val cumplidos = porDia.filterValues { it >= meta }.keys
+            // Los dias que cuentan como cumplidos, con la misma vara que usa
+            // la racha: un habito con meta de tres no esta hecho con uno.
+            val meta = habito.metaDiaria.coerceAtLeast(1)
+            val cumplidos = porDia.filterValues { it >= meta }.keys
 
-                val pendiente = CalendarioHabito.pendienteEl(habito, cumplidos, dia)
-                val vigente = if (pendiente && habito.frecuencia.esPeriodica) {
-                    CalendarioHabito.ocurrenciaVigente(habito, cumplidos, dia)
-                } else {
-                    null
-                }
-                // Solo se busca cuando hoy no toca, que es cuando la pantalla la
-                // ensena: recorrer el calendario de cada habito en cada emision
-                // se paga en el hilo de fondo, pero se paga.
-                val proxima = if (pendiente) {
-                    null
-                } else {
-                    CalendarioHabito.proximaTras(habito, cumplidos, dia)
-                }
-
-                HabitoConAvance(
-                    habito = habito,
-                    vecesHoy = hoy?.veces ?: 0,
-                    minutosHoy = hoy?.minutos ?: 0,
-                    racha = Rachas.calcula(habito, porDia, dia),
-                    tocaHoy = pendiente,
-                    vencidoDesde = vigente?.takeIf { it.isBefore(dia) },
-                    proxima = proxima
-                )
+            val pendiente = CalendarioHabito.pendienteEl(habito, cumplidos, dia)
+            val vigente = if (pendiente && habito.frecuencia.esPeriodica) {
+                CalendarioHabito.ocurrenciaVigente(habito, cumplidos, dia)
+            } else {
+                null
             }
-        }.flowOn(Dispatchers.Default)
+            // Solo se busca cuando hoy no toca, que es cuando la pantalla la
+            // ensena: recorrer el calendario de cada habito en cada emision
+            // se paga en el hilo de fondo, pero se paga.
+            val proxima = if (pendiente) {
+                null
+            } else {
+                CalendarioHabito.proximaTras(habito, cumplidos, dia)
+            }
+
+            HabitoConAvance(
+                habito = habito,
+                vecesHoy = hoy?.veces ?: 0,
+                minutosHoy = hoy?.minutos ?: 0,
+                racha = Rachas.calcula(habito, porDia, dia),
+                tocaHoy = pendiente,
+                vencidoDesde = vigente?.takeIf { it.isBefore(dia) },
+                proxima = proxima
+            )
+        }
+    }.flowOn(Dispatchers.Default)
 
     // ---------------- Escritura de actividades ----------------
 
@@ -316,7 +312,11 @@ class ActividadesRepositorio(
      * cualquier otro: asi aparece en la bitacora, suma en la analitica y se
      * puede editar despues.
      */
-    suspend fun registraHabito(habito: Habito, minutos: Int? = null, dia: LocalDate = Tiempo.hoy()) {
+    suspend fun registraHabito(
+        habito: Habito,
+        minutos: Int? = null,
+        dia: LocalDate = Tiempo.hoy()
+    ) {
         val duracion = (minutos ?: habito.minutosSugeridos ?: 0).coerceAtLeast(0)
         // Un habito de ayer se ancla al mediodia: es la hora que menos miente
         // cuando ya no se sabe a que hora fue.
@@ -344,19 +344,23 @@ class ActividadesRepositorio(
         actividades.ultimoCumplimiento(habitoId, dia)?.let { actividades.elimina(it) }
     }
 
-    suspend fun guardaHabito(habito: Habito): Long =
-        if (habito.id == 0L) habitos.inserta(habito) else {
-            habitos.actualiza(habito); habito.id
-        }
+    suspend fun guardaHabito(habito: Habito): Long = if (habito.id == 0L) {
+        habitos.inserta(habito)
+    } else {
+        habitos.actualiza(habito)
+        habito.id
+    }
 
     suspend fun eliminaHabito(habito: Habito) = habitos.elimina(habito)
 
     // ---------------- Categorias ----------------
 
-    suspend fun guardaCategoria(categoria: Categoria): Long =
-        if (categoria.id == 0L) categorias.inserta(categoria) else {
-            categorias.actualiza(categoria); categoria.id
-        }
+    suspend fun guardaCategoria(categoria: Categoria): Long = if (categoria.id == 0L) {
+        categorias.inserta(categoria)
+    } else {
+        categorias.actualiza(categoria)
+        categoria.id
+    }
 
     suspend fun eliminaCategoria(categoria: Categoria) = categorias.elimina(categoria)
 
@@ -381,20 +385,17 @@ class ActividadesRepositorio(
                 ?: error("No se pudo abrir el archivo seleccionado")
         }
 
-    suspend fun exporta(
-        uri: Uri,
-        esquema: EsquemaExportacion,
-        hojas: Set<HojaExportable>
-    ) = withContext(Dispatchers.IO) {
-        val datos = DatosExportacion(
-            categorias = categorias.todas(),
-            habitos = habitos.todos(),
-            actividades = actividades.todas()
-        )
-        abreParaEscribir(uri).use { salida ->
-            ExportadorExcel(datos, esquema, hojas).escribeEn(salida)
+    suspend fun exporta(uri: Uri, esquema: EsquemaExportacion, hojas: Set<HojaExportable>) =
+        withContext(Dispatchers.IO) {
+            val datos = DatosExportacion(
+                categorias = categorias.todas(),
+                habitos = habitos.todos(),
+                actividades = actividades.todas()
+            )
+            abreParaEscribir(uri).use { salida ->
+                ExportadorExcel(datos, esquema, hojas).escribeEn(salida)
+            }
         }
-    }
 
     /**
      * Abre el destino elegido en el selector del sistema.

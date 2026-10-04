@@ -55,12 +55,16 @@ fun pedirCredencialDelSistema(
     val lanzador = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { resultado ->
-        if (resultado.resultCode == Activity.RESULT_OK) alLograr()
-        else alFallar("No se pudo verificar. Inténtalo de nuevo.")
+        if (resultado.resultCode == Activity.RESULT_OK) {
+            alLograr()
+        } else {
+            alFallar("No se pudo verificar. Inténtalo de nuevo.")
+        }
     }
 
     val pantallaDelSistema: () -> Unit = {
         val guardia = actividad.getSystemService(KeyguardManager::class.java)
+
         @Suppress("DEPRECATION")
         val intencion = guardia?.createConfirmDeviceCredentialIntent(
             titulo,
@@ -85,7 +89,10 @@ fun pedirCredencialDelSistema(
                         override fun onAuthenticationSucceeded(
                             resultado: BiometricPrompt.AuthenticationResult
                         ) {
-                            if (LlaveDeDesbloqueo.demuestraAutenticacion(resultado.cryptoObject?.cipher)) {
+                            if (LlaveDeDesbloqueo.demuestraAutenticacion(
+                                    resultado.cryptoObject?.cipher
+                                )
+                            ) {
                                 alLograr()
                             } else {
                                 alFallar("No se pudo verificar. Inténtalo de nuevo.")

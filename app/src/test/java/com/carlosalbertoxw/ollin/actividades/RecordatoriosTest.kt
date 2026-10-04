@@ -262,9 +262,13 @@ class RecordatoriosTest {
 
     @Test
     fun `sin candado el aviso dice de que habito se trata`() {
-        val aviso = Recordatorio(Recordatorio.Clase.HABITO, 1, "Terapia", "Te toca hoy", Tiempo.ahora())
+        val aviso =
+            Recordatorio(Recordatorio.Clase.HABITO, 1, "Terapia", "Te toca hoy", Tiempo.ahora())
 
-        assertEquals("Terapia" to "Te toca hoy", Notificaciones.textoVisible(aviso, discreto = false))
+        assertEquals(
+            "Terapia" to "Te toca hoy",
+            Notificaciones.textoVisible(aviso, discreto = false)
+        )
     }
 
     /**
@@ -289,9 +293,16 @@ class RecordatoriosTest {
     @Test
     fun `con candado el aviso de respaldo sale igual`() {
         val aviso = Recordatorio(
-            Recordatorio.Clase.RESPALDO, 0, "Tu último respaldo es de hace 8 días", "Exporta", Tiempo.ahora()
+            Recordatorio.Clase.RESPALDO,
+            0,
+            "Tu último respaldo es de hace 8 días",
+            "Exporta",
+            Tiempo.ahora()
         )
 
-        assertEquals(aviso.titulo to aviso.detalle, Notificaciones.textoVisible(aviso, discreto = true))
+        assertEquals(
+            aviso.titulo to aviso.detalle,
+            Notificaciones.textoVisible(aviso, discreto = true)
+        )
     }
 }

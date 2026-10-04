@@ -3,12 +3,12 @@ package com.carlosalbertoxw.ollin.actividades
 import android.app.Application
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
-import kotlinx.coroutines.test.runTest
 import com.carlosalbertoxw.ollin.actividades.data.db.Categoria
 import com.carlosalbertoxw.ollin.actividades.data.db.OllinDatabase
 import com.carlosalbertoxw.ollin.actividades.data.db.Sembrador
 import com.carlosalbertoxw.ollin.actividades.data.db.Semilla
 import com.carlosalbertoxw.ollin.actividades.domain.model.Ambito
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -47,7 +47,12 @@ class SembradorTest {
 
         val catalogo = db.categoriaDao().todas()
         assertEquals(Semilla.CATEGORIAS.size, catalogo.size)
-        assertEquals(Semilla.CATEGORIAS.map { it.nombre }.toSet(), catalogo.map { it.nombre }.toSet())
+        assertEquals(
+            Semilla.CATEGORIAS.map {
+                it.nombre
+            }.toSet(),
+            catalogo.map { it.nombre }.toSet()
+        )
         // El orden es el de la plantilla: agrupa por ambito y eso se ve al elegir.
         assertEquals(Semilla.CATEGORIAS.first().nombre, catalogo.minByOrNull { it.orden }!!.nombre)
     }

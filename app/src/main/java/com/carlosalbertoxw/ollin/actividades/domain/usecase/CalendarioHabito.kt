@@ -46,11 +46,7 @@ object CalendarioHabito {
      * ocurrencia vencida, no cuatro. Ver [desdeUltimo] para lo que pasa si se
      * hace antes de tiempo.
      */
-    fun ocurrencias(
-        habito: Habito,
-        cumplidos: Set<LocalDate>,
-        hasta: LocalDate
-    ): List<LocalDate> {
+    fun ocurrencias(habito: Habito, cumplidos: Set<LocalDate>, hasta: LocalDate): List<LocalDate> {
         if (habito.anclaEfectiva().isAfter(hasta)) return emptyList()
         return secuencia(habito, cumplidos).takeWhile { !it.isAfter(hasta) }.toList()
     }
@@ -170,11 +166,7 @@ object CalendarioHabito {
      * de la actual, asi que mientras haya algo vencido no hay fecha que dar. Y
      * un habito de dias elegidos sin ningun dia marcado no toca jamas.
      */
-    fun proximaTras(
-        habito: Habito,
-        cumplidos: Set<LocalDate>,
-        dia: LocalDate
-    ): LocalDate? {
+    fun proximaTras(habito: Habito, cumplidos: Set<LocalDate>, dia: LocalDate): LocalDate? {
         if (!habito.frecuencia.esPeriodica) {
             return generateSequence(dia.plusDays(1)) { it.plusDays(1) }
                 .take(HORIZONTE_DIAS)
@@ -190,9 +182,6 @@ object CalendarioHabito {
      * Sirve para decir *desde cuando* esta vencido algo, que es lo que hace que
      * "vencido" signifique algo distinto de "toca".
      */
-    fun ocurrenciaVigente(
-        habito: Habito,
-        cumplidos: Set<LocalDate>,
-        dia: LocalDate
-    ): LocalDate? = ocurrencias(habito, cumplidos, dia).lastOrNull()
+    fun ocurrenciaVigente(habito: Habito, cumplidos: Set<LocalDate>, dia: LocalDate): LocalDate? =
+        ocurrencias(habito, cumplidos, dia).lastOrNull()
 }

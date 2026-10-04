@@ -82,7 +82,11 @@ class CalendarioHabitoTest {
         // Se cumplio el 1 y nada mas: el ciclo del 16 sigue abierto.
         val cumplidos = dias(1)
 
-        val ocurrencias = CalendarioHabito.ocurrencias(habito, cumplidos, LocalDate.of(2026, 10, 30))
+        val ocurrencias = CalendarioHabito.ocurrencias(
+            habito,
+            cumplidos,
+            LocalDate.of(2026, 10, 30)
+        )
 
         assertEquals(
             "Dos meses sin hacerlo son una ocurrencia vencida, no cuatro",
@@ -156,7 +160,10 @@ class CalendarioHabitoTest {
         val habito = cadaQuince(ModoCiclo.CALENDARIO)
         val cumplidos = dias(1)
 
-        assertTrue("El 16 toca", CalendarioHabito.pendienteEl(habito, cumplidos, agosto1.plusDays(15)))
+        assertTrue(
+            "El 16 toca",
+            CalendarioHabito.pendienteEl(habito, cumplidos, agosto1.plusDays(15))
+        )
         assertTrue(
             "El 20 sigue pendiente, no desaparece hasta el 31",
             CalendarioHabito.pendienteEl(habito, cumplidos, LocalDate.of(2026, 8, 20))

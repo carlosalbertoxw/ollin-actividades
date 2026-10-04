@@ -30,9 +30,7 @@ import java.time.Instant
  * sobrevivir a que se gire el telefono o se cambie de pestaña: si no, quitarlo
  * duraria hasta el siguiente giro.
  */
-class AvisoDeRespaldo(
-    private val reloj: () -> Long = { SystemClock.elapsedRealtime() }
-) {
+class AvisoDeRespaldo(private val reloj: () -> Long = { SystemClock.elapsedRealtime() }) {
 
     private val _descartado = MutableStateFlow(false)
     val descartado: StateFlow<Boolean> = _descartado.asStateFlow()
@@ -69,7 +67,12 @@ class AvisoDeRespaldo(
          * repetir, y si contara, el aviso se apagaria justo cuando sale la
          * notificacion que el usuario descarto sin exportar.
          */
-        fun texto(ajustes: Ajustes, hayBitacora: Boolean, descartado: Boolean, ahora: Instant): String? {
+        fun texto(
+            ajustes: Ajustes,
+            hayBitacora: Boolean,
+            descartado: Boolean,
+            ahora: Instant
+        ): String? {
             if (descartado || !ajustes.avisaRespaldo || !hayBitacora) return null
             if (ajustes.respaldoDesde <= 0L) return null
             val vence = Instant.ofEpochMilli(ajustes.respaldoDesde)

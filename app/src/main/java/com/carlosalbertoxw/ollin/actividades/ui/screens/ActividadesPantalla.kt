@@ -39,10 +39,7 @@ import com.carlosalbertoxw.ollin.actividades.ui.recuerdaVm
 import com.carlosalbertoxw.ollin.actividades.ui.theme.LocalColoresOllin
 
 @Composable
-fun ActividadesPantalla(
-    contenedor: Contenedor,
-    alAbrirActividad: (Long) -> Unit
-) {
+fun ActividadesPantalla(contenedor: Contenedor, alAbrirActividad: (Long) -> Unit) {
     val vm = recuerdaVm("actividades") { ActividadesVm(contenedor.repositorio) }
     val filtro by vm.filtro.collectAsStateWithLifecycle()
     val actividades by vm.actividades.collectAsStateWithLifecycle()
@@ -85,7 +82,17 @@ fun ActividadesPantalla(
                     FilterChip(
                         selected = filtro.estado == estado,
                         onClick = {
-                            vm.actualiza { it.copy(estado = if (it.estado == estado) null else estado) }
+                            vm.actualiza {
+                                it.copy(
+                                    estado = if (it.estado ==
+                                        estado
+                                    ) {
+                                        null
+                                    } else {
+                                        estado
+                                    }
+                                )
+                            }
                         },
                         label = { Text(estado.etiqueta) }
                     )
@@ -94,7 +101,17 @@ fun ActividadesPantalla(
                     FilterChip(
                         selected = filtro.ambito == ambito,
                         onClick = {
-                            vm.actualiza { it.copy(ambito = if (it.ambito == ambito) null else ambito) }
+                            vm.actualiza {
+                                it.copy(
+                                    ambito = if (it.ambito ==
+                                        ambito
+                                    ) {
+                                        null
+                                    } else {
+                                        ambito
+                                    }
+                                )
+                            }
                         },
                         label = { Text(ambito.etiqueta) },
                         leadingIcon = {
@@ -140,7 +157,10 @@ fun ActividadesPantalla(
 
         LazyColumn(
             Modifier.fillMaxSize(),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 8.dp, bottom = 96.dp)
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                top = 8.dp,
+                bottom = 96.dp
+            )
         ) {
             porDia.keys.sortedDescending().forEach { dia ->
                 val delDia = porDia[dia].orEmpty()

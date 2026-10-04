@@ -22,12 +22,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -65,6 +65,9 @@ import com.carlosalbertoxw.ollin.actividades.domain.model.Frecuencia
 import com.carlosalbertoxw.ollin.actividades.domain.model.ModoCiclo
 import com.carlosalbertoxw.ollin.actividades.domain.model.Tiempo
 import com.carlosalbertoxw.ollin.actividades.ui.components.AyudaDePantalla
+import com.carlosalbertoxw.ollin.actividades.ui.components.DialogoDeshacerHabito
+import com.carlosalbertoxw.ollin.actividades.ui.components.DialogoFecha
+import com.carlosalbertoxw.ollin.actividades.ui.components.DialogoHora
 import com.carlosalbertoxw.ollin.actividades.ui.components.EstadoVacio
 import com.carlosalbertoxw.ollin.actividades.ui.components.Punto
 import com.carlosalbertoxw.ollin.actividades.ui.components.SeccionTitulo
@@ -76,15 +79,9 @@ import com.carlosalbertoxw.ollin.actividades.ui.theme.colorDeCategoria
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
-import com.carlosalbertoxw.ollin.actividades.ui.components.DialogoDeshacerHabito
-import com.carlosalbertoxw.ollin.actividades.ui.components.DialogoFecha
-import com.carlosalbertoxw.ollin.actividades.ui.components.DialogoHora
 
 @Composable
-fun HabitosPantalla(
-    contenedor: Contenedor,
-    alRegistrarHabito: (Long) -> Unit
-) {
+fun HabitosPantalla(contenedor: Contenedor, alRegistrarHabito: (Long) -> Unit) {
     val vm = recuerdaVm("habitos") { HabitosVm(contenedor.repositorio) }
     val habitos by vm.habitos.collectAsStateWithLifecycle()
     val categorias by vm.categorias.collectAsStateWithLifecycle()
@@ -132,7 +129,10 @@ fun HabitosPantalla(
                     .fillMaxSize()
                     .padding(relleno),
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                    start = 16.dp, end = 16.dp, top = 12.dp, bottom = 96.dp
+                    start = 16.dp,
+                    end = 16.dp,
+                    top = 12.dp,
+                    bottom = 96.dp
                 ),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
@@ -143,8 +143,11 @@ fun HabitosPantalla(
                         avance = avance,
                         categoria = avance.habito.categoriaId?.let(indiceCategorias::get),
                         alAlternar = {
-                            if (avance.cumplidoHoy) deshaciendo = avance
-                            else alRegistrarHabito(avance.habito.id)
+                            if (avance.cumplidoHoy) {
+                                deshaciendo = avance
+                            } else {
+                                alRegistrarHabito(avance.habito.id)
+                            }
                         },
                         alEditar = { editando = avance.habito }
                     )
@@ -194,7 +197,9 @@ fun HabitosPantalla(
                 vm.guarda(it)
                 editando = null
             },
-            alEliminar = if (habito.id == 0L) null else {
+            alEliminar = if (habito.id == 0L) {
+                null
+            } else {
                 {
                     vm.elimina(habito)
                     editando = null
@@ -218,10 +223,7 @@ fun HabitosPantalla(
  * nunca: contando desde el ultimo cumplimiento, la siguiente fecha nace de
  * cumplir la que esta vencida.
  */
-internal fun ordenDeHabitos(
-    activos: List<HabitoConAvance>,
-    hoy: LocalDate
-): List<HabitoConAvance> =
+internal fun ordenDeHabitos(activos: List<HabitoConAvance>, hoy: LocalDate): List<HabitoConAvance> =
     activos.sortedWith(compareBy(nullsLast<LocalDate>()) { fechaQueImporta(it, hoy) })
 
 /** La fecha por la que se ordena un habito: la que tiene pendiente. */
@@ -239,7 +241,8 @@ private fun TarjetaHabito(
     alEditar: () -> Unit
 ) {
     val colores = LocalColoresOllin.current
-    val color = colorDeCategoria(categoria?.colorHex, colores.de(categoria?.ambito ?: Ambito.HABITO))
+    val color =
+        colorDeCategoria(categoria?.colorHex, colores.de(categoria?.ambito ?: Ambito.HABITO))
     val cumplido = avance.cumplidoHoy
     val pausado = !avance.habito.activo
     // La llama solo arde si la racha sigue corriendo. En pausa no avanza, y
@@ -250,7 +253,9 @@ private fun TarjetaHabito(
         Modifier
             .fillMaxWidth()
             .clickable(onClick = alEditar),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer
+        ),
         shape = RoundedCornerShape(18.dp)
     ) {
         Row(
@@ -458,18 +463,24 @@ private fun resumen(avance: HabitoConAvance): String {
     val hoy = when {
         // Un habito en pausa no esta pendiente: no se espera nada de el hoy.
         !habito.activo -> "en pausa"
+
         // "Hoy no toca" es cierto y no sirve: no distingue entre faltan dos
         // dias y faltan dos meses. Cuando no hay proxima fecha que dar es
         // porque de verdad no se sabe, y entonces si toca decirlo asi.
-        !avance.tocaHoy -> avance.proxima
-            ?.let { "toca el ${Tiempo.fechaCortaConAnio(it)}" }
-            ?: "hoy no toca"
+        !avance.tocaHoy ->
+            avance.proxima
+                ?.let { "toca el ${Tiempo.fechaCortaConAnio(it)}" }
+                ?: "hoy no toca"
+
         avance.cumplidoHoy -> "hecho hoy"
+
         habito.metaDiaria > 1 -> "${avance.vecesHoy}/${habito.metaDiaria} hoy"
+
         // Vencido y no "pendiente hoy": la fecha en que tocaba es justo lo que
         // hace falta para decidir si vale la pena ponerse ahora.
         avance.vencidoDesde != null ->
             "tocaba el ${Tiempo.fechaCortaConAnio(avance.vencidoDesde)}"
+
         else -> "pendiente hoy"
     }
     val tiempo = if (avance.minutosHoy > 0) " · ${Tiempo.duracion(avance.minutosHoy)}" else ""
@@ -553,7 +564,11 @@ private fun DialogoHabito(
                 )
 
                 Spacer(Modifier.height(12.dp))
-                Text("Cada cuando", style = MaterialTheme.typography.labelLarge, color = colores.textoTenue)
+                Text(
+                    "Cada cuando",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = colores.textoTenue
+                )
                 Spacer(Modifier.height(6.dp))
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Frecuencia.entries.forEach { opcion ->
@@ -575,8 +590,11 @@ private fun DialogoHabito(
                                     .size(34.dp)
                                     .clip(CircleShape)
                                     .background(
-                                        if (puesto) MaterialTheme.colorScheme.primaryContainer
-                                        else colores.trazoSuave
+                                        if (puesto) {
+                                            MaterialTheme.colorScheme.primaryContainer
+                                        } else {
+                                            colores.trazoSuave
+                                        }
                                     )
                                     .clickable { dias = DiasSemana.alterna(dias, dia) },
                                 contentAlignment = Alignment.Center
@@ -584,8 +602,11 @@ private fun DialogoHabito(
                                 Text(
                                     Tiempo.inicialDia(dia),
                                     style = MaterialTheme.typography.labelLarge,
-                                    color = if (puesto) MaterialTheme.colorScheme.onPrimaryContainer
-                                    else colores.textoTenue
+                                    color = if (puesto) {
+                                        MaterialTheme.colorScheme.onPrimaryContainer
+                                    } else {
+                                        colores.textoTenue
+                                    }
                                 )
                             }
                         }
@@ -642,14 +663,19 @@ private fun DialogoHabito(
                 }
 
                 Spacer(Modifier.height(12.dp))
-                Text("Categoria", style = MaterialTheme.typography.labelLarge, color = colores.textoTenue)
+                Text(
+                    "Categoria",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = colores.textoTenue
+                )
                 Spacer(Modifier.height(6.dp))
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(categorias, key = { it.id }) { categoria ->
                         FilterChip(
                             selected = categoriaId == categoria.id,
                             onClick = {
-                                categoriaId = if (categoriaId == categoria.id) null else categoria.id
+                                categoriaId =
+                                    if (categoriaId == categoria.id) null else categoria.id
                             },
                             label = { Text(categoria.nombre) }
                         )
@@ -677,7 +703,11 @@ private fun DialogoHabito(
                 }
 
                 Spacer(Modifier.height(16.dp))
-                Text("Recordatorio", style = MaterialTheme.typography.labelLarge, color = colores.textoTenue)
+                Text(
+                    "Recordatorio",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = colores.textoTenue
+                )
                 Spacer(Modifier.height(6.dp))
                 Text(
                     if (recordatorio != null) {

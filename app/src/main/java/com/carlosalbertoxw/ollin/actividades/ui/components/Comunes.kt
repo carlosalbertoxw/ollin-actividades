@@ -21,11 +21,19 @@ import androidx.compose.material.icons.automirrored.filled.DirectionsRun
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.SelfImprovement
 import androidx.compose.material.icons.filled.Work
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,18 +52,10 @@ import com.carlosalbertoxw.ollin.actividades.domain.model.Tiempo
 import com.carlosalbertoxw.ollin.actividades.ui.theme.EstiloTiempo
 import com.carlosalbertoxw.ollin.actividades.ui.theme.LocalColoresOllin
 import com.carlosalbertoxw.ollin.actividades.ui.theme.colorDeCategoria
-import java.time.LocalDate
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.AlertDialog
-import java.time.ZoneOffset
 import java.time.Instant
-import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.DatePicker
+import java.time.LocalDate
 import java.time.LocalTime
-import androidx.compose.material3.rememberTimePickerState
-import androidx.compose.material3.TimePicker
+import java.time.ZoneOffset
 
 /** Cada ambito tiene su icono. Se repite en filtros, chips y renglones. */
 fun iconoDe(ambito: Ambito?): ImageVector = when (ambito) {
@@ -97,7 +97,9 @@ fun TarjetaValor(
 ) {
     Card(
         modifier = modifier,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer
+        ),
         shape = RoundedCornerShape(18.dp)
     ) {
         Column(Modifier.padding(16.dp)) {
@@ -184,14 +186,20 @@ fun BarrasDias(
                 // La ranura vacia se insinua para que se note el dia sin registro.
                 drawRoundRect(
                     color = colores.trazoSuave,
-                    topLeft = androidx.compose.ui.geometry.Offset(centro - anchoBarra / 2f, size.height - 3f.dp.toPx()),
+                    topLeft = androidx.compose.ui.geometry.Offset(
+                        centro - anchoBarra / 2f,
+                        size.height - 3f.dp.toPx()
+                    ),
                     size = Size(anchoBarra, 3f.dp.toPx()),
                     cornerRadius = radio
                 )
                 if (valor > 0) {
                     drawRoundRect(
                         color = color,
-                        topLeft = androidx.compose.ui.geometry.Offset(centro - anchoBarra / 2f, size.height - altoBarra),
+                        topLeft = androidx.compose.ui.geometry.Offset(
+                            centro - anchoBarra / 2f,
+                            size.height - altoBarra
+                        ),
                         size = Size(anchoBarra, altoBarra),
                         cornerRadius = radio
                     )
@@ -270,10 +278,7 @@ fun SeccionTitulo(
 
 /** Contenedor con borde suave, para agrupar sin recurrir a otra tarjeta. */
 @Composable
-fun Marco(
-    modifier: Modifier = Modifier,
-    contenido: @Composable () -> Unit
-) {
+fun Marco(modifier: Modifier = Modifier, contenido: @Composable () -> Unit) {
     Box(
         modifier
             .clip(RoundedCornerShape(16.dp))
@@ -334,8 +339,11 @@ fun RenglonActividad(
         Column(horizontalAlignment = Alignment.End) {
             TextoDuracion(
                 minutos = minutos,
-                color = if (actividad.estado == EstadoActividad.EN_CURSO) colores.enCurso
-                else MaterialTheme.colorScheme.onSurface
+                color = if (actividad.estado == EstadoActividad.EN_CURSO) {
+                    colores.enCurso
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                }
             )
             val medida = actividad.cantidad
             if (medida != null && medida > 0.0) {
@@ -423,11 +431,7 @@ fun DialogoDeshacerHabito(
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DialogoFecha(
-    inicial: LocalDate,
-    alElegir: (LocalDate) -> Unit,
-    alCerrar: () -> Unit
-) {
+fun DialogoFecha(inicial: LocalDate, alElegir: (LocalDate) -> Unit, alCerrar: () -> Unit) {
     val estado = rememberDatePickerState(
         initialSelectedDateMillis = inicial.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
     )

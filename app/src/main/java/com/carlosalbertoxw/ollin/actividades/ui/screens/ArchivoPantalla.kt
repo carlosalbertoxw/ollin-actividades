@@ -191,9 +191,11 @@ fun ArchivoPantalla(contenedor: Contenedor, alCerrar: () -> Unit) {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     InterruptorConNota(
                         titulo = "Reemplazar todo",
-                        detalle = if (ajustes.reemplazarAlImportar)
+                        detalle = if (ajustes.reemplazarAlImportar) {
                             "Se borran las $total actividades actuales y se cargan las del archivo."
-                        else "Las actividades del archivo se agregan a las que ya tienes.",
+                        } else {
+                            "Las actividades del archivo se agregan a las que ya tienes."
+                        },
                         valor = ajustes.reemplazarAlImportar,
                         alCambiar = vm::cambiaReemplazar
                     )
@@ -228,7 +230,10 @@ fun ArchivoPantalla(contenedor: Contenedor, alCerrar: () -> Unit) {
                     SegmentedButton(
                         selected = ajustes.esquema == esquema,
                         onClick = { vm.cambiaEsquema(esquema) },
-                        shape = SegmentedButtonDefaults.itemShape(i, EsquemaExportacion.entries.size)
+                        shape = SegmentedButtonDefaults.itemShape(
+                            i,
+                            EsquemaExportacion.entries.size
+                        )
                     ) { Text(esquema.etiqueta) }
                 }
             }
@@ -351,16 +356,22 @@ private fun InterruptorConNota(
 private fun ResumenImportacion(resultado: ResultadoImportacion, alCerrar: () -> Unit) {
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = if (resultado.huboProblemas) MaterialTheme.colorScheme.tertiaryContainer
-            else MaterialTheme.colorScheme.primaryContainer
+            containerColor = if (resultado.huboProblemas) {
+                MaterialTheme.colorScheme.tertiaryContainer
+            } else {
+                MaterialTheme.colorScheme.primaryContainer
+            }
         )
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
                 // Un libro puede traer solo catalogos: contar renglones de una
                 // bitacora que no venia diria "0 de 0" y sonaria a que fallo.
-                if (resultado.soloCatalogos) "Catálogos actualizados"
-                else "Importadas ${resultado.importadas} de ${resultado.filasLeidas} renglones",
+                if (resultado.soloCatalogos) {
+                    "Catálogos actualizados"
+                } else {
+                    "Importadas ${resultado.importadas} de ${resultado.filasLeidas} renglones"
+                },
                 style = MaterialTheme.typography.titleSmall
             )
 

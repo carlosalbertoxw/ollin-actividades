@@ -26,6 +26,10 @@ androidxJunit = "1.3.0"
 espressoCore = "3.7.0"
 androidxTestCore = "1.7.0"
 robolectric = "4.17"
+spotless = "8.10.3"
+# La version de ktlint va aparte de la de Spotless: es la que decide las
+# reglas, y subirla puede marcar codigo que ayer pasaba.
+ktlint = "1.8.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -65,3 +69,4 @@ robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }

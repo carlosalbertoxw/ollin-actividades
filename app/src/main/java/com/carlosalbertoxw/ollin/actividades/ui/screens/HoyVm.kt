@@ -65,11 +65,14 @@ class HoyVm(
      */
     val ahora: StateFlow<Instant> = enCurso
         .flatMapLatest { corriendo ->
-            if (corriendo == null) flowOf(Tiempo.ahora())
-            else flow {
-                while (true) {
-                    emit(Tiempo.ahora())
-                    delay(1_000)
+            if (corriendo == null) {
+                flowOf(Tiempo.ahora())
+            } else {
+                flow {
+                    while (true) {
+                        emit(Tiempo.ahora())
+                        delay(1_000)
+                    }
                 }
             }
         }

@@ -11,7 +11,6 @@ import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
-import kotlinx.coroutines.runBlocking
 import com.carlosalbertoxw.ollin.actividades.data.db.OllinDatabase
 import com.carlosalbertoxw.ollin.actividades.data.excel.EsquemaExportacion
 import com.carlosalbertoxw.ollin.actividades.data.excel.HojaExportable
@@ -19,6 +18,7 @@ import com.carlosalbertoxw.ollin.actividades.data.prefs.Ajustes
 import com.carlosalbertoxw.ollin.actividades.data.prefs.AjustesRepositorio
 import com.carlosalbertoxw.ollin.actividades.data.repo.ActividadesRepositorio
 import com.carlosalbertoxw.ollin.actividades.di.Contenedor
+import kotlinx.coroutines.runBlocking
 import org.junit.rules.ExternalResource
 
 /**
@@ -53,7 +53,8 @@ class BancoDePruebas : ExternalResource() {
     }
 
     /** Prepara datos antes de componer. La pantalla lee del mismo repositorio. */
-    fun <T> siembra(bloque: suspend ActividadesRepositorio.() -> T): T = runBlocking { repo.bloque() }
+    fun <T> siembra(bloque: suspend ActividadesRepositorio.() -> T): T =
+        runBlocking { repo.bloque() }
 }
 
 /**
@@ -132,8 +133,8 @@ fun ComposeContentTestRule.hayDescripcion(texto: String): Boolean =
  * Una pestaña de la barra de abajo. Hace falta distinguirla del texto suelto:
  * "Hoy" es a la vez el nombre de la pestaña y el titulo de la pantalla.
  */
-fun pestana(nombre: String) =
-    hasText(nombre) and hasClickAction() and SemanticsMatcher.keyIsDefined(SemanticsProperties.Selected)
+fun pestana(nombre: String) = hasText(nombre) and hasClickAction() and
+    SemanticsMatcher.keyIsDefined(SemanticsProperties.Selected)
 
 /**
  * El campo de un formulario, buscado por su etiqueta y no por su valor: la

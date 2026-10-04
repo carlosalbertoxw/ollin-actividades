@@ -130,7 +130,13 @@ class CapturaVm(
                     inicio = inicio,
                     fin = null,
                     dia = f.fecha,
-                    duracionMinutos = if (f.estado == EstadoActividad.EN_CURSO) null else f.duracion,
+                    duracionMinutos = if (f.estado ==
+                        EstadoActividad.EN_CURSO
+                    ) {
+                        null
+                    } else {
+                        f.duracion
+                    },
                     cantidad = f.cantidadTexto.replace(',', '.').toDoubleOrNull(),
                     unidad = f.unidad,
                     habitoId = f.habitoId,

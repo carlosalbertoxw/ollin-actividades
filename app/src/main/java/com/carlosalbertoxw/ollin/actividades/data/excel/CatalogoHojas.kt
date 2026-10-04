@@ -23,6 +23,7 @@ enum class EsquemaExportacion(val etiqueta: String, val descripcion: String) {
                 "Fecha", "Titulo", "Categoria", "Ambito", "Estado", "Inicio", "Fin",
                 "Minutos", "Cantidad", "Unidad", "Habito", "Notas"
             )
+
             COMPACTO -> listOf("Fecha", "Titulo", "Categoria", "Estado", "Minutos")
         }
 

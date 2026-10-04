@@ -7,19 +7,19 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
-import kotlinx.coroutines.runBlocking
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.carlosalbertoxw.ollin.actividades.data.db.Actividad
 import com.carlosalbertoxw.ollin.actividades.domain.model.EstadoActividad
 import com.carlosalbertoxw.ollin.actividades.domain.model.Tiempo
 import com.carlosalbertoxw.ollin.actividades.ui.screens.CapturaPantalla
 import com.carlosalbertoxw.ollin.actividades.ui.theme.TemaOllin
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
@@ -103,7 +103,9 @@ class CapturaPantallaTest {
         monta(id)
 
         compose.esperaTexto("Editar actividad")
-        compose.espera("carga el titulo guardado") { compose.hayTexto("Redactar", subcadena = true) }
+        compose.espera("carga el titulo guardado") {
+            compose.hayTexto("Redactar", subcadena = true)
+        }
 
         compose.onNode(campo("Qué hiciste")).performTextReplacement("Redactar el informe")
         compose.onNodeWithText("Guardar").performScrollTo().performClick()

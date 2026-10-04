@@ -45,6 +45,8 @@ Desde Android Gradle Plugin 9 el plugin de Android compila Kotlin por sí mismo,
 ./gradlew installDebug         # instala en el dispositivo conectado
 ./gradlew testDebugUnitTest    # pruebas unitarias (JVM + Robolectric)
 ./gradlew lintDebug            # Android Lint; falla la compilacion si encuentra errores
+./gradlew spotlessApply        # da formato al codigo con ktlint
+./gradlew spotlessCheck        # solo comprueba el formato, como en CI
 ./gradlew assembleRelease      # con minify y shrink de recursos
 ./gradlew clean
 ```
@@ -55,7 +57,7 @@ El [sitio](sitio.md) es un proyecto aparte, en `web/`, y no pasa por Gradle:
 cd web && npm install && npm run dev
 ```
 
-El estilo está en [`.editorconfig`](../.editorconfig) —el oficial de Kotlin, que ya declaraba `gradle.properties`— para que no dependa de la memoria de quien edite. Lint corre con `abortOnError`: un aviso que no rompe nada no se lee, y lo que marca como error son fugas de contexto, APIs por encima del `minSdk` o permisos ausentes, cosas que se notarían en el teléfono de alguien. Las quejas por traducciones ausentes están apagadas: la app es monolingüe por decisión explícita.
+El estilo está en [`.editorconfig`](../.editorconfig) —el oficial de Kotlin, que ya declaraba `gradle.properties`— y lo hace cumplir **ktlint** a través de [Spotless](../build.gradle.kts): `spotlessCheck` corre en `pruebas.yml`, así que un cambio con otro formato no entra. Antes de subir algo, `./gradlew spotlessApply` lo deja como debe. ktlint lee el mismo `.editorconfig`, con su estilo `intellij_idea` —el oficial de Kotlin— y no el suyo propio, que pediría reescribir medio proyecto sin ganar nada; las funciones `@Composable` se nombran como clases, que es la convención de Compose. La única excepción al tope de 100 columnas es [`XlsxEscritor`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/data/excel/XlsxEscritor.kt), que escribe el XML de la norma OOXML con sus espacios de nombres completos. Lint corre con `abortOnError`: un aviso que no rompe nada no se lee, y lo que marca como error son fugas de contexto, APIs por encima del `minSdk` o permisos ausentes, cosas que se notarían en el teléfono de alguien. Las quejas por traducciones ausentes están apagadas: la app es monolingüe por decisión explícita.
 
 La variante `debug` lleva `applicationIdSuffix = ".debug"` y `versionNameSuffix = "-debug"`, así que convive con la de producción instalada.
 

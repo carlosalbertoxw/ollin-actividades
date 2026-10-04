@@ -11,8 +11,10 @@ object Estilo {
     const val NORMAL = 0
     const val FECHA = 1
     const val HORA = 2
+
     /** Minutos y conteos: enteros con separador de miles. */
     const val ENTERO = 3
+
     /** Medidas con decimal (km, horas). */
     const val DECIMAL = 4
     const val PORCENTAJE = 5
@@ -59,19 +61,17 @@ sealed interface Celda {
 
 /** Validacion de lista apuntando a un rango de otra hoja. */
 data class ValidacionLista(
-    val rangoDestino: String,   // "C2:C5000"
-    val origenFormula: String   // "Diccionarios!$A$2:$A$40"
+    /** Por ejemplo "C2:C5000". */
+    val rangoDestino: String,
+    /** Por ejemplo "Diccionarios!$A$2:$A$40". */
+    val origenFormula: String
 )
 
 /** Ancho de columna en caracteres, como lo mide Excel. */
 data class AnchoColumna(val columna: Int, val ancho: Double)
 
 /** Definicion de un ListObject (tabla de Excel) sobre un rango. */
-data class TablaExcel(
-    val nombre: String,
-    val rango: String,
-    val encabezados: List<String>
-)
+data class TablaExcel(val nombre: String, val rango: String, val encabezados: List<String>)
 
 /** Una hoja completa lista para escribirse. */
 data class Hoja(

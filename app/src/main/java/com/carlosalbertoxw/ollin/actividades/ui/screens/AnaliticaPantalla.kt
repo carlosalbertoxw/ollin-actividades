@@ -69,7 +69,10 @@ fun AnaliticaPantalla(contenedor: Contenedor) {
     LazyColumn(
         Modifier.fillMaxSize(),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(
-            start = 16.dp, end = 16.dp, top = 12.dp, bottom = 96.dp
+            start = 16.dp,
+            end = 16.dp,
+            top = 12.dp,
+            bottom = 96.dp
         ),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
@@ -92,7 +95,8 @@ fun AnaliticaPantalla(contenedor: Contenedor) {
                 EstadoVacio(
                     icono = Icons.Filled.Insights,
                     titulo = "Todavia no hay que graficar",
-                    detalle = "En cuanto completes actividades, aquí aparece en qué se te va el tiempo.",
+                    detalle = "En cuanto completes actividades, aquí aparece en qué se te va " +
+                        "el tiempo.",
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -124,7 +128,9 @@ fun AnaliticaPantalla(contenedor: Contenedor) {
         item {
             Card(
                 Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer
+                ),
                 shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp)
             ) {
                 Column(Modifier.padding(16.dp)) {
@@ -144,10 +150,15 @@ fun AnaliticaPantalla(contenedor: Contenedor) {
             item {
                 Card(
                     Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                    ),
                     shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp)
                 ) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Column(
+                        Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
                         val mayor = porAmbito.maxOf { it.minutos }.coerceAtLeast(1)
                         porAmbito.forEach { total ->
                             RenglonProporcion(
@@ -168,10 +179,15 @@ fun AnaliticaPantalla(contenedor: Contenedor) {
             item {
                 Card(
                     Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                    ),
                     shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp)
                 ) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Column(
+                        Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
                         val mayor = porCategoria.maxOf { it.minutos }.coerceAtLeast(1)
                         porCategoria.take(8).forEach { total ->
                             RenglonProporcion(
@@ -260,6 +276,7 @@ private fun RenglonProporcion(
  */
 private fun etiquetasDe(dias: List<LocalDate>): List<String> = when {
     dias.size <= 7 -> dias.map { Tiempo.inicialDia(it.dayOfWeek) }
+
     else -> listOf(
         Tiempo.fechaCorta(dias.first()),
         Tiempo.fechaCorta(dias[dias.size / 2]),

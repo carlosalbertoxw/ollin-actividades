@@ -2,6 +2,10 @@ package com.carlosalbertoxw.ollin.actividades
 
 import android.app.Application
 import android.util.Log
+import com.carlosalbertoxw.ollin.actividades.data.actualizaciones.Resultado
+import com.carlosalbertoxw.ollin.actividades.data.diagnostico.RegistroDeFallos
+import com.carlosalbertoxw.ollin.actividades.data.recordatorios.Notificaciones
+import com.carlosalbertoxw.ollin.actividades.di.Contenedor
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -10,10 +14,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import com.carlosalbertoxw.ollin.actividades.data.actualizaciones.Resultado
-import com.carlosalbertoxw.ollin.actividades.data.diagnostico.RegistroDeFallos
-import com.carlosalbertoxw.ollin.actividades.data.recordatorios.Notificaciones
-import com.carlosalbertoxw.ollin.actividades.di.Contenedor
 
 class OllinApp : Application() {
 

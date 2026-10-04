@@ -104,11 +104,13 @@ data class Actividad(
      */
     fun minutosVividos(ahora: Instant = Tiempo.ahora()): Int = when {
         duracionMinutos != null -> duracionMinutos
+
         estado == EstadoActividad.EN_CURSO ->
             ((ahora.toEpochMilli() - inicio.toEpochMilli()) / 60_000L)
                 .coerceAtLeast(0L)
                 .coerceAtMost(Int.MAX_VALUE.toLong())
                 .toInt()
+
         else -> 0
     }
 
@@ -253,15 +255,22 @@ data class Habito(
      */
     fun cadencia(): String = when (frecuencia) {
         Frecuencia.DIARIA -> "Todos los días"
+
         Frecuencia.DIAS_ELEGIDOS -> DiasSemana.etiqueta(diasSemana)
+
         Frecuencia.SEMANAL -> "$metaSemanal días por semana"
+
         Frecuencia.CADA_DIAS -> when (val n = intervaloDias.coerceAtLeast(1)) {
             1 -> "Todos los días"
+
             7 -> "Cada semana"
+
             // Quince dias es la cadencia mas pedida y tiene nombre propio.
             15 -> "Cada quincena"
+
             else -> "Cada $n días"
         }
+
         Frecuencia.CADA_MESES -> when (val n = intervaloMeses.coerceAtLeast(1)) {
             1 -> "Cada mes"
             2 -> "Cada 2 meses"
@@ -275,7 +284,9 @@ data class Habito(
     /** Cierto si el habito toca este dia. Un habito semanal toca todos. */
     fun tocaHoy(dia: LocalDate): Boolean = when (frecuencia) {
         Frecuencia.DIARIA -> true
+
         Frecuencia.SEMANAL -> true
+
         Frecuencia.DIAS_ELEGIDOS -> DiasSemana.contiene(diasSemana, dia.dayOfWeek)
 
         Frecuencia.CADA_DIAS -> {

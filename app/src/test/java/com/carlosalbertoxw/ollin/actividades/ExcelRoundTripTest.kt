@@ -32,7 +32,12 @@ class ExcelRoundTripTest {
     private val hoy = LocalDate.of(2026, 8, 10)
 
     private val categorias = listOf(
-        Categoria(id = 1, nombre = "Enfoque profundo", ambito = Ambito.TRABAJO, colorHex = "#3D6DB5"),
+        Categoria(
+            id = 1,
+            nombre = "Enfoque profundo",
+            ambito = Ambito.TRABAJO,
+            colorHex = "#3D6DB5"
+        ),
         Categoria(id = 2, nombre = "Correr", ambito = Ambito.FISICO, colorHex = "#2F9E6E")
     )
 
@@ -59,7 +64,13 @@ class ExcelRoundTripTest {
             categoriaId = categoriaId,
             estado = estado,
             inicio = inicio,
-            fin = if (estado == EstadoActividad.COMPLETADO) inicio.plusSeconds(minutos * 60L) else null,
+            fin = if (estado ==
+                EstadoActividad.COMPLETADO
+            ) {
+                inicio.plusSeconds(minutos * 60L)
+            } else {
+                null
+            },
             dia = dia,
             duracionMinutos = if (estado == EstadoActividad.COMPLETADO) minutos else null,
             cantidad = cantidad,
@@ -71,12 +82,22 @@ class ExcelRoundTripTest {
     private val actividades = listOf(
         actividad(1, "Rediseno de la pantalla de hoy", hoy.minusDays(1), LocalTime.of(9, 0), 90),
         actividad(
-            2, "Correr 5 km", hoy.minusDays(1), LocalTime.of(19, 30), 32,
-            categoriaId = 2, cantidad = 5.0, unidad = Unidad.KILOMETROS
+            2,
+            "Correr 5 km",
+            hoy.minusDays(1),
+            LocalTime.of(19, 30),
+            32,
+            categoriaId = 2,
+            cantidad = 5.0,
+            unidad = Unidad.KILOMETROS
         ),
         actividad(3, "Leer 20 minutos", hoy, LocalTime.of(7, 15), 20, habitoId = 7),
         actividad(
-            4, "Junta pendiente", hoy.plusDays(1), LocalTime.of(11, 0), 0,
+            4,
+            "Junta pendiente",
+            hoy.plusDays(1),
+            LocalTime.of(11, 0),
+            0,
             estado = EstadoActividad.PENDIENTE
         )
     )
@@ -170,7 +191,7 @@ class ExcelRoundTripTest {
         val hoja = libro.hoja("Por categoria")!!
 
         val trabajo = hoja.filas.first { it.getOrNull(0)?.comoTexto() == "Enfoque profundo" }
-        assertEquals(110.0, trabajo[2].numero!!, 0.001)   // 90 de ayer + 20 de hoy
+        assertEquals(110.0, trabajo[2].numero!!, 0.001) // 90 de ayer + 20 de hoy
 
         val correr = hoja.filas.first { it.getOrNull(0)?.comoTexto() == "Correr" }
         assertEquals(32.0, correr[2].numero!!, 0.001)

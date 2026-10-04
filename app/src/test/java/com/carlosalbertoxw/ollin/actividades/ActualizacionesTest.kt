@@ -37,15 +37,13 @@ class ActualizacionesTest {
         ajustes.restauraDeFabrica()
     }
 
-    private fun comprobador(
-        instalada: String? = "1.0.0",
-        respuesta: String = JSON_1_2_0
-    ) = ComprobadorActualizaciones(
-        ajustes = ajustes,
-        instalada = Version.de(instalada),
-        url = "https://ejemplo.invalido/version.json",
-        descarga = { respuesta }
-    )
+    private fun comprobador(instalada: String? = "1.0.0", respuesta: String = JSON_1_2_0) =
+        ComprobadorActualizaciones(
+            ajustes = ajustes,
+            instalada = Version.de(instalada),
+            url = "https://ejemplo.invalido/version.json",
+            descarga = { respuesta }
+        )
 
     // ------------------------------------------------------------- versiones
 

@@ -3,7 +3,6 @@ package com.carlosalbertoxw.ollin.actividades
 import android.app.Application
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
-import kotlinx.coroutines.test.runTest
 import com.carlosalbertoxw.ollin.actividades.data.db.Actividad
 import com.carlosalbertoxw.ollin.actividades.data.db.Categoria
 import com.carlosalbertoxw.ollin.actividades.data.db.Habito
@@ -22,6 +21,7 @@ import com.carlosalbertoxw.ollin.actividades.domain.model.DiasSemana
 import com.carlosalbertoxw.ollin.actividades.domain.model.EstadoActividad
 import com.carlosalbertoxw.ollin.actividades.domain.model.Frecuencia
 import com.carlosalbertoxw.ollin.actividades.domain.model.Tiempo
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -93,12 +93,19 @@ class ImportadorCatalogosTest {
             libroDe(
                 categorias = listOf(
                     Categoria(
-                        id = 1, nombre = "Trabajo profundo", ambito = Ambito.TRABAJO,
-                        colorHex = "#FF8844", archivada = false, orden = 3
+                        id = 1,
+                        nombre = "Trabajo profundo",
+                        ambito = Ambito.TRABAJO,
+                        colorHex = "#FF8844",
+                        archivada = false,
+                        orden = 3
                     ),
                     Categoria(
-                        id = 2, nombre = "Descanso", ambito = Ambito.PERSONAL,
-                        archivada = true, orden = 7
+                        id = 2,
+                        nombre = "Descanso",
+                        ambito = Ambito.PERSONAL,
+                        archivada = true,
+                        orden = 7
                     )
                 )
             ).inputStream()
@@ -132,8 +139,11 @@ class ImportadorCatalogosTest {
             libroDe(
                 categorias = listOf(
                     Categoria(
-                        id = 1, nombre = "reunion", ambito = Ambito.PERSONAL,
-                        colorHex = "#112233", orden = 5
+                        id = 1,
+                        nombre = "reunion",
+                        ambito = Ambito.PERSONAL,
+                        colorHex = "#112233",
+                        orden = 5
                     )
                 )
             ).inputStream()
@@ -162,8 +172,13 @@ class ImportadorCatalogosTest {
                 categorias = listOf(Categoria(id = 4, nombre = "Salud", ambito = Ambito.HABITO)),
                 habitos = listOf(
                     Habito(
-                        id = 1, nombre = "Leer", categoriaId = 4, metaDiaria = 2,
-                        minutosSugeridos = 20, activo = false, notas = "Antes de dormir"
+                        id = 1,
+                        nombre = "Leer",
+                        categoriaId = 4,
+                        metaDiaria = 2,
+                        minutosSugeridos = 20,
+                        activo = false,
+                        notas = "Antes de dormir"
                     )
                 )
             ).inputStream()
@@ -189,14 +204,41 @@ class ImportadorCatalogosTest {
                 habitos = listOf(
                     Habito(id = 1, nombre = "Diario", frecuencia = Frecuencia.DIARIA),
                     Habito(
-                        id = 2, nombre = "Impares", frecuencia = Frecuencia.DIAS_ELEGIDOS,
+                        id = 2,
+                        nombre = "Impares",
+                        frecuencia = Frecuencia.DIAS_ELEGIDOS,
                         diasSemana = lunesMiercolesViernes
                     ),
-                    Habito(id = 3, nombre = "Cuatro", frecuencia = Frecuencia.SEMANAL, metaSemanal = 4),
-                    Habito(id = 4, nombre = "Quincenal", frecuencia = Frecuencia.CADA_DIAS, intervaloDias = 15),
-                    Habito(id = 5, nombre = "Cada tres", frecuencia = Frecuencia.CADA_DIAS, intervaloDias = 3),
-                    Habito(id = 6, nombre = "Trimestral", frecuencia = Frecuencia.CADA_MESES, intervaloMeses = 3),
-                    Habito(id = 7, nombre = "Anual", frecuencia = Frecuencia.CADA_MESES, intervaloMeses = 12)
+                    Habito(
+                        id = 3,
+                        nombre = "Cuatro",
+                        frecuencia = Frecuencia.SEMANAL,
+                        metaSemanal = 4
+                    ),
+                    Habito(
+                        id = 4,
+                        nombre = "Quincenal",
+                        frecuencia = Frecuencia.CADA_DIAS,
+                        intervaloDias = 15
+                    ),
+                    Habito(
+                        id = 5,
+                        nombre = "Cada tres",
+                        frecuencia = Frecuencia.CADA_DIAS,
+                        intervaloDias = 3
+                    ),
+                    Habito(
+                        id = 6,
+                        nombre = "Trimestral",
+                        frecuencia = Frecuencia.CADA_MESES,
+                        intervaloMeses = 3
+                    ),
+                    Habito(
+                        id = 7,
+                        nombre = "Anual",
+                        frecuencia = Frecuencia.CADA_MESES,
+                        intervaloMeses = 12
+                    )
                 )
             ).inputStream()
         )
@@ -279,8 +321,10 @@ class ImportadorCatalogosTest {
                 filas = listOf(
                     texto("Categorias", "Ambitos", "Estados", "Unidades", "Habitos"),
                     listOf(
-                        Celda.Texto("Lectura"), Celda.Texto("Personal"),
-                        Celda.Texto("Completado"), Celda.Texto("Sin medida"),
+                        Celda.Texto("Lectura"),
+                        Celda.Texto("Personal"),
+                        Celda.Texto("Completado"),
+                        Celda.Texto("Sin medida"),
                         Celda.Texto("Meditar")
                     )
                 )
@@ -301,7 +345,12 @@ class ImportadorCatalogosTest {
         importador.importa(
             libroDe(
                 categorias = listOf(
-                    Categoria(id = 1, nombre = "Salud", ambito = Ambito.FISICO, colorHex = "#00AA55")
+                    Categoria(
+                        id = 1,
+                        nombre = "Salud",
+                        ambito = Ambito.FISICO,
+                        colorHex = "#00AA55"
+                    )
                 ),
                 habitos = listOf(Habito(id = 1, nombre = "Nadar", categoriaId = 1))
             ).inputStream()
@@ -322,8 +371,12 @@ class ImportadorCatalogosTest {
         val inicio = Tiempo.instante(hoy.atTime(9, 0))
         db.actividadDao().inserta(
             Actividad(
-                titulo = "Lo que ya estaba", estado = EstadoActividad.COMPLETADO,
-                inicio = inicio, fin = inicio.plusSeconds(600), dia = hoy, duracionMinutos = 10
+                titulo = "Lo que ya estaba",
+                estado = EstadoActividad.COMPLETADO,
+                inicio = inicio,
+                fin = inicio.plusSeconds(600),
+                dia = hoy,
+                duracionMinutos = 10
             )
         )
 
@@ -354,7 +407,9 @@ class ImportadorCatalogosTest {
     fun `sin crear faltantes los catalogos del archivo no dan de alta nada`() = runTest {
         val resultado = importador.importa(
             libroDe(
-                categorias = listOf(Categoria(id = 1, nombre = "Inventada", ambito = Ambito.TRABAJO)),
+                categorias = listOf(
+                    Categoria(id = 1, nombre = "Inventada", ambito = Ambito.TRABAJO)
+                ),
                 habitos = listOf(Habito(id = 1, nombre = "Inventado"))
             ).inputStream(),
             OpcionesImportacion(creaFaltantes = false)
@@ -369,12 +424,22 @@ class ImportadorCatalogosTest {
     @Test
     fun `el registro se enlaza a la categoria que trajo la hoja de catalogo`() = runTest {
         val categoria = Categoria(
-            id = 1, nombre = "Gimnasio", ambito = Ambito.FISICO, colorHex = "#334455", orden = 2
+            id = 1,
+            nombre = "Gimnasio",
+            ambito = Ambito.FISICO,
+            colorHex = "#334455",
+            orden = 2
         )
         val inicio = Tiempo.instante(hoy.atTime(18, 0))
         val actividad = Actividad(
-            id = 1, titulo = "Pesas", categoriaId = 1, estado = EstadoActividad.COMPLETADO,
-            inicio = inicio, fin = inicio.plusSeconds(45 * 60L), dia = hoy, duracionMinutos = 45
+            id = 1,
+            titulo = "Pesas",
+            categoriaId = 1,
+            estado = EstadoActividad.COMPLETADO,
+            inicio = inicio,
+            fin = inicio.plusSeconds(45 * 60L),
+            dia = hoy,
+            duracionMinutos = 45
         )
 
         val resultado = importador.importa(
@@ -493,5 +558,4 @@ class ImportadorCatalogosTest {
 
         assertNull(db.habitoDao().todos().first { it.nombre == "Leer" }.ancla)
     }
-
 }

@@ -14,26 +14,25 @@ import java.util.zip.ZipInputStream
 import javax.xml.parsers.SAXParserFactory
 
 /** Una celda tal como venia en el archivo, sin interpretar todavia. */
-data class CeldaLeida(
-    val texto: String? = null,
-    val numero: Double? = null
-) {
+data class CeldaLeida(val texto: String? = null, val numero: Double? = null) {
     val estaVacia: Boolean get() = texto.isNullOrBlank() && numero == null
 
     /** Texto para comparar contra catalogos. Un numero entero sale sin ".0". */
     fun comoTexto(): String? = when {
         texto != null -> texto
+
         numero != null ->
-            if (numero == numero.toLong().toDouble()) numero.toLong().toString()
-            else numero.toString()
+            if (numero == numero.toLong().toDouble()) {
+                numero.toLong().toString()
+            } else {
+                numero.toString()
+            }
+
         else -> null
     }
 }
 
-data class HojaLeida(
-    val nombre: String,
-    val filas: List<List<CeldaLeida>>
-)
+data class HojaLeida(val nombre: String, val filas: List<List<CeldaLeida>>)
 
 data class LibroLeido(val hojas: List<HojaLeida>) {
     fun hoja(nombre: String): HojaLeida? =
@@ -86,7 +85,10 @@ object XlsxLector {
         val partes = descomprime(entrada)
 
         if (!partes.containsKey("xl/workbook.xml")) {
-            throw ArchivoInvalido("El archivo no parece un libro de Excel (.xlsx). Si es .xls antiguo, guárdalo primero como .xlsx.")
+            throw ArchivoInvalido(
+                "El archivo no parece un libro de Excel (.xlsx). " +
+                    "Si es .xls antiguo, guárdalo primero como .xlsx."
+            )
         }
 
         val cadenas = partes["xl/sharedStrings.xml"]?.let(::leeSharedStrings) ?: emptyList()
@@ -114,11 +116,15 @@ object XlsxLector {
             ZipInputStream(entrada.buffered()).use { zip ->
                 while (true) {
                     val entry = zip.nextEntry ?: break
-                    if (entry.isDirectory) { zip.closeEntry(); continue }
+                    if (entry.isDirectory) {
+                        zip.closeEntry()
+                        continue
+                    }
                     val nombre = entry.name.removePrefix("/")
                     // Solo interesan las partes XML del libro.
                     if (!nombre.endsWith(".xml") && !nombre.endsWith(".rels")) {
-                        zip.closeEntry(); continue
+                        zip.closeEntry()
+                        continue
                     }
                     if (++leidas > LIMITE_PARTES) throw demasiadoGrande()
                     val bytes = leeAcotado(zip, LIMITE_BYTES - total)
@@ -243,22 +249,28 @@ object XlsxLector {
             if (c.toChar().isWhitespace() || c == 0xFEFF) continue
             if (c.toChar() != '<') return
             lector.mark(16)
-            val siguiente = CharArray(8).let { it.concatToString(0, lector.read(it, 0, 8).coerceAtLeast(0)) }
+            val bufer = CharArray(8)
+            val siguiente = bufer.concatToString(0, lector.read(bufer, 0, 8).coerceAtLeast(0))
             when {
                 // Declaracion XML o instruccion de proceso: <? ... ?>
                 siguiente.startsWith("?") -> {
-                    lector.reset(); lector.read()
+                    lector.reset()
+                    lector.read()
                     if (!saltaHasta(lector, "?>")) return
                 }
+
                 // Comentario: <!-- ... -->
                 siguiente.startsWith("!--") -> {
-                    lector.reset(); repeat(3) { lector.read() }
+                    lector.reset()
+                    repeat(3) { lector.read() }
                     if (!saltaHasta(lector, "-->")) return
                 }
+
                 siguiente.startsWith("!DOCTYPE", ignoreCase = true) -> throw ArchivoInvalido(
                     "El archivo declara un DOCTYPE, que Ollin Actividades no acepta. " +
                         "Vuelve a guardarlo como .xlsx desde tu hoja de cálculo."
                 )
+
                 // Cualquier otra cosa ya es el elemento raiz: el prologo acabo.
                 else -> return
             }
@@ -302,56 +314,89 @@ object XlsxLector {
         var dentroDeSi = false
         var capturando = false
 
-        parsea(bytes, object : DefaultHandler() {
-            override fun startElement(uri: String?, local: String?, qName: String, attrs: Attributes?) {
-                when (qName) {
-                    "si" -> { dentroDeSi = true; actual.setLength(0) }
-                    "t" -> if (dentroDeSi) capturando = true
-                    // <rPh> lleva la lectura fonetica japonesa; no es contenido.
-                    "rPh" -> capturando = false
+        parsea(
+            bytes,
+            object : DefaultHandler() {
+                override fun startElement(
+                    uri: String?,
+                    local: String?,
+                    qName: String,
+                    attrs: Attributes?
+                ) {
+                    when (qName) {
+                        "si" -> {
+                            dentroDeSi = true
+                            actual.setLength(0)
+                        }
+
+                        "t" -> if (dentroDeSi) capturando = true
+
+                        // <rPh> lleva la lectura fonetica japonesa; no es contenido.
+                        "rPh" -> capturando = false
+                    }
+                }
+
+                override fun characters(ch: CharArray, start: Int, length: Int) {
+                    if (capturando) actual.appendRange(ch, start, start + length)
+                }
+
+                override fun endElement(uri: String?, local: String?, qName: String) {
+                    when (qName) {
+                        "t" -> capturando = false
+
+                        "si" -> {
+                            resultado += actual.toString()
+                            dentroDeSi = false
+                        }
+                    }
                 }
             }
-
-            override fun characters(ch: CharArray, start: Int, length: Int) {
-                if (capturando) actual.appendRange(ch, start, start + length)
-            }
-
-            override fun endElement(uri: String?, local: String?, qName: String) {
-                when (qName) {
-                    "t" -> capturando = false
-                    "si" -> { resultado += actual.toString(); dentroDeSi = false }
-                }
-            }
-        })
+        )
         return resultado
     }
 
     private fun leeRelaciones(bytes: ByteArray): Map<String, String> {
         val mapa = HashMap<String, String>()
-        parsea(bytes, object : DefaultHandler() {
-            override fun startElement(uri: String?, local: String?, qName: String, attrs: Attributes?) {
-                if (qName == "Relationship" && attrs != null) {
-                    val id = attrs.getValue("Id") ?: return
-                    val target = attrs.getValue("Target") ?: return
-                    mapa[id] = target
+        parsea(
+            bytes,
+            object : DefaultHandler() {
+                override fun startElement(
+                    uri: String?,
+                    local: String?,
+                    qName: String,
+                    attrs: Attributes?
+                ) {
+                    if (qName == "Relationship" && attrs != null) {
+                        val id = attrs.getValue("Id") ?: return
+                        val target = attrs.getValue("Target") ?: return
+                        mapa[id] = target
+                    }
                 }
             }
-        })
+        )
         return mapa
     }
 
     /** Devuelve pares (nombre de hoja, rId) en el orden del libro. */
     private fun leeDefinicionHojas(bytes: ByteArray): List<Pair<String, String>> {
         val lista = mutableListOf<Pair<String, String>>()
-        parsea(bytes, object : DefaultHandler() {
-            override fun startElement(uri: String?, local: String?, qName: String, attrs: Attributes?) {
-                if (qName == "sheet" && attrs != null) {
-                    val nombre = attrs.getValue("name") ?: return
-                    val rid = attrs.getValue("r:id") ?: attrs.getValue("id") ?: return
-                    lista += nombre to rid
+        parsea(
+            bytes,
+            object : DefaultHandler() {
+                override fun startElement(
+                    uri: String?,
+                    local: String?,
+                    qName: String,
+                    attrs: Attributes?
+                ) {
+                    if (qName == "sheet" && attrs != null) {
+                        val nombre = attrs.getValue("name") ?: return
+                        val rid = attrs.getValue("r:id") ?: attrs.getValue("id") ?: return
+                        lista += nombre to rid
+                    }
                 }
             }
-        })
+        )
         return lista
     }
 
@@ -372,62 +417,99 @@ object XlsxLector {
             // Rellena los huecos que el archivo omite y las filas salteadas.
             while (filas.size < numeroFilaActual - 1) filas.add(emptyList())
             val fila = (1..maxColFila).map { filaActual[it] ?: CeldaLeida() }
-            if (filas.size == numeroFilaActual - 1) filas.add(fila) else filas[numeroFilaActual - 1] = fila
+            if (filas.size == numeroFilaActual - 1) {
+                filas.add(fila)
+            } else {
+                filas[numeroFilaActual - 1] = fila
+            }
         }
 
-        parsea(bytes, object : DefaultHandler() {
-            override fun startElement(uri: String?, local: String?, qName: String, attrs: Attributes?) {
-                when (qName) {
-                    "row" -> {
-                        filaActual = HashMap()
-                        maxColFila = 0
-                        numeroFilaActual = attrs?.getValue("r")?.toIntOrNull() ?: (filas.size + 1)
-                        if (numeroFilaActual > MAXIMO_FILAS) throw fueraDeLaHoja()
-                    }
-                    "c" -> {
-                        val ref = attrs?.getValue("r")
-                        columnaCelda = if (ref != null) Ooxml.indiceColumna(Ooxml.partesReferencia(ref).first)
-                        else columnaCelda + 1
-                        if (columnaCelda > MAXIMO_COLUMNAS) throw fueraDeLaHoja()
-                        if (columnaCelda > maxColFila) maxColFila = columnaCelda
-                        tipoCelda = attrs?.getValue("t")
-                        valor.setLength(0)
-                    }
-                    "f" -> dentroDeFormula = true
-                    "v" -> if (!dentroDeFormula) { capturandoValor = true; valor.setLength(0) }
-                    "t" -> if (!dentroDeFormula) { capturandoValor = true }
-                }
-            }
-
-            override fun characters(ch: CharArray, start: Int, length: Int) {
-                if (capturandoValor) valor.appendRange(ch, start, start + length)
-            }
-
-            override fun endElement(uri: String?, local: String?, qName: String) {
-                when (qName) {
-                    "f" -> dentroDeFormula = false
-                    "v", "t" -> capturandoValor = false
-                    "c" -> {
-                        val crudo = valor.toString()
-                        if (crudo.isNotEmpty()) {
-                            val celda = when (tipoCelda) {
-                                "s" -> CeldaLeida(texto = crudo.toIntOrNull()?.let { cadenas.getOrNull(it) })
-                                "inlineStr", "str" -> CeldaLeida(texto = crudo)
-                                "b" -> CeldaLeida(texto = if (crudo == "1") "VERDADERO" else "FALSO")
-                                "e" -> CeldaLeida(texto = crudo) // #REF!, #VALUE!, etc.
-                                else -> crudo.toDoubleOrNull()
-                                    ?.let { CeldaLeida(numero = it) }
-                                    ?: CeldaLeida(texto = crudo)
-                            }
-                            if (!celda.estaVacia) filaActual[columnaCelda] = celda
+        parsea(
+            bytes,
+            object : DefaultHandler() {
+                override fun startElement(
+                    uri: String?,
+                    local: String?,
+                    qName: String,
+                    attrs: Attributes?
+                ) {
+                    when (qName) {
+                        "row" -> {
+                            filaActual = HashMap()
+                            maxColFila = 0
+                            numeroFilaActual =
+                                attrs?.getValue("r")?.toIntOrNull() ?: (filas.size + 1)
+                            if (numeroFilaActual > MAXIMO_FILAS) throw fueraDeLaHoja()
                         }
-                        valor.setLength(0)
-                        tipoCelda = null
+
+                        "c" -> {
+                            val ref = attrs?.getValue("r")
+                            columnaCelda = if (ref != null) {
+                                Ooxml.indiceColumna(Ooxml.partesReferencia(ref).first)
+                            } else {
+                                columnaCelda + 1
+                            }
+                            if (columnaCelda > MAXIMO_COLUMNAS) throw fueraDeLaHoja()
+                            if (columnaCelda > maxColFila) maxColFila = columnaCelda
+                            tipoCelda = attrs?.getValue("t")
+                            valor.setLength(0)
+                        }
+
+                        "f" -> dentroDeFormula = true
+
+                        "v" -> if (!dentroDeFormula) {
+                            capturandoValor = true
+                            valor.setLength(0)
+                        }
+
+                        "t" -> if (!dentroDeFormula) {
+                            capturandoValor = true
+                        }
                     }
-                    "row" -> cierraFila()
+                }
+
+                override fun characters(ch: CharArray, start: Int, length: Int) {
+                    if (capturandoValor) valor.appendRange(ch, start, start + length)
+                }
+
+                override fun endElement(uri: String?, local: String?, qName: String) {
+                    when (qName) {
+                        "f" -> dentroDeFormula = false
+
+                        "v", "t" -> capturandoValor = false
+
+                        "c" -> {
+                            val crudo = valor.toString()
+                            if (crudo.isNotEmpty()) {
+                                val celda = when (tipoCelda) {
+                                    "s" -> CeldaLeida(
+                                        texto = crudo.toIntOrNull()?.let { cadenas.getOrNull(it) }
+                                    )
+
+                                    "inlineStr", "str" -> CeldaLeida(texto = crudo)
+
+                                    "b" -> CeldaLeida(
+                                        texto = if (crudo == "1") "VERDADERO" else "FALSO"
+                                    )
+
+                                    "e" -> CeldaLeida(texto = crudo)
+
+                                    // #REF!, #VALUE!, etc.
+                                    else -> crudo.toDoubleOrNull()
+                                        ?.let { CeldaLeida(numero = it) }
+                                        ?: CeldaLeida(texto = crudo)
+                                }
+                                if (!celda.estaVacia) filaActual[columnaCelda] = celda
+                            }
+                            valor.setLength(0)
+                            tipoCelda = null
+                        }
+
+                        "row" -> cierraFila()
+                    }
                 }
             }
-        })
+        )
 
         return filas
     }

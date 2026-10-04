@@ -22,18 +22,18 @@ import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Repeat
-import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.SystemUpdateAlt
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -62,9 +62,9 @@ import com.carlosalbertoxw.ollin.actividades.di.Contenedor
 import com.carlosalbertoxw.ollin.actividades.domain.model.Tiempo
 import com.carlosalbertoxw.ollin.actividades.ui.recuerdaVm
 import com.carlosalbertoxw.ollin.actividades.ui.theme.LocalColoresOllin
-import java.time.Instant
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.time.Instant
 
 /**
  * Que es Ollin y con que reglas trabaja.
@@ -127,7 +127,9 @@ fun AcercaDePantalla(contenedor: Contenedor, alCerrar: () -> Unit) {
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        painter = androidx.compose.ui.res.painterResource(R.drawable.ic_ollin_glyph),
+                        painter = androidx.compose.ui.res.painterResource(
+                            R.drawable.ic_ollin_glyph
+                        ),
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.fillMaxSize()
@@ -476,9 +478,12 @@ private fun SeccionVersion(estado: AcercaDeVm.Estado, alComprobar: () -> Unit) {
  */
 private fun textoDeLaUltimaComprobacion(estado: AcercaDeVm.Estado): String = when {
     !estado.activa -> "La búsqueda de actualizaciones está apagada en Ajustes."
+
     estado.ultimaComprobacion <= 0L -> "Todavía no se ha buscado."
-    else -> "Última búsqueda: " +
-        Tiempo.fechaHora(Instant.ofEpochMilli(estado.ultimaComprobacion))
+
+    else ->
+        "Última búsqueda: " +
+            Tiempo.fechaHora(Instant.ofEpochMilli(estado.ultimaComprobacion))
 }
 
 @Composable

@@ -6,9 +6,9 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
-import kotlinx.coroutines.flow.Flow
 import com.carlosalbertoxw.ollin.actividades.domain.model.Ambito
 import com.carlosalbertoxw.ollin.actividades.domain.model.EstadoActividad
+import kotlinx.coroutines.flow.Flow
 import java.time.Instant
 import java.time.LocalDate
 

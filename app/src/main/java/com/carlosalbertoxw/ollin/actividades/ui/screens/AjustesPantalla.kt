@@ -1,6 +1,14 @@
 package com.carlosalbertoxw.ollin.actividades.ui.screens
 
+import android.Manifest
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
 import androidx.activity.compose.LocalActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -49,32 +57,24 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import kotlinx.coroutines.launch
 import com.carlosalbertoxw.ollin.actividades.data.prefs.Ajustes
 import com.carlosalbertoxw.ollin.actividades.data.prefs.ModoBloqueo
+import com.carlosalbertoxw.ollin.actividades.data.recordatorios.AlarmaRecordatorios
+import com.carlosalbertoxw.ollin.actividades.data.recordatorios.Notificaciones
 import com.carlosalbertoxw.ollin.actividades.data.seguridad.ClavePin
 import com.carlosalbertoxw.ollin.actividades.di.Contenedor
 import com.carlosalbertoxw.ollin.actividades.domain.model.Tiempo
 import com.carlosalbertoxw.ollin.actividades.ui.recuerdaVm
 import com.carlosalbertoxw.ollin.actividades.ui.seguridad.pedirCredencialDelSistema
 import com.carlosalbertoxw.ollin.actividades.ui.seguridad.segundosDeEsperaPin
-import com.carlosalbertoxw.ollin.actividades.ui.seguridad.textoDeEspera
 import com.carlosalbertoxw.ollin.actividades.ui.seguridad.telefonoAsegurado
+import com.carlosalbertoxw.ollin.actividades.ui.seguridad.textoDeEspera
 import com.carlosalbertoxw.ollin.actividades.ui.theme.LocalColoresOllin
-import com.carlosalbertoxw.ollin.actividades.data.recordatorios.Notificaciones
-import com.carlosalbertoxw.ollin.actividades.data.recordatorios.AlarmaRecordatorios
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.compose.LifecycleEventEffect
-import androidx.lifecycle.Lifecycle
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.compose.rememberLauncherForActivityResult
-import android.provider.Settings
-import android.os.Build
-import android.net.Uri
-import android.content.Intent
-import android.content.Context
-import android.Manifest
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -212,7 +212,10 @@ fun AjustesPantalla(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(Modifier.weight(1f)) {
-                    Text("Mostrar lo completado en Hoy", style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        "Mostrar lo completado en Hoy",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
                     Text(
                         "Apagado, la pantalla de hoy solo enseña lo que falta.",
                         style = MaterialTheme.typography.bodySmall,
@@ -250,8 +253,11 @@ fun AjustesPantalla(
                     onCheckedChange = { quiere ->
                         // El permiso se pide solo al encenderlo: preguntarlo al
                         // abrir Ajustes seria pedir algo que quiza nadie quiere.
-                        if (quiere) pidePermisoNotificaciones(vm::recordatorios)
-                        else vm.recordatorios(false)
+                        if (quiere) {
+                            pidePermisoNotificaciones(vm::recordatorios)
+                        } else {
+                            vm.recordatorios(false)
+                        }
                     }
                 )
             }
@@ -280,8 +286,11 @@ fun AjustesPantalla(
                 Switch(
                     checked = ajustes.avisaRespaldo,
                     onCheckedChange = { quiere ->
-                        if (quiere) pidePermisoNotificaciones(vm::avisaRespaldo)
-                        else vm.avisaRespaldo(false)
+                        if (quiere) {
+                            pidePermisoNotificaciones(vm::avisaRespaldo)
+                        } else {
+                            vm.avisaRespaldo(false)
+                        }
                     }
                 )
             }
@@ -298,7 +307,10 @@ fun AjustesPantalla(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(Modifier.weight(1f)) {
-                    Text("Avisarme de versiones nuevas", style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        "Avisarme de versiones nuevas",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
                     Text(
                         "Una vez al día Ollin pregunta al sitio si salió una versión más " +
                             "nueva y te lo enseña en Acerca de. La pregunta no lleva nada " +
@@ -454,8 +466,14 @@ private fun SeccionBloqueo(
     val confirmaConSistema = pedirCredencialDelSistema(
         actividad = actividad,
         titulo = "Confirma que eres tú",
-        alLograr = { pendiente?.invoke(); pendiente = null },
-        alFallar = { pendiente = null; aviso = it },
+        alLograr = {
+            pendiente?.invoke()
+            pendiente = null
+        },
+        alFallar = {
+            pendiente = null
+            aviso = it
+        },
         alSalirAlSistema = alSalirAlSistema
     )
 
@@ -463,8 +481,16 @@ private fun SeccionBloqueo(
         aviso = null
         when (modoActual) {
             ModoBloqueo.NINGUNO -> accion()
-            ModoBloqueo.SISTEMA -> { pendiente = accion; confirmaConSistema() }
-            ModoBloqueo.PIN -> { pendiente = accion; pidiendoPinActual = true }
+
+            ModoBloqueo.SISTEMA -> {
+                pendiente = accion
+                confirmaConSistema()
+            }
+
+            ModoBloqueo.PIN -> {
+                pendiente = accion
+                pidiendoPinActual = true
+            }
         }
     }
 
@@ -476,10 +502,15 @@ private fun SeccionBloqueo(
                     aviso = null
                     when (modo) {
                         ModoBloqueo.NINGUNO -> conConfirmacion(alQuitar)
+
                         ModoBloqueo.SISTEMA ->
-                            if (estaAsegurado) conConfirmacion(alUsarSistema)
-                            else aviso = "Tu teléfono no tiene patrón, PIN ni contraseña. " +
-                                "Configúralo en los ajustes de Android y vuelve aquí."
+                            if (estaAsegurado) {
+                                conConfirmacion(alUsarSistema)
+                            } else {
+                                aviso = "Tu teléfono no tiene patrón, PIN ni contraseña. " +
+                                    "Configúralo en los ajustes de Android y vuelve aquí."
+                            }
+
                         ModoBloqueo.PIN -> conConfirmacion { pidiendoPinNuevo = true }
                     }
                 },
@@ -498,17 +529,25 @@ private fun SeccionBloqueo(
 
     aviso?.let {
         Spacer(Modifier.height(6.dp))
-        Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+        Text(
+            it,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.error
+        )
     }
 
     Spacer(Modifier.height(8.dp))
     Text(
         when (modoActual) {
             ModoBloqueo.NINGUNO -> "Cualquiera que tome tu teléfono desbloqueado puede abrir Ollin."
-            ModoBloqueo.SISTEMA -> "Se usa el patrón, PIN o huella con que desbloqueas el teléfono. " +
-                "Ollin no guarda ningún secreto."
-            ModoBloqueo.PIN -> "Se usa un PIN solo de Ollin. Si lo olvidas no hay forma de " +
-                "recuperarlo: tendrías que reinstalar la app y perderías los datos."
+
+            ModoBloqueo.SISTEMA ->
+                "Se usa el patrón, PIN o huella con que desbloqueas el teléfono. " +
+                    "Ollin no guarda ningún secreto."
+
+            ModoBloqueo.PIN ->
+                "Se usa un PIN solo de Ollin. Si lo olvidas no hay forma de " +
+                    "recuperarlo: tendrías que reinstalar la app y perderías los datos."
         },
         style = MaterialTheme.typography.bodySmall,
         color = colores.textoTenue
@@ -531,13 +570,19 @@ private fun SeccionBloqueo(
                 pendiente?.invoke()
                 pendiente = null
             },
-            alCancelar = { pidiendoPinActual = false; pendiente = null }
+            alCancelar = {
+                pidiendoPinActual = false
+                pendiente = null
+            }
         )
     }
 
     if (pidiendoPinNuevo) {
         DialogoNuevoPin(
-            alGuardar = { pin -> alUsarPin(pin); pidiendoPinNuevo = false },
+            alGuardar = { pin ->
+                alUsarPin(pin)
+                pidiendoPinNuevo = false
+            },
             alCancelar = { pidiendoPinNuevo = false }
         )
     }

@@ -5,18 +5,18 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
-import kotlinx.coroutines.runBlocking
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.carlosalbertoxw.ollin.actividades.data.db.Habito
 import com.carlosalbertoxw.ollin.actividades.domain.model.Frecuencia
 import com.carlosalbertoxw.ollin.actividades.ui.screens.HabitosPantalla
 import com.carlosalbertoxw.ollin.actividades.ui.theme.TemaOllin
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
-import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.runner.RunWith
 
 /** La lista de habitos: alta con su cadencia, pausa, marcado y borrado. */

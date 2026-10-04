@@ -17,11 +17,7 @@ import java.time.format.DateTimeFormatter
 
 enum class Severidad { INFO, AVISO, ERROR }
 
-data class Diagnostico(
-    val severidad: Severidad,
-    val mensaje: String,
-    val fila: Int? = null
-)
+data class Diagnostico(val severidad: Severidad, val mensaje: String, val fila: Int? = null)
 
 data class OpcionesImportacion(
     /** Da de alta las categorias y habitos que el archivo mencione y no existan. */
@@ -81,7 +77,16 @@ class ImportadorExcel(private val db: OllinDatabase) {
     private companion object {
         val SINONIMOS: Map<String, List<String>> = mapOf(
             "fecha" to listOf("fecha", "dia", "date", "day"),
-            "titulo" to listOf("titulo", "actividad", "tarea", "nombre", "descripcion", "concepto", "title"),
+            "titulo" to
+                listOf(
+                    "titulo",
+                    "actividad",
+                    "tarea",
+                    "nombre",
+                    "descripcion",
+                    "concepto",
+                    "title"
+                ),
             "categoria" to listOf("categoria", "category", "rubro"),
             "ambito" to listOf("ambito", "area", "tipo"),
             "estado" to listOf("estado", "status"),
@@ -304,7 +309,13 @@ class ImportadorExcel(private val db: OllinDatabase) {
         val aInsertar = crudas.map { cruda ->
             val categoriaId = cruda.categoria?.let { indiceCategorias[it.normalizaClave()]?.id }
             if (categoriaId == null) sinCategoria++
-            construye(cruda, categoriaId, cruda.habito?.let { indiceHabitos[it.normalizaClave()]?.id })
+            construye(
+                cruda,
+                categoriaId,
+                cruda.habito?.let {
+                    indiceHabitos[it.normalizaClave()]?.id
+                }
+            )
         }
         actividadDao.insertaTodas(aInsertar)
 
@@ -382,7 +393,9 @@ class ImportadorExcel(private val db: OllinDatabase) {
         val texto = celda.texto?.trim().orEmpty()
         if (texto.isEmpty()) return null
         return runCatching { LocalTime.parse(texto) }.getOrNull()
-            ?: runCatching { LocalTime.parse(texto, DateTimeFormatter.ofPattern("H:mm")) }.getOrNull()
+            ?: runCatching {
+                LocalTime.parse(texto, DateTimeFormatter.ofPattern("H:mm"))
+            }.getOrNull()
     }
 
     private fun leeEstado(texto: String): EstadoActividad? {
@@ -392,8 +405,10 @@ class ImportadorExcel(private val db: OllinDatabase) {
         } ?: when {
             clave.startsWith("hecho") || clave.startsWith("listo") || clave == "si" ->
                 EstadoActividad.COMPLETADO
+
             clave.startsWith("corriendo") || clave.startsWith("activo") ->
                 EstadoActividad.EN_CURSO
+
             else -> null
         }
     }

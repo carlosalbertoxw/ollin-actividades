@@ -49,13 +49,13 @@ import com.carlosalbertoxw.ollin.actividades.di.Contenedor
 import com.carlosalbertoxw.ollin.actividades.domain.model.EstadoActividad
 import com.carlosalbertoxw.ollin.actividades.domain.model.Tiempo
 import com.carlosalbertoxw.ollin.actividades.domain.model.Unidad
+import com.carlosalbertoxw.ollin.actividades.ui.components.DialogoFecha
+import com.carlosalbertoxw.ollin.actividades.ui.components.DialogoHora
 import com.carlosalbertoxw.ollin.actividades.ui.components.iconoDe
 import com.carlosalbertoxw.ollin.actividades.ui.recuerdaVm
 import com.carlosalbertoxw.ollin.actividades.ui.theme.LocalColoresOllin
 import java.time.LocalDate
 import java.time.LocalTime
-import com.carlosalbertoxw.ollin.actividades.ui.components.DialogoFecha
-import com.carlosalbertoxw.ollin.actividades.ui.components.DialogoHora
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -121,7 +121,9 @@ fun CapturaPantalla(
                 isError = faltaTitulo,
                 supportingText = if (faltaTitulo) {
                     { Text("Ponle un título para poder guardarlo") }
-                } else null,
+                } else {
+                    null
+                },
                 singleLine = true
             )
 
@@ -139,7 +141,11 @@ fun CapturaPantalla(
             }
 
             Spacer(Modifier.height(16.dp))
-            Text("Categoría", style = MaterialTheme.typography.labelLarge, color = colores.textoTenue)
+            Text(
+                "Categoría",
+                style = MaterialTheme.typography.labelLarge,
+                color = colores.textoTenue
+            )
             Spacer(Modifier.height(6.dp))
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(categorias, key = { it.id }) { categoria ->
@@ -147,7 +153,15 @@ fun CapturaPantalla(
                         selected = form.categoriaId == categoria.id,
                         onClick = {
                             vm.actualiza {
-                                it.copy(categoriaId = if (it.categoriaId == categoria.id) null else categoria.id)
+                                it.copy(
+                                    categoriaId = if (it.categoriaId ==
+                                        categoria.id
+                                    ) {
+                                        null
+                                    } else {
+                                        categoria.id
+                                    }
+                                )
                             }
                         },
                         label = { Text(categoria.nombre) },
@@ -185,7 +199,9 @@ fun CapturaPantalla(
                 OutlinedTextField(
                     value = form.duracionTexto,
                     onValueChange = { texto ->
-                        vm.actualiza { it.copy(duracionTexto = texto.filter(Char::isDigit).take(4)) }
+                        vm.actualiza {
+                            it.copy(duracionTexto = texto.filter(Char::isDigit).take(4))
+                        }
                     },
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text("Duración en minutos") },
@@ -197,7 +213,9 @@ fun CapturaPantalla(
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(listOf(15, 25, 30, 45, 60, 90)) { minutos ->
                         AssistChip(
-                            onClick = { vm.actualiza { it.copy(duracionTexto = minutos.toString()) } },
+                            onClick = {
+                                vm.actualiza { it.copy(duracionTexto = minutos.toString()) }
+                            },
                             label = { Text(Tiempo.duracion(minutos)) }
                         )
                     }
@@ -223,7 +241,12 @@ fun CapturaPantalla(
                     value = form.cantidadTexto,
                     onValueChange = { texto ->
                         vm.actualiza {
-                            it.copy(cantidadTexto = texto.filter { c -> c.isDigit() || c == '.' || c == ',' })
+                            it.copy(
+                                cantidadTexto = texto.filter { c ->
+                                    c.isDigit() || c == '.' ||
+                                        c == ','
+                                }
+                            )
                         }
                     },
                     modifier = Modifier.width(140.dp),

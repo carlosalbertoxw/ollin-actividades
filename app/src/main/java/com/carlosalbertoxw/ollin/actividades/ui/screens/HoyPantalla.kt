@@ -63,6 +63,7 @@ import com.carlosalbertoxw.ollin.actividades.domain.model.EstadoActividad
 import com.carlosalbertoxw.ollin.actividades.domain.model.Tiempo
 import com.carlosalbertoxw.ollin.actividades.ui.components.AyudaDePantalla
 import com.carlosalbertoxw.ollin.actividades.ui.components.BarraAvance
+import com.carlosalbertoxw.ollin.actividades.ui.components.DialogoDeshacerHabito
 import com.carlosalbertoxw.ollin.actividades.ui.components.Punto
 import com.carlosalbertoxw.ollin.actividades.ui.components.RenglonActividad
 import com.carlosalbertoxw.ollin.actividades.ui.components.SeccionTitulo
@@ -73,7 +74,6 @@ import com.carlosalbertoxw.ollin.actividades.ui.theme.LocalColoresOllin
 import com.carlosalbertoxw.ollin.actividades.ui.theme.colorDeCategoria
 import java.time.Instant
 import java.time.LocalDate
-import com.carlosalbertoxw.ollin.actividades.ui.components.DialogoDeshacerHabito
 
 @Composable
 fun HoyPantalla(
@@ -135,8 +135,11 @@ fun HoyPantalla(
                 Column {
                     Text(Tiempo.diaRelativo(dia), style = MaterialTheme.typography.headlineSmall)
                     Text(
-                        if (totalHoy > 0) "${Tiempo.duracionLarga(totalHoy)} registradas"
-                        else "Sin tiempo registrado todavía",
+                        if (totalHoy > 0) {
+                            "${Tiempo.duracionLarga(totalHoy)} registradas"
+                        } else {
+                            "Sin tiempo registrado todavía"
+                        },
                         style = MaterialTheme.typography.bodySmall,
                         color = colores.textoTenue
                     )
@@ -231,8 +234,11 @@ fun HoyPantalla(
                     avance = avance,
                     categoria = avance.habito.categoriaId?.let(indiceCategorias::get),
                     alAlternar = {
-                        if (avance.cumplidoHoy) deshaciendo = avance
-                        else alRegistrarHabito(avance.habito.id, dia)
+                        if (avance.cumplidoHoy) {
+                            deshaciendo = avance
+                        } else {
+                            alRegistrarHabito(avance.habito.id, dia)
+                        }
                     },
                     alCronometrar = { vm.cronometraHabito(avance.habito) }
                 )
@@ -261,7 +267,9 @@ fun HoyPantalla(
                                     tint = colores.enCurso
                                 )
                             }
-                            IconButton(onClick = { vm.completaSinCronometro(detalle.actividad.id) }) {
+                            IconButton(onClick = {
+                                vm.completaSinCronometro(detalle.actividad.id)
+                            }) {
                                 Icon(
                                     Icons.Filled.Check,
                                     contentDescription = "Marcar como hecha",
@@ -331,7 +339,9 @@ private fun TarjetaCronometro(
 
     Card(
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer
+        ),
         shape = RoundedCornerShape(22.dp)
     ) {
         Column(Modifier.padding(18.dp)) {
@@ -339,7 +349,10 @@ private fun TarjetaCronometro(
                 val actividad = enCurso.actividad
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Punto(
-                        colorDeCategoria(enCurso.categoriaColor, colores.de(enCurso.categoriaAmbito)),
+                        colorDeCategoria(
+                            enCurso.categoriaColor,
+                            colores.de(enCurso.categoriaAmbito)
+                        ),
                         10
                     )
                     Spacer(Modifier.width(8.dp))
@@ -441,7 +454,9 @@ private fun MetaDelDia(
     val colores = LocalColoresOllin.current
     Card(
         modifier = modifier,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer
+        ),
         shape = RoundedCornerShape(18.dp)
     ) {
         Column(Modifier.padding(14.dp)) {
@@ -483,10 +498,9 @@ private fun MetaDelDia(
  * ordenacion sea estable: si lo que toca hoy se reacomodara cada vez que algo
  * vence, la lista dejaria de estar donde uno la dejo.
  */
-internal fun ordenDeHoy(habitos: List<HabitoConAvance>): List<HabitoConAvance> =
-    habitos
-        .filter { it.tocaHoy }
-        .sortedWith(compareBy(nullsLast<LocalDate>()) { it.vencidoDesde })
+internal fun ordenDeHoy(habitos: List<HabitoConAvance>): List<HabitoConAvance> = habitos
+    .filter { it.tocaHoy }
+    .sortedWith(compareBy(nullsLast<LocalDate>()) { it.vencidoDesde })
 
 @Composable
 private fun RenglonHabitoHoy(
@@ -568,7 +582,11 @@ private fun RenglonHabitoHoy(
             }
         }
         IconButton(onClick = alCronometrar) {
-            Icon(Icons.Filled.PlayArrow, contentDescription = "Cronometrar", tint = colores.textoTenue)
+            Icon(
+                Icons.Filled.PlayArrow,
+                contentDescription = "Cronometrar",
+                tint = colores.textoTenue
+            )
         }
         IconButton(onClick = alAlternar) {
             Icon(
