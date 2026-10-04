@@ -9,12 +9,12 @@
 | Kotlin / KSP | 2.4.20 / 2.3.12 |
 | Compose BOM | 2026.09.00 |
 | Room | 2.8.5 |
-| SQLCipher | 4.19.0 |
+| SQLCipher | 4.19.1 |
 | JDK del proyecto | 17 (`sourceCompatibility`, `jvmTarget`) |
 | JDK para correr Gradle | 17 o superior (probado con 21 y 26) |
 | compileSdk / targetSdk / minSdk | 37 / 36 / 26 |
 | Node (solo para el sitio) | 22 |
-| Vite | 6 |
+| Vite | 8 |
 
 ### El JDK de Gradle
 
