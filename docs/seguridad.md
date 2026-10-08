@@ -48,6 +48,8 @@ Con candado configurado, los **recordatorios** también salen discretos: dicen q
 
 Las transiciones de bloqueo se escriben de golpe en DataStore. Si el modo y el PIN se guardaran por separado podría quedar un "modo PIN" sin PIN, y eso deja la app cerrada sin llave.
 
+**Un modo que no se puede leer no abre la app.** Para el resto de las preferencias, lo ilegible vuelve al valor de fábrica, y para el candado el de fábrica es no tenerlo: un enum renombrado, una clave que cambió de tipo o un archivo dañado abrían la bitácora sin pedir nada. Ahora se distingue *no haber puesto candado* de *no poder leer cuál se puso*, y en el segundo caso se deduce de lo que sí se lee: si hay huella de PIN, el PIN; si no, la credencial del teléfono. Solo se abre si el teléfono no tiene ningún bloqueo, porque entonces no hay con qué cerrar. Ver `AjustesRepositorio.leeModoBloqueo`.
+
 ### El PIN propio
 
 [`ClavePin`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/data/seguridad/ClavePin.kt) nunca guarda el PIN: guarda **PBKDF2-HMAC-SHA256, 120 000 iteraciones, 256 bits**, con sal aleatoria de 16 bytes distinta por teléfono.
@@ -109,8 +111,8 @@ Ollin se instala fuera de la tienda, así que nadie avisa de una corrección: si
 
 Tres cierres, porque el enlace acaba abriéndose en el navegador de alguien y viene de fuera:
 
-- **Solo `https`.** Si la dirección del APK no lo es, se ignora; si no queda ninguna válida, el archivo se descarta entero.
-- **Las redirecciones se siguen a mano** (`instanceFollowRedirects = false`), un solo salto y solo si el destino también es `https`. A mano y no automáticas justamente para poder exigirlo: una que se quedara en `http` dejaría la respuesta viajando en claro. Y se sigue una porque la dirección va compilada dentro de cada APK —mudar el sitio no puede apagar el aviso en todas las instalaciones a la vez—.
+- **Solo una descarga de las releases de este repositorio.** Que fuera `https` no bastaba: el JSON llega por el dominio propio, y quien se quedara con él podría anunciar a todas las instalaciones el enlace que quisiera. El enlace tiene que empezar por `https://github.com/carlosalbertoxw/ollin-actividades/releases/download/`, que no cambia de dueño con el dominio; si no, el archivo se descarta entero. Las notas se recortan a 300 caracteres. Ver [actualizaciones](actualizaciones.md#solo-una-descarga-de-las-releases).
+- **Las redirecciones se siguen a mano** (`instanceFollowRedirects = false`), un solo salto y solo si el destino también es `https` y es el propio sitio (`carlosalbertoxw.com` o `carlosalbertoxw.github.io`). A mano y no automáticas justamente para poder exigirlo: una que se quedara en `http` dejaría la respuesta viajando en claro. Y se sigue una porque la dirección va compilada dentro de cada APK —mudar el sitio no puede apagar el aviso en todas las instalaciones a la vez—.
 - **`usesCleartextTraffic="false"`** en el manifiesto, que lo prohíbe a nivel de plataforma por si lo anterior fallara.
 
 La respuesta tiene un tope de 64 KB. El archivo real ronda los 400 bytes; el tope está porque es lo único que entra a la app desde la red, y sin límite un servidor que nunca cierra la respuesta agota la memoria del teléfono.

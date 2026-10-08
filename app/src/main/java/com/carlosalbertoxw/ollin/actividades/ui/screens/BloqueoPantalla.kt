@@ -134,17 +134,22 @@ private fun DesbloqueoPin(
             verificando = true
             error = null
             ambito.launch {
-                val correcto = ClavePin.coincide(pin, ajustes.pinHash, ajustes.pinSal)
-                verificando = false
-                if (correcto) {
-                    preferencias.limpiaFallosPin()
-                    alDesbloquear()
-                } else {
-                    // El fallo se apunta antes de decirlo: si el proceso muere
-                    // justo aqui, lo que no puede perderse es la cuenta.
-                    preferencias.sumaFalloPin()
-                    error = "PIN incorrecto"
-                    pin = ""
+                // `verificando` se suelta al final, con el fallo ya escrito:
+                // soltarlo antes dejaba el boton listo para otro intento
+                // mientras la cuenta —y con ella la espera— aun no subia.
+                try {
+                    if (ClavePin.coincide(pin, ajustes.pinHash, ajustes.pinSal)) {
+                        preferencias.limpiaFallosPin()
+                        alDesbloquear()
+                    } else {
+                        // El fallo se apunta antes de decirlo: si el proceso muere
+                        // justo aqui, lo que no puede perderse es la cuenta.
+                        preferencias.sumaFalloPin()
+                        error = "PIN incorrecto"
+                        pin = ""
+                    }
+                } finally {
+                    verificando = false
                 }
             }
         }

@@ -85,7 +85,7 @@ class ActualizacionesTest {
         val publicada = ComprobadorActualizaciones.lee(JSON_1_2_0)!!
 
         assertEquals(Version(1, 2, 0), publicada.version)
-        assertEquals("https://ejemplo.invalido/ollin-1.2.0.apk", publicada.url)
+        assertEquals(APK_1_2_0, publicada.url)
         assertEquals("Arregla el cronómetro.", publicada.notas)
         assertEquals("2026-09-15", publicada.publicadaEn)
     }
@@ -107,10 +107,52 @@ class ActualizacionesTest {
         assertNull(ComprobadorActualizaciones.lee("esto no es json"))
     }
 
+    /**
+     * El sitio vive en el dominio propio, y el dominio propio es justo lo que se
+     * puede perder. Sin una descarga oficial no hay nada que ofrecer.
+     */
     @Test
-    fun `si no hay apk sirve el sitio, que es a donde se manda al usuario`() {
-        val soloSitio = """{"version":"1.2.0","sitio":"https://ejemplo.invalido/"}"""
-        assertEquals("https://ejemplo.invalido/", ComprobadorActualizaciones.lee(soloSitio)!!.url)
+    fun `sin apk no basta el sitio`() {
+        val soloSitio =
+            """{"version":"1.2.0","sitio":"https://carlosalbertoxw.com/ollin-actividades/"}"""
+        assertNull(ComprobadorActualizaciones.lee(soloSitio))
+    }
+
+    /**
+     * Quien se quedara con el dominio podria anunciar a todas las instalaciones
+     * el enlace que quisiera. Https no basta: tiene que ser una release de aqui.
+     */
+    @Test
+    fun `solo se acepta una descarga de las releases de este repositorio`() {
+        val ajenos = listOf(
+            "https://ejemplo.invalido/ollin-1.2.0.apk",
+            "https://github.com/otra-cuenta/ollin-actividades/releases/download/v1/x.apk",
+            "https://github.com/carlosalbertoxw/ollin-actividades-falsa/releases/download/v1/x.apk",
+            "https://github.com.ejemplo.invalido/carlosalbertoxw/ollin-actividades/releases/download/x",
+            "https://github.com@ejemplo.invalido/carlosalbertoxw/ollin-actividades/releases/download/x",
+            "https://github.com:8443/carlosalbertoxw/ollin-actividades/releases/download/v1/x.apk",
+            "${APK_BASE}../../../../otra-cuenta/repo/releases/download/v1/x.apk",
+            "${APK_BASE}%2E%2E/%2e%2e/%2e%2e/%2e%2e/otra-cuenta/repo/x.apk",
+            "http://github.com/carlosalbertoxw/ollin-actividades/releases/download/v1/x.apk"
+        )
+
+        ajenos.forEach { apk ->
+            assertNull(
+                "No debe aceptarse $apk",
+                ComprobadorActualizaciones.lee("""{"version":"1.2.0","apk":"$apk"}""")
+            )
+        }
+    }
+
+    @Test
+    fun `una nota mas larga que el tope se recorta`() {
+        val larga = "a".repeat(ComprobadorActualizaciones.TOPE_NOTAS * 3)
+        val publicada = ComprobadorActualizaciones.lee(
+            """{"version":"1.2.0","apk":"$APK_1_2_0","notas":"$larga"}"""
+        )!!
+
+        assertEquals(ComprobadorActualizaciones.TOPE_NOTAS, publicada.notas!!.length)
+        assertTrue(publicada.notas!!.endsWith("…"))
     }
 
     // ------------------------------------------------------- redirecciones
@@ -124,8 +166,8 @@ class ActualizacionesTest {
     @Test
     fun `un 301 a https se sigue`() {
         assertEquals(
-            "https://ollin.ejemplo/version.json",
-            siguienteSalto(301, "https://ollin.ejemplo/version.json")
+            "https://carlosalbertoxw.com/ollin-actividades/version.json",
+            siguienteSalto(301, "https://carlosalbertoxw.com/ollin-actividades/version.json")
         )
     }
 
@@ -134,8 +176,8 @@ class ActualizacionesTest {
         listOf(301, 302, 303, 307, 308).forEach { codigo ->
             assertEquals(
                 "El $codigo tambien es una mudanza",
-                "https://ollin.ejemplo/x.json",
-                siguienteSalto(codigo, "https://ollin.ejemplo/x.json")
+                "https://carlosalbertoxw.com/ollin-actividades/x.json",
+                siguienteSalto(codigo, "https://carlosalbertoxw.com/ollin-actividades/x.json")
             )
         }
     }
@@ -148,17 +190,30 @@ class ActualizacionesTest {
      */
     @Test
     fun `un salto que sale de https no se sigue`() {
-        assertNull(siguienteSalto(301, "http://ollin.ejemplo/version.json"))
-        assertNull(siguienteSalto(302, "ftp://ollin.ejemplo/version.json"))
+        assertNull(siguienteSalto(301, "http://carlosalbertoxw.com/ollin-actividades/version.json"))
+        assertNull(siguienteSalto(302, "ftp://carlosalbertoxw.com/ollin-actividades/version.json"))
         assertNull(siguienteSalto(301, "/version.json"))
         assertNull(siguienteSalto(301, null))
         assertNull(siguienteSalto(301, ""))
     }
 
+    /** La mudanza es de github.io al dominio propio; cualquier otro destino no lo es. */
+    @Test
+    fun `un salto a otro dominio no se sigue`() {
+        assertEquals(
+            "https://carlosalbertoxw.github.io/ollin-actividades/version.json",
+            siguienteSalto(301, "https://carlosalbertoxw.github.io/ollin-actividades/version.json")
+        )
+        assertNull(siguienteSalto(301, "https://ejemplo.invalido/version.json"))
+        assertNull(siguienteSalto(301, "https://carlosalbertoxw.com.ejemplo.invalido/version.json"))
+        assertNull(siguienteSalto(301, "https://carlosalbertoxw.com@ejemplo.invalido/version.json"))
+        assertNull(siguienteSalto(301, "https://carlosalbertoxw.com:8443/version.json"))
+    }
+
     @Test
     fun `una respuesta que no es 3xx no es una mudanza`() {
-        assertNull(siguienteSalto(200, "https://ollin.ejemplo/x.json"))
-        assertNull(siguienteSalto(404, "https://ollin.ejemplo/x.json"))
+        assertNull(siguienteSalto(200, "https://carlosalbertoxw.com/ollin-actividades/x.json"))
+        assertNull(siguienteSalto(404, "https://carlosalbertoxw.com/ollin-actividades/x.json"))
         assertNull(siguienteSalto(500, null))
     }
 
@@ -245,7 +300,7 @@ class ActualizacionesTest {
 
         val guardado = ajustes.ajustes.first()
         assertEquals("1.2.0", guardado.versionDisponible)
-        assertEquals("https://ejemplo.invalido/ollin-1.2.0.apk", guardado.urlDeDescarga)
+        assertEquals(APK_1_2_0, guardado.urlDeDescarga)
         assertEquals("Arregla el cronómetro.", guardado.notasDeVersion)
         assertEquals(cuando(), guardado.ultimaComprobacion)
     }
@@ -281,11 +336,14 @@ class ActualizacionesTest {
     private fun cuando() = 1_800_000_000_000L
 
     private companion object {
+        const val APK_BASE = ComprobadorActualizaciones.DESCARGAS_OFICIALES
+        const val APK_1_2_0 = "${APK_BASE}v1.2.0/ollin-actividades-1.2.0.apk"
+
         val JSON_1_2_0 = """
             {
               "version": "1.2.0",
               "publicada": "2026-09-15",
-              "apk": "https://ejemplo.invalido/ollin-1.2.0.apk",
+              "apk": "$APK_1_2_0",
               "sitio": "https://ejemplo.invalido/",
               "notas": "Arregla el cronómetro."
             }

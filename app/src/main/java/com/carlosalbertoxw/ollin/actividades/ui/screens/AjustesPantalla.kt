@@ -426,8 +426,8 @@ private fun SeccionBloqueo(
     alQuitar: () -> Unit,
     alUsarSistema: () -> Unit,
     alUsarPin: (String) -> Unit,
-    alFallarPin: () -> Unit,
-    alAcertarPin: () -> Unit,
+    alFallarPin: suspend () -> Unit,
+    alAcertarPin: suspend () -> Unit,
     alSalirAlSistema: () -> Unit
 ) {
     val contexto = LocalContext.current
@@ -591,8 +591,8 @@ private fun SeccionBloqueo(
 @Composable
 private fun DialogoPinActual(
     ajustes: Ajustes,
-    alFallar: () -> Unit,
-    alAcertar: () -> Unit,
+    alFallar: suspend () -> Unit,
+    alAcertar: suspend () -> Unit,
     alConfirmar: () -> Unit,
     alCancelar: () -> Unit
 ) {
@@ -645,15 +645,20 @@ private fun DialogoPinActual(
                     verificando = true
                     error = null
                     ambito.launch {
-                        val correcto = ClavePin.coincide(pin, ajustes.pinHash, ajustes.pinSal)
-                        verificando = false
-                        if (correcto) {
-                            alAcertar()
-                            alConfirmar()
-                        } else {
-                            alFallar()
-                            error = "PIN incorrecto"
-                            pin = ""
+                        // `verificando` se suelta al final, con el fallo ya
+                        // escrito: soltarlo antes dejaba el boton listo para
+                        // otro intento mientras la cuenta aun no subia.
+                        try {
+                            if (ClavePin.coincide(pin, ajustes.pinHash, ajustes.pinSal)) {
+                                alAcertar()
+                                alConfirmar()
+                            } else {
+                                alFallar()
+                                error = "PIN incorrecto"
+                                pin = ""
+                            }
+                        } finally {
+                            verificando = false
                         }
                     }
                 }

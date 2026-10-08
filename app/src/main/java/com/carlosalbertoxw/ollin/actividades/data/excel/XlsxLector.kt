@@ -30,6 +30,14 @@ data class CeldaLeida(val texto: String? = null, val numero: Double? = null) {
 
         else -> null
     }
+
+    companion object {
+        /**
+         * La que rellena los huecos. Una sola para todo el libro: es inmutable, y
+         * crear una por hueco costaba un objeto por cada columna saltada.
+         */
+        val VACIA = CeldaLeida()
+    }
 }
 
 data class HojaLeida(val nombre: String, val filas: List<List<CeldaLeida>>)
@@ -71,6 +79,18 @@ object XlsxLector {
     internal const val MAXIMO_FILAS = 1_048_576
     internal const val MAXIMO_COLUMNAS = 16_384
 
+    /**
+     * Las celdas que el libro entero puede pedir, huecos incluidos.
+     *
+     * Los dos topes de arriba acotan cada eje, no su producto: una sola celda en
+     * XFD obliga a rellenar 16 384 columnas, y diez mil filas asi caben en un
+     * archivo de pocos kilobytes y piden 164 millones de casillas. Una bitacora
+     * real, con decenas de miles de registros de trece columnas, se queda en
+     * menos de un millon; cuatro dan holgura de sobra y siguen cabiendo en la
+     * memoria de cualquier telefono.
+     */
+    internal const val LIMITE_CELDAS = 4_000_000L
+
     /** Todo lo que permitiria a un XML de fuera hacer algo mas que describir celdas. */
     private val BANDERAS_CERRADAS = listOf(
         "http://apache.org/xml/features/disallow-doctype-decl" to true,
@@ -95,11 +115,14 @@ object XlsxLector {
         val relaciones = partes["xl/_rels/workbook.xml.rels"]?.let(::leeRelaciones) ?: emptyMap()
         val definiciones = leeDefinicionHojas(partes.getValue("xl/workbook.xml"))
 
+        // Uno para todo el libro y no uno por hoja: repartir el tope entre muchas
+        // hojas pequenas lo multiplicaria por el numero de hojas.
+        val presupuesto = Presupuesto(LIMITE_CELDAS)
         val hojas = definiciones.mapNotNull { (nombre, rid) ->
             val destino = relaciones[rid] ?: return@mapNotNull null
             val ruta = normalizaRuta(destino)
             val bytes = partes[ruta] ?: return@mapNotNull null
-            HojaLeida(nombre, leeFilas(bytes, cadenas))
+            HojaLeida(nombre, leeFilas(bytes, cadenas, presupuesto))
         }
 
         if (hojas.isEmpty()) throw ArchivoInvalido("El libro no tiene hojas legibles.")
@@ -400,7 +423,19 @@ object XlsxLector {
         return lista
     }
 
-    private fun leeFilas(bytes: ByteArray, cadenas: List<String>): List<List<CeldaLeida>> {
+    /** Las celdas que todavia se pueden rellenar antes de dar el libro por invalido. */
+    private class Presupuesto(var restante: Long) {
+        fun gasta(celdas: Int) {
+            restante -= celdas
+            if (restante < 0) throw demasiadoGrande()
+        }
+    }
+
+    private fun leeFilas(
+        bytes: ByteArray,
+        cadenas: List<String>,
+        presupuesto: Presupuesto
+    ): List<List<CeldaLeida>> {
         val filas = mutableListOf<List<CeldaLeida>>()
         var filaActual = HashMap<Int, CeldaLeida>()
         var numeroFilaActual = 0
@@ -416,7 +451,10 @@ object XlsxLector {
             if (numeroFilaActual <= 0) return
             // Rellena los huecos que el archivo omite y las filas salteadas.
             while (filas.size < numeroFilaActual - 1) filas.add(emptyList())
-            val fila = (1..maxColFila).map { filaActual[it] ?: CeldaLeida() }
+            // Se cobra antes de pedir la memoria, no despues: el punto es no
+            // llegar a reservarla.
+            presupuesto.gasta(maxColFila)
+            val fila = (1..maxColFila).map { filaActual[it] ?: CeldaLeida.VACIA }
             if (filas.size == numeroFilaActual - 1) {
                 filas.add(fila)
             } else {

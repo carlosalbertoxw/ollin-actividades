@@ -47,8 +47,11 @@ class AjustesVm(private val repo: AjustesRepositorio) : ViewModel() {
      * El contador de fallos del PIN es el mismo que el de la pantalla de
      * bloqueo. Este dialogo tambien abre la puerta —desde aqui se quita el
      * candado—, y llevarle una cuenta aparte seria dejar una entrada sin freno.
+     *
+     * Suspende en vez de lanzar: el dialogo espera a que el fallo quede escrito
+     * antes de volver a dejar probar, igual que la pantalla de bloqueo.
      */
-    fun sumaFalloPin() = viewModelScope.launch { repo.sumaFalloPin() }
+    suspend fun sumaFalloPin() = repo.sumaFalloPin()
 
-    fun limpiaFallosPin() = viewModelScope.launch { repo.limpiaFallosPin() }
+    suspend fun limpiaFallosPin() = repo.limpiaFallosPin()
 }

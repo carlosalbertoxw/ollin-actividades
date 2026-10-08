@@ -1,5 +1,6 @@
 package com.carlosalbertoxw.ollin.actividades
 
+import com.carlosalbertoxw.ollin.actividades.data.excel.CeldaLeida
 import com.carlosalbertoxw.ollin.actividades.data.excel.XlsxLector
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -194,6 +195,39 @@ class XlsxLectorSeguridadTest {
         )
 
         assertTrue(e.message!!.contains("tamaño máximo"))
+    }
+
+    /**
+     * Cada eje cabe en su tope, pero su producto no: una celda vacia en XFD
+     * obliga a rellenar 16 384 columnas, y diez mil filas asi pedian 164 millones
+     * de casillas desde un archivo que comprimido no llega a unas decenas de KB.
+     */
+    @Test
+    fun `muchas filas que llegan hasta XFD se rechazan antes de agotar la memoria`() {
+        val filas = (1..10_000).joinToString("") { n -> """<row r="$n"><c r="XFD$n"/></row>""" }
+        val bytes = libro(filas = filas)
+        assertTrue(
+            "El archivo tiene que ser pequeno: es lo que lo hace peligroso",
+            bytes.size < 64 * 1024
+        )
+
+        val e = rechaza(bytes, "Un libro que pide mas celdas que el tope no debe leerse")
+
+        assertTrue(e.message!!.contains("demasiado grande"))
+    }
+
+    /** Las casillas de relleno son la misma: no cuestan un objeto cada una. */
+    @Test
+    fun `los huecos comparten una sola celda vacia`() {
+        val leido = XlsxLector.lee(
+            ByteArrayInputStream(
+                libro(filas = """<row r="1"><c r="D1" t="inlineStr"><is><t>x</t></is></c></row>""")
+            )
+        )
+
+        val fila = leido.hoja("Registros")!!.filas[0]
+        assertEquals(4, fila.size)
+        assertTrue(fila.take(3).all { it === CeldaLeida.VACIA })
     }
 
     /** La ultima fila y la ultima columna de Excel siguen siendo legales. */

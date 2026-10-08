@@ -64,7 +64,10 @@ class AcercaDeVm(
         Estado(
             instalada = instalada,
             disponible = Version.de(ajustes.versionDisponible),
-            urlDeDescarga = ajustes.urlDeDescarga,
+            // Se vuelve a comprobar al leerla: la guardada puede venir de una
+            // version anterior, que aceptaba cualquier https.
+            urlDeDescarga = ajustes.urlDeDescarga
+                ?.takeIf(ComprobadorActualizaciones::esDescargaOficial),
             notas = ajustes.notasDeVersion,
             ultimaComprobacion = ajustes.ultimaComprobacion,
             activa = ajustes.buscarActualizaciones,

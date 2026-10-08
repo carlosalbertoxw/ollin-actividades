@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.net.HttpURLConnection
+import java.net.URI
 import java.net.URL
 
 /** Lo que el sitio dice de la ultima version publicada. */
@@ -121,20 +122,58 @@ class ComprobadorActualizaciones(
             val version = Version.de(objeto.optString("version").takeIf { it.isNotBlank() })
                 ?: return null
 
-            // Solo https, y solo si viene. Un enlace en claro que llegara desde
-            // fuera acabaria abriendo el navegador en una descarga manipulable
-            // por cualquiera que este en medio de la red.
-            val url = objeto.optString("apk")
-                .takeIf { it.startsWith("https://") }
-                ?: objeto.optString("sitio").takeIf { it.startsWith("https://") }
-                ?: return null
+            // Solo una descarga de las releases de este repositorio. Que fuera
+            // https no bastaba: el JSON llega por el dominio propio, y quien se
+            // quedara con el —uno vencido, un DNS secuestrado— podria anunciar
+            // a todas las instalaciones una "version nueva" con el enlace que
+            // quisiera. Las releases de GitHub no cambian de dueno con el
+            // dominio. `sitio` ya no sirve de respaldo por la misma razon: el
+            // sitio vive en ese dominio.
+            val url = objeto.optString("apk").takeIf(::esDescargaOficial) ?: return null
 
             return VersionPublicada(
                 version = version,
                 url = url,
-                notas = objeto.optString("notas").takeIf { it.isNotBlank() },
+                notas = objeto.optString("notas").takeIf { it.isNotBlank() }?.let(::recorta),
                 publicadaEn = objeto.optString("publicada").takeIf { it.isNotBlank() }
             )
+        }
+
+        /**
+         * Lo unico que la tarjeta de Acerca de puede abrir. Termina en barra para
+         * que `ollin-actividades-falsa` no pase por `ollin-actividades`.
+         */
+        internal const val DESCARGAS_OFICIALES =
+            "https://github.com/carlosalbertoxw/ollin-actividades/releases/download/"
+
+        /**
+         * Lo que el sitio genera son 280 caracteres como mucho; esto es por si lo
+         * que llega no lo genero el sitio.
+         */
+        internal const val TOPE_NOTAS = 300
+
+        private fun recorta(notas: String): String =
+            if (notas.length <= TOPE_NOTAS) notas else notas.take(TOPE_NOTAS - 1).trimEnd() + "…"
+
+        /**
+         * Si [url] es una descarga de las releases de este repositorio.
+         *
+         * Se compara la URL ya interpretada y no el texto: `https://github.com@otro.sitio/`
+         * empieza igual y apunta a otro lado, y los `..` —tambien escritos como
+         * `%2e`, que el navegador resuelve igual— sacarian la ruta del repositorio.
+         */
+        internal fun esDescargaOficial(url: String?): Boolean {
+            if (url.isNullOrBlank() || !url.startsWith(DESCARGAS_OFICIALES)) return false
+            val escapaDeLaRuta = url.contains("..") ||
+                url.contains("%2e", ignoreCase = true) ||
+                url.contains('\\')
+            if (escapaDeLaRuta) return false
+            val uri = runCatching { URI(url) }.getOrNull() ?: return false
+            return uri.scheme == "https" &&
+                uri.rawUserInfo == null &&
+                uri.port == -1 &&
+                uri.host.equals("github.com", ignoreCase = true) &&
+                uri.rawPath.orEmpty().startsWith(URI(DESCARGAS_OFICIALES).rawPath)
         }
     }
 }
@@ -235,12 +274,23 @@ private fun pide(url: String): Respuesta {
  * mano: un 301 desde https que apunte a http dejaria la respuesta viajando en
  * claro, y quien este en medio de la red podria anunciar la version que
  * quisiera con el enlace de descarga que quisiera.
+ *
+ * **Y solo a casa.** El salto existe para la mudanza de `github.io` al dominio
+ * propio; cualquier otro destino no es una mudanza del sitio, y no hay por que
+ * pedirle a un tercero que diga que version toca.
  */
 internal fun siguienteSalto(codigo: Int, destino: String?): String? {
     if (codigo !in 300..399) return null
     val limpio = destino?.trim().orEmpty()
-    return limpio.takeIf { it.startsWith("https://", ignoreCase = true) }
+    if (!limpio.startsWith("https://", ignoreCase = true)) return null
+    val uri = runCatching { URI(limpio) }.getOrNull() ?: return null
+    val host = uri.host?.lowercase() ?: return null
+    if (uri.rawUserInfo != null || uri.port != -1 || host !in HOSTS_DEL_SITIO) return null
+    return limpio
 }
+
+/** A donde puede mudarse el sitio: su dominio propio y el de GitHub Pages. */
+internal val HOSTS_DEL_SITIO = setOf("carlosalbertoxw.com", "carlosalbertoxw.github.io")
 
 /** 64 K caracteres. El archivo real ronda los 400 bytes; esto es holgura, no expectativa. */
 private const val TOPE_CARACTERES = 64 * 1024
