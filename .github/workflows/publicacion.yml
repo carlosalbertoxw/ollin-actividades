@@ -153,9 +153,13 @@ jobs:
           target: google_apis
           arch: x86_64
           disable-animations: true
+          # `lenient` por el UTP, igual que en pruebas-instrumentadas.yml: se
+          # descarga solo con emulador y no esta en la metadata. Este job solo
+          # prueba; el APK que se publica sale del job `publicar`, en estricto.
           script: >
             ./gradlew connectedDebugAndroidTest
             -Pandroid.testInstrumentationRunnerArguments.class=com.carlosalbertoxw.ollin.actividades.db.MigracionesTest
+            --dependency-verification=lenient
             --no-daemon
 
       - name: Guardar el informe
@@ -191,6 +195,11 @@ jobs:
 
     permissions:
       contents: write
+      # Los tres para atestar el APK y su SBOM: el token OIDC con el que
+      # Sigstore emite el certificado, y guardar la atestacion en el repo.
+      id-token: write
+      attestations: write
+      artifact-metadata: write
 
     # Los secretos de firma se pueden mover a este environment y borrarse de los
     # del repositorio: asi solo existen para este job, y si se le pone revision
@@ -241,10 +250,11 @@ jobs:
           [ -n "${CLAVE:-}" ] || faltan+=("OLLIN_ACTIVIDADES_KEY_PASSWORD")
 
           if [ ${#faltan[@]} -gt 0 ]; then
-            echo "::error::Faltan estos secretos del repositorio: ${faltan[*]}"
+            echo "::error::Faltan estos secretos: ${faltan[*]}"
             echo "::error::Sin ellos el APK saldría sin firmar y no se instala en ningún teléfono."
-            echo "::error::Van en Settings → Secrets and variables → Actions, como secretos del"
-            echo "::error::repositorio y no de un entorno. Los nombres van tal cual. Ver docs/publicacion.md."
+            echo "::error::Van de preferencia en Settings → Environments → release, limitado a los tags v*;"
+            echo "::error::como secretos del repositorio también sirven. Los nombres van tal cual."
+            echo "::error::Ver docs/publicacion.md#los-secretos."
             exit 1
           fi
 
@@ -273,7 +283,7 @@ jobs:
           OLLIN_ACTIVIDADES_STORE_PASSWORD: ${{ secrets.OLLIN_ACTIVIDADES_STORE_PASSWORD }}
           OLLIN_ACTIVIDADES_KEY_ALIAS: ${{ secrets.OLLIN_ACTIVIDADES_KEY_ALIAS }}
           OLLIN_ACTIVIDADES_KEY_PASSWORD: ${{ secrets.OLLIN_ACTIVIDADES_KEY_PASSWORD }}
-        run: ./gradlew assembleRelease bundleRelease --no-daemon --stacktrace
+        run: ./gradlew assembleRelease bundleRelease :app:cyclonedxDirectBom --no-daemon --stacktrace
 
       # Sin credenciales el build no falla, saca `app-release-unsigned.apk` y
       # sigue adelante. Es lo que se quiere al compilar en local; aqui seria un
@@ -320,7 +330,7 @@ jobs:
           } >> notas.md
           rm -f certificados.txt
 
-      # Se adjunta el APK y nada mas. El .aab se compila —un fallo de bundling
+      # Se adjuntan el APK, su huella y su SBOM. El .aab se compila —un fallo de bundling
       # es un fallo igual y conviene verlo aqui— pero no se publica: no se
       # instala en ningun telefono, solo sirve para subirlo a Play, y una
       # descarga que no hace lo que promete confunde a quien llega de fuera.
@@ -334,6 +344,25 @@ jobs:
           # comprobar que lo que bajo es lo que salio de esta compilacion.
           ( cd entrega && sha256sum ./*.apk > checksums.txt )
           cat entrega/checksums.txt
+
+          # El inventario de lo que lleva el APK, para responder "¿esta version
+          # trae la biblioteca vulnerable?" sin tener que recompilarla. Ver el
+          # bloque cyclonedxDirectBom de app/build.gradle.kts.
+          cp app/build/reports/cyclonedx-direct/bom.json "entrega/ollin-actividades-$VERSION.cdx.json"
+
+      # La firma dice quien firmo; la atestacion dice desde que commit y con
+      # que flujo salio el binario, firmada por Sigstore con la identidad de
+      # este workflow. Se comprueba con `gh attestation verify` (ver el README).
+      - name: Atestar la procedencia del APK
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: entrega/*.apk
+
+      - name: Atestar el SBOM del APK
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: entrega/*.apk
+          sbom-path: entrega/ollin-actividades-${{ needs.etiqueta.outputs.version }}.cdx.json
 
       - name: Crear la release
         env:

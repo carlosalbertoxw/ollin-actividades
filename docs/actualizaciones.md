@@ -76,19 +76,23 @@ Lo publica el sitio en `https://carlosalbertoxw.com/ollin-actividades/version.js
 | Campo | Obligatorio | Qué pasa si falta |
 |---|---|---|
 | `version` | Sí | El archivo entero se descarta |
-| `apk` | Sí, o `sitio` | Se usa `sitio`; sin ninguno de los dos, se descarta |
-| `notas` | No | La tarjeta enseña solo el número de versión |
-| `publicada`, `tamanoBytes`, `sha256`, `release` | No | Solo los usa la página web |
+| `apk` | Sí | El archivo entero se descarta. Tiene que ser una descarga de las releases de este repositorio |
+| `notas` | No | La tarjeta enseña solo el número de versión. Pasados 300 caracteres se recorta |
+| `sitio`, `publicada`, `tamanoBytes`, `sha256`, `release` | No | Solo los usa la página web. La app ya no usa `sitio` (ver abajo) |
 
 **Los nombres de los campos no se renombran, se agregan.** Los lee `ComprobadorActualizaciones.lee()`, y cambiar uno rompe el aviso de todas las versiones que ya están instaladas, que por definición no se pueden actualizar para arreglarlo.
 
-### Solo `https`
+### Solo una descarga de las releases
 
-Un enlace en claro que llegara desde fuera acabaría abriendo el navegador en una descarga manipulable por cualquiera que esté en medio de la red. Si `apk` no empieza por `https://`, se ignora y se cae a `sitio`; si tampoco, el archivo se descarta entero.
+El enlace acaba abriéndose en el navegador de alguien, y viene de fuera. Hasta la 1.2.1 bastaba con que fuera `https`, pero eso no protegía de lo que más probablemente puede salir mal: el JSON llega por el dominio propio, y quien se quedara con él —un dominio vencido, un DNS secuestrado— podría anunciar a **todas** las instalaciones una «versión nueva» con el enlace que quisiera. Android no instalaría encima un APK con otra firma, pero las notas podrían pedir desinstalar primero, y eso borra la bitácora.
 
-### Un salto, y solo hacia `https`
+Por eso `apk` tiene que empezar por `https://github.com/carlosalbertoxw/ollin-actividades/releases/download/` (`esDescargaOficial`). Las releases de GitHub no cambian de dueño con el dominio. La comprobación se hace sobre la URL interpretada y no solo sobre el texto: se rechazan usuario en la URL (`github.com@otro.sitio`), un puerto, y los `..` —también escritos como `%2e`, que el navegador resuelve igual— que sacarían la ruta del repositorio.
 
-La petición va con `instanceFollowRedirects = false`, pero no para rechazar las redirecciones: para seguirlas a mano y poder exigir que el destino siga siendo `https`. `HttpURLConnection` ni siquiera sigue por su cuenta las que cambian de protocolo, y una que se quedara en `http` dejaría la respuesta viajando en claro.
+`sitio` dejó de servir de respaldo por la misma razón: el sitio vive en el dominio propio. Sin un `apk` válido el archivo se descarta. La URL que quedó guardada de una comprobación anterior se vuelve a validar al pintar *Acerca de*.
+
+### Un salto, solo hacia `https` y solo a casa
+
+La petición va con `instanceFollowRedirects = false`, pero no para rechazar las redirecciones: para seguirlas a mano y poder exigir que el destino siga siendo `https` y esté en `carlosalbertoxw.com` o `carlosalbertoxw.github.io` (`HOSTS_DEL_SITIO`). Cualquier otro destino no es una mudanza del sitio. `HttpURLConnection` ni siquiera sigue por su cuenta las que cambian de protocolo, y una que se quedara en `http` dejaría la respuesta viajando en claro.
 
 Se sigue **un** salto. Hace falta porque la dirección va compilada dentro de cada APK y no se puede corregir en los que ya están instalados: poner un dominio propio delante de GitHub Pages deja el `.github.io` devolviendo un `301` para siempre, y sin seguirlo el aviso se apaga en todas las instalaciones a la vez. Más de un salto no aporta nada para eso y sí permite que una cadena de redirecciones dé vueltas sin fin.
 
@@ -104,6 +108,6 @@ Tiene un tope de 64 KB. El archivo real ronda los 400 bytes; el tope está porqu
 
 ## Pruebas
 
-[`ActualizacionesTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/ActualizacionesTest.kt), en la JVM y sin red: la descarga entra por parámetro, así que todo lo que decide algo se prueba con un JSON escrito a mano. Cubre el orden de las versiones, el rechazo de enlaces en claro, qué redirecciones se siguen y cuáles no, la ventana de un día, el reloj movido hacia atrás y que un fallo no gaste el día.
+[`ActualizacionesTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/ActualizacionesTest.kt), en la JVM y sin red: la descarga entra por parámetro, así que todo lo que decide algo se prueba con un JSON escrito a mano. Cubre el orden de las versiones, el rechazo de enlaces en claro o fuera de las releases, el tope de las notas, qué redirecciones se siguen y cuáles no, la ventana de un día, el reloj movido hacia atrás y que un fallo no gaste el día.
 
 Lo único sin cubrir es el `HttpURLConnection` en sí, que no toma ninguna decisión.

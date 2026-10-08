@@ -8,7 +8,8 @@
 # Estos enums no se guardan como numero sino como su nombre, y se releen con
 # valueOf(). Si R8 los renombra, lo guardado deja de reconocerse y se cae al
 # valor por omision sin avisar: la seleccion de pestanas del usuario se pierde,
-# y en el caso del bloqueo la app se abriria sin pedir la llave.
+# y en el caso del bloqueo la app tendria que deducir el candado de lo que
+# queda (ver AjustesRepositorio.leeModoBloqueo) en vez de leer el que se puso.
 -keepclassmembers enum com.carlosalbertoxw.ollin.actividades.data.excel.EsquemaExportacion { *; }
 -keepclassmembers enum com.carlosalbertoxw.ollin.actividades.data.excel.HojaExportable { *; }
 -keepclassmembers enum com.carlosalbertoxw.ollin.actividades.data.prefs.ModoBloqueo { *; }

@@ -43,6 +43,13 @@ lo instales. En el teléfono, sin computadora, lo comprueba también
 [AppVerifier](https://github.com/soupslurpr/AppVerifier). El flujo de publicación se niega
 a publicar un APK firmado con otra llave.
 
+Y para comprobar además que el APK salió del flujo de publicación de este repositorio —de
+qué commit y con qué workflow—, cada release lleva una atestación de procedencia:
+
+```bash
+gh attestation verify ollin-actividades-x.y.z.apk --repo carlosalbertoxw/ollin-actividades
+```
+
 [Ollin Finanzas](https://github.com/carlosalbertoxw/ollin-finanzas) es la app hermana —un
 libro de finanzas personales— y comparte estas convenciones: la versión sale del
 `CHANGELOG`, la firma de variables de entorno, y los mismos cuatro flujos de publicación.

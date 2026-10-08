@@ -31,6 +31,11 @@ spotless = "8.10.3"
 # La version de ktlint va aparte de la de Spotless: es la que decide las
 # reglas, y subirla puede marcar codigo que ayer pasaba.
 ktlint = "1.8.0"
+# Que licencias viajan en el APK (ver app/build.gradle.kts, bloque licensee).
+licensee = "1.14.1"
+# El SBOM que acompana cada release. 3.4.1 y no la 3.5.0, que salio el mismo
+# dia en que se agrego: Dependabot la propondra cuando lleve unos dias fuera.
+cyclonedx = "3.4.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -71,3 +76,5 @@ android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
+licensee = { id = "app.cash.licensee", version.ref = "licensee" }
+cyclonedx = { id = "org.cyclonedx.bom", version.ref = "cyclonedx" }

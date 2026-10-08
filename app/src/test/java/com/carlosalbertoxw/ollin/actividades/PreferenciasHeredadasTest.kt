@@ -94,6 +94,52 @@ class PreferenciasHeredadasTest {
         )
     }
 
+    /**
+     * El candado es la excepcion a "lo ilegible vuelve al de fabrica": el de
+     * fabrica es no tenerlo, y caer ahi abria la bitacora sin pedir nada.
+     */
+    @Test
+    fun `un modo de bloqueo ilegible con PIN guardado pide el PIN`() {
+        val ajustes = repositorio.interpreta(
+            mutablePreferencesOf(
+                stringPreferencesKey("modo_bloqueo") to "UN_MODO_QUE_YA_NO_EXISTE",
+                stringPreferencesKey("pin_hash") to "unahuella",
+                stringPreferencesKey("pin_sal") to "unasal"
+            )
+        )
+
+        assertEquals(ModoBloqueo.PIN, ajustes.modoBloqueo)
+    }
+
+    @Test
+    fun `un modo de bloqueo con el tipo equivocado pide la credencial del telefono`() {
+        val asegurado = AjustesRepositorio(
+            ApplicationProvider.getApplicationContext(),
+            telefonoAsegurado = { true }
+        )
+
+        val ajustes = asegurado.interpreta(
+            mutablePreferencesOf(intPreferencesKey("modo_bloqueo") to 2)
+        )
+
+        assertEquals(ModoBloqueo.SISTEMA, ajustes.modoBloqueo)
+    }
+
+    /** Sin PIN ni bloqueo del telefono no hay con que cerrar: dejarlo fuera seria peor. */
+    @Test
+    fun `un modo ilegible en un telefono sin bloqueo no deja a nadie fuera`() {
+        val sinBloqueo = AjustesRepositorio(
+            ApplicationProvider.getApplicationContext(),
+            telefonoAsegurado = { false }
+        )
+
+        val ajustes = sinBloqueo.interpreta(
+            mutablePreferencesOf(stringPreferencesKey("modo_bloqueo") to "???")
+        )
+
+        assertEquals(ModoBloqueo.NINGUNO, ajustes.modoBloqueo)
+    }
+
     /** Una instalación nueva no lee nada y sale con lo de fábrica. */
     @Test
     fun `sin nada guardado salen los valores de fabrica`() {

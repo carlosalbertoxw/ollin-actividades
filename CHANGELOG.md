@@ -20,7 +20,10 @@ Los enlaces van con dirección completa: el mismo texto se lee en GitHub, en el 
 
 - **El candado del teléfono ya no se puede abrir fingiendo el diálogo.** Al desbloquear con huella, patrón o PIN del teléfono, la app ya no se fía del aviso del diálogo: exige que una llave del Keystore, que solo se habilita tras una autenticación real, funcione. Como las huellas débiles no pueden habilitarla, ahora se pide huella de clase fuerte; con una débil se entra con el patrón o el PIN.
 - **Los recordatorios no dicen de qué se trata si la app tiene candado.** Con candado puesto, el aviso de un hábito o de una tarea dice que hay algo pendiente, sin nombre ni detalle. Antes iban marcados como privados, pero con el ajuste de fábrica de Android una notificación privada se lee completa en la pantalla de bloqueo.
-- **Un `.xlsx` manipulado ya no cierra la app ni le agota la memoria.** Se rechazan los libros que declaran un DOCTYPE —en Android el lector no sabía prohibirlo por su cuenta—, los que traen miles de partes y los que ponen celdas más allá de la última fila o columna de Excel, que con un archivo de un kilobyte pedían miles de millones de renglones.
+- **Un `.xlsx` manipulado ya no cierra la app ni le agota la memoria.** Se rechazan los libros que declaran un DOCTYPE —en Android el lector no sabía prohibirlo por su cuenta—, los que traen miles de partes y los que ponen celdas más allá de la última fila o columna de Excel, que con un archivo de un kilobyte pedían miles de millones de renglones. Tampoco pasa ya con miles de filas que llegan, aunque sea con una celda vacía, hasta la última columna: el libro entero tiene un tope de casillas.
+- **El aviso de versión nueva solo lleva a las releases de este repositorio.** Antes bastaba con que el enlace fuera `https`; quien se quedara con el dominio del sitio podría haber anunciado a todas las instalaciones una «versión nueva» con el enlace que quisiera. Ahora el botón solo abre descargas de `github.com/carlosalbertoxw/ollin-actividades/releases`, el sitio solo puede redirigir a sí mismo y las notas se recortan a 300 caracteres.
+- **Un candado que no se puede leer ya no deja la app abierta.** Si el modo de bloqueo guardado no se reconoce, la app pide el PIN si hay uno, o la credencial del teléfono; antes se abría sin pedir nada.
+- **Un fallo del PIN se cuenta antes de dejar probar otra vez.** El botón volvía a habilitarse un instante antes de que se apuntara el fallo y empezara la espera.
 
 ### Añadido
 
@@ -28,11 +31,13 @@ Los enlaces van con dirección completa: el mismo texto se lee en GitHub, en el 
 - **Informe del último fallo.** Si un error cierra la app o le impide arrancar, la siguiente vez *Acerca de* enseña el informe —versión, Android y la traza— para leerlo, copiarlo o borrarlo. Se queda en el teléfono; no se manda a ningún lado.
 - **Licencias de terceros** en *Acerca de*, con el aviso de SQLCipher y la lista de bibliotecas bajo Apache 2.0. El código se publica ahora bajo licencia [MIT](https://github.com/carlosalbertoxw/ollin-actividades/blob/main/LICENSE).
 - **La huella del certificado de firma**, en el README, en el sitio y en las notas de cada release, para comprobar que el APK descargado es el bueno. La publicación se niega a salir si el APK va firmado con otra llave.
+- **Cada release lleva su SBOM y una atestación de procedencia.** El inventario de bibliotecas que trae el APK, en CycloneDX, y una atestación firmada por Sigstore que dice de qué commit y de qué flujo salió. Se comprueba con `gh attestation verify` (ver el README).
 
 ### Cambiado
 
 - **Herramientas y bibliotecas al día.** Android Gradle Plugin 9.4.1 —que ya compila Kotlin por sí mismo—, Gradle 9.8, Kotlin 2.4.20, Compose BOM 2026.09, Room 2.8, Navigation 2.10 y SQLCipher 4.19, entre otras. La app se compila contra la API 37 de Android, pero se sigue portando como en la 36: subir el `targetSdk` cambia el comportamiento en el teléfono y va aparte. Ya no hace falta un JDK 21 para compilar; sirve cualquiera desde el 17.
 - *Acerca de* avisa de que el `.xlsx` exportado no va cifrado, a diferencia de la base.
+- Las licencias de terceros incluyen ahora todo lo que viaja en el APK —faltaban Protocol Buffers, kotlinx.serialization, Okio y algunas anotaciones—, y la integración continua falla si entra una biblioteca con una licencia fuera de la lista permitida.
 
 ### Corregido
 

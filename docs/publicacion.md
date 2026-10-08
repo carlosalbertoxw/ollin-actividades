@@ -72,7 +72,13 @@ La misma huella se agrega al final de las notas de la release, para que quien de
 
 ## Qué se publica
 
-Solo el **APK** y un `checksums.txt` con su SHA-256.
+El **APK**, un `checksums.txt` con su SHA-256 y `ollin-actividades-x.y.z.cdx.json`, su SBOM en CycloneDX: la lista exacta de bibliotecas y versiones que lleva dentro, sacada de `releaseRuntimeClasspath`. Sirve para contestar «¿esta versión trae la biblioteca de la alerta?» sin recompilar nada.
+
+Además, el APK sale **atestado** con [`actions/attest`](https://github.com/actions/attest): una procedencia SLSA firmada por Sigstore con la identidad del flujo, que dice de qué commit y de qué workflow salió el binario, y una segunda atestación que ata el SBOM a ese mismo APK. La firma de Android dice *quién* firmó; la atestación, *cómo* se construyó. Se comprueba con:
+
+```bash
+gh attestation verify ollin-actividades-x.y.z.apk --repo carlosalbertoxw/ollin-actividades
+```
 
 El `.aab` se compila —un fallo de bundling es un fallo igual y conviene verlo— pero no se adjunta: no se instala en ningún teléfono, solo sirve para subirlo a Play, y una descarga que no hace lo que promete confunde a quien llega de fuera. Si algún día hace falta, `./gradlew bundleRelease`.
 
@@ -83,7 +89,7 @@ La huella se publica junto al archivo para que cualquiera pueda comprobar que lo
 | Comprobación | Dónde | Bloquea |
 |---|---|---|
 | Etiqueta contra `CHANGELOG` | `publicacion.yml` | Sí |
-| Pruebas unitarias, Lint, `assembleRelease` | `pruebas.yml`, invocado tal cual | Sí |
+| Estilo, licencias, pruebas unitarias, Lint, `assembleRelease` | `pruebas.yml`, invocado tal cual | Sí |
 | `MigracionesTest` en emulador | `publicacion.yml` | Sí |
 | Actualizar sobre la versión anterior | [`actualizacion.yml`](../.github/workflows/actualizacion.yml), invocado tal cual | Sí |
 | Suite de interfaz completa | [`pruebas-instrumentadas.yml`](../.github/workflows/pruebas-instrumentadas.yml) | No |
@@ -134,11 +140,14 @@ Guarda el `.jks` y sus contraseñas en un gestor de contraseñas o en una copia 
 
 ### Crear el almacén
 
-Una sola vez, en la raíz del proyecto:
+Una sola vez, **fuera** de la carpeta del proyecto. `.gitignore` impide que el `.jks` entre a un commit, pero no que viaje cuando la carpeta se copia, se comprime o se sincroniza con la nube; por eso `storeFile` en `keystore.properties` admite una ruta absoluta o relativa que salga del proyecto (ver `keystore.properties.example`):
 
 ```bash
-"$HOME/.jdks/jbr-21.0.11/bin/keytool" -genkeypair -v -keystore ollin-actividades-release.jks -alias ollin-actividades -keyalg RSA -keysize 4096 -validity 10000
+mkdir -p ../llaves
+"$HOME/.jdks/jbr-21.0.11/bin/keytool" -genkeypair -v -keystore ../llaves/ollin-actividades-release.jks -alias ollin-actividades -keyalg RSA -keysize 4096 -validity 10000
 ```
+
+Si el almacén ya vive en la raíz del proyecto, basta con moverlo a esa carpeta y cambiar `storeFile`; `./gradlew :app:signingReport` confirma que se sigue encontrando.
 
 Los 10 000 días (unos 27 años) son la recomendación de Google: una llave vencida deja de servir para publicar actualizaciones.
 

@@ -60,7 +60,12 @@ jobs:
           # perezosa, no se componen y las pruebas no las encuentran.
           profile: pixel_6
           disable-animations: true
-          script: ./gradlew connectedDebugAndroidTest --no-daemon
+          # `lenient`: el ejecutor de pruebas en dispositivo (UTP) se descarga
+          # solo con un emulador conectado, y por eso no esta en
+          # gradle/verification-metadata.xml. Aqui un checksum que no cuadre se
+          # avisa en vez de cortar: este job no produce nada que se publique.
+          # Lo que se firma y publica sigue verificado en estricto.
+          script: ./gradlew connectedDebugAndroidTest --dependency-verification=lenient --no-daemon
 
       - name: Guardar el informe
         if: always()

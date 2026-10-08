@@ -1,5 +1,6 @@
 package com.carlosalbertoxw.ollin.actividades.data.prefs
 
+import android.app.KeyguardManager
 import android.content.Context
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -125,7 +126,17 @@ data class Ajustes(
     val pinFallos: Int = 0
 )
 
-class AjustesRepositorio(private val contexto: Context) {
+class AjustesRepositorio(
+    private val contexto: Context,
+    /**
+     * Si el telefono tiene patron, PIN o contrasena. Solo hace falta para
+     * decidir que candado poner cuando el guardado no se puede leer; ver
+     * [leeModoBloqueo]. Va por parametro para poder probar los dos casos.
+     */
+    private val telefonoAsegurado: () -> Boolean = {
+        contexto.getSystemService(KeyguardManager::class.java)?.isDeviceSecure == true
+    }
+) {
 
     private object Claves {
         val TEMA = stringPreferencesKey("tema")
@@ -190,9 +201,7 @@ class AjustesRepositorio(private val contexto: Context) {
             ?: HojaExportable.PREDETERMINADAS,
         reemplazarAlImportar = p.lee(Claves.REEMPLAZAR) ?: true,
         creaFaltantesAlImportar = p.lee(Claves.CREA_FALTANTES) ?: true,
-        modoBloqueo = p.lee(Claves.BLOQUEO)
-            ?.let { runCatching { ModoBloqueo.valueOf(it) }.getOrNull() }
-            ?: ModoBloqueo.NINGUNO,
+        modoBloqueo = leeModoBloqueo(p),
         pinHash = p.lee(Claves.PIN_HASH),
         pinSal = p.lee(Claves.PIN_SAL),
         pinFallos = p.lee(Claves.PIN_FALLOS) ?: 0,
@@ -208,6 +217,38 @@ class AjustesRepositorio(private val contexto: Context) {
         ultimoAvisoRespaldo = p.lee(Claves.ULTIMO_AVISO_RESPALDO) ?: 0L,
         versionAvisada = p.lee(Claves.VERSION_AVISADA)
     )
+
+    /**
+     * El candado que toca, fallando hacia el lado cerrado.
+     *
+     * El resto de las preferencias, si no se leen, vuelven a su valor de
+     * fabrica, y para el bloqueo el de fabrica es no tenerlo. Esta es la unica en
+     * la que eso es peligroso: un modo que alguien puso y que hoy no se reconoce
+     * —un enum renombrado, una clave que cambio de tipo, un archivo danado— abria
+     * la bitacora sin pedir nada y sin avisar.
+     *
+     * Por eso se distingue no haber puesto candado de no poder leer cual se
+     * puso. En el segundo caso se deduce de lo que si se lee: si hay huella de
+     * PIN, el PIN; si no, la credencial del telefono. Solo se abre si el
+     * telefono no tiene ningun bloqueo, porque entonces no hay con que cerrar y
+     * la alternativa seria dejar a su dueno fuera de su propia bitacora.
+     */
+    private fun leeModoBloqueo(p: Map<Preferences.Key<*>, Any>): ModoBloqueo {
+        if (Claves.BLOQUEO !in p) return ModoBloqueo.NINGUNO
+
+        p.lee(Claves.BLOQUEO)
+            ?.let { runCatching { ModoBloqueo.valueOf(it) }.getOrNull() }
+            ?.let { return it }
+
+        return when {
+            !p.lee(Claves.PIN_HASH).isNullOrBlank() && !p.lee(Claves.PIN_SAL).isNullOrBlank() ->
+                ModoBloqueo.PIN
+
+            telefonoAsegurado() -> ModoBloqueo.SISTEMA
+
+            else -> ModoBloqueo.NINGUNO
+        }
+    }
 
     suspend fun guardaTema(oscuro: Boolean?) {
         contexto.almacen.edit {

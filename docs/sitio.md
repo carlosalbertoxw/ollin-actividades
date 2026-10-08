@@ -120,6 +120,15 @@ GitHub Pages no deja poner cabeceras propias, así que el build agrega un `<meta
 
 Solo va en el build. `npm run dev` inyecta estilos y abre un websocket para recargar, y la política rompería el servidor local. `frame-ancestors` no se puede declarar en un `<meta>`; eso solo lo admite la cabecera.
 
+### Lo que queda fuera, a sabiendas
+
+Sin cabeceras propias faltan dos cosas, y se aceptan:
+
+- **`frame-ancestors` / `X-Frame-Options`.** Otra página podría enmarcar esta. El clickjacking necesita algo que valga la pena hacer clic a ciegas, y aquí no hay sesión, formularios ni acciones: el único botón descarga un APK que se verifica por su firma, no por la página que lo enlaza.
+- **HSTS propio.** Con el dominio personalizado, GitHub Pages redirige `http` → `https` si está marcado *Enforce HTTPS* en *Settings → Pages*, pero no manda `Strict-Transport-Security`. La primera visita escrita a mano con `http://` podría interceptarse antes de la redirección. La app no pasa por ahí —pide `https` directamente y no sigue saltos a `http`—, y el README y las releases enlazan siempre con `https`.
+
+*Enforce HTTPS* tiene que estar marcado. Si algún día se quieren las dos cabeceras, la salida es un CDN delante de Pages (por ejemplo, Cloudflare con reglas de transformación de cabeceras); hoy no compensa otro servicio en medio de la descarga.
+
 ## Privacidad del sitio
 
 Sin analítica, sin cookies, sin rastreadores, sin fuentes remotas —la tipografía es la del sistema— y sin peticiones más allá de sus propios assets: la versión viene horneada en el build.
