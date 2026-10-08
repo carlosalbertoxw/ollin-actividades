@@ -31,11 +31,13 @@ Los enlaces van con dirección completa: el mismo texto se lee en GitHub, en el 
 - **Informe del último fallo.** Si un error cierra la app o le impide arrancar, la siguiente vez *Acerca de* enseña el informe —versión, Android y la traza— para leerlo, copiarlo o borrarlo. Se queda en el teléfono; no se manda a ningún lado.
 - **Licencias de terceros** en *Acerca de*, con el aviso de SQLCipher y la lista de bibliotecas bajo Apache 2.0. El código se publica ahora bajo licencia [MIT](https://github.com/carlosalbertoxw/ollin-actividades/blob/main/LICENSE).
 - **La huella del certificado de firma**, en el README, en el sitio y en las notas de cada release, para comprobar que el APK descargado es el bueno. La publicación se niega a salir si el APK va firmado con otra llave.
+- **Cada release lleva su SBOM y una atestación de procedencia.** El inventario de bibliotecas que trae el APK, en CycloneDX, y una atestación firmada por Sigstore que dice de qué commit y de qué flujo salió. Se comprueba con `gh attestation verify` (ver el README).
 
 ### Cambiado
 
 - **Herramientas y bibliotecas al día.** Android Gradle Plugin 9.4.1 —que ya compila Kotlin por sí mismo—, Gradle 9.8, Kotlin 2.4.20, Compose BOM 2026.09, Room 2.8, Navigation 2.10 y SQLCipher 4.19, entre otras. La app se compila contra la API 37 de Android, pero se sigue portando como en la 36: subir el `targetSdk` cambia el comportamiento en el teléfono y va aparte. Ya no hace falta un JDK 21 para compilar; sirve cualquiera desde el 17.
 - *Acerca de* avisa de que el `.xlsx` exportado no va cifrado, a diferencia de la base.
+- Las licencias de terceros incluyen ahora todo lo que viaja en el APK —faltaban Protocol Buffers, kotlinx.serialization, Okio y algunas anotaciones—, y la integración continua falla si entra una biblioteca con una licencia fuera de la lista permitida.
 
 ### Corregido
 

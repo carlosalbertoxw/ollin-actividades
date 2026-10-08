@@ -46,6 +46,8 @@ jobs:
       # tareas comunes en vez de arrancar cinco veces.
       #
       #   spotlessCheck            el estilo de ktlint; lo barato, primero
+      #   licenseeAndroidRelease   que lo que viaja en el APK tenga una licencia
+      #                            de la lista de app/build.gradle.kts
       #   testDebugUnitTest        las pruebas en la JVM, EsquemaTest incluido
       #   lintDebug                falla la compilacion si Lint encuentra errores
       #   assembleDebugAndroidTest compila la suite instrumentada sin ejecutarla,
@@ -55,6 +57,7 @@ jobs:
         run: >
           ./gradlew
           spotlessCheck
+          licenseeAndroidRelease
           testDebugUnitTest
           lintDebug
           assembleDebugAndroidTest
@@ -69,6 +72,7 @@ jobs:
           path: |
             app/build/reports/tests/
             app/build/reports/lint-results-debug.html
+            app/build/reports/licensee/
           retention-days: 14
           if-no-files-found: ignore
 

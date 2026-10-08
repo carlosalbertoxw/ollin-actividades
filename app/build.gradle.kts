@@ -6,6 +6,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.licensee)
+    alias(libs.plugins.cyclonedx)
 }
 
 /**
@@ -206,6 +208,46 @@ android {
 
 ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
+}
+
+// Las licencias que pueden viajar dentro del APK.
+//
+// El APK redistribuye cada biblioteca que lleva dentro, y cada una pone sus
+// condiciones. Una nueva —o una transitiva que cambia de licencia al subir de
+// version— con condiciones que MIT no admite, como GPL, haria del APK algo que
+// no se puede publicar como se publica. `licensee` corre en pruebas.yml y falla
+// si aparece una que no este en esta lista.
+//
+// Tambien sirve para mantener al dia `res/raw/licencias_terceros.txt`: el
+// informe `build/reports/licensee/androidRelease/artifacts.json` dice que lleva
+// de verdad el APK.
+licensee {
+    allow("Apache-2.0")
+    allow("BSD-3-Clause")
+    // Su POM no declara un identificador SPDX, solo esta direccion. Lo que hay
+    // en ella es una BSD de tres clausulas, la misma que se reproduce en
+    // licencias_terceros.txt. Si cambiara de URL, licensee volveria a fallar,
+    // y eso es justo lo que se quiere: mirarla otra vez.
+    allowUrl("https://www.zetetic.net/sqlcipher/license/") {
+        because("BSD de tres clausulas, reproducida en licencias_terceros.txt")
+    }
+}
+
+// El inventario de lo que lleva cada release, en CycloneDX.
+//
+// Solo `releaseRuntimeClasspath`: es lo que acaba dentro del APK publicado. Las
+// de pruebas, KSP y la variante de depuracion no salen del equipo que compila.
+// El flujo de publicacion lo adjunta a la release y lo atesta junto al APK.
+//
+// El plugin resuelve esa configuracion en tiempo de configuracion y Gradle lo
+// avisa. Pasa solo cuando se pide el SBOM —el job que publica—, no en las
+// compilaciones ni en las pruebas de todos los dias.
+tasks.named<org.cyclonedx.gradle.CyclonedxDirectTask>("cyclonedxDirectBom") {
+    includeConfigs = listOf("releaseRuntimeClasspath")
+    projectType = org.cyclonedx.model.Component.Type.APPLICATION
+    componentGroup = "com.carlosalbertoxw"
+    componentName = "ollin-actividades"
+    componentVersion = nombreDeVersion
 }
 
 dependencies {

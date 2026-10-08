@@ -48,6 +48,8 @@ Desde Android Gradle Plugin 9 el plugin de Android compila Kotlin por sí mismo,
 ./gradlew spotlessApply        # da formato al codigo con ktlint
 ./gradlew spotlessCheck        # solo comprueba el formato, como en CI
 ./gradlew assembleRelease      # con minify y shrink de recursos
+./gradlew licenseeAndroidRelease  # que lo que viaja en el APK tenga una licencia permitida
+./gradlew :app:cyclonedxDirectBom # el SBOM del release, en app/build/reports/cyclonedx-direct/
 ./gradlew clean
 ```
 
@@ -147,8 +149,8 @@ Siete flujos, en [`.github/workflows/`](../.github/workflows/):
 
 | Flujo | Cuándo | Qué hace |
 |---|---|---|
-| [`pruebas.yml`](../.github/workflows/pruebas.yml) | Push y PR a `main` | Pruebas unitarias, Lint, compila la suite instrumentada sin ejecutarla, `assembleRelease` y el sitio |
-| [`publicacion.yml`](../.github/workflows/publicacion.yml) | Tag `v*` | Valida la etiqueta contra el `CHANGELOG`, invoca `pruebas.yml`, corre `MigracionesTest`, firma, publica la release y despliega el sitio |
+| [`pruebas.yml`](../.github/workflows/pruebas.yml) | Push y PR a `main` | Estilo, licencias, pruebas unitarias, Lint, compila la suite instrumentada sin ejecutarla, `assembleRelease` y el sitio |
+| [`publicacion.yml`](../.github/workflows/publicacion.yml) | Tag `v*` | Valida la etiqueta contra el `CHANGELOG`, invoca `pruebas.yml`, corre `MigracionesTest`, firma, atesta el APK y su SBOM, publica la release y despliega el sitio |
 | [`sitio.yml`](../.github/workflows/sitio.yml) | Cambios en `web/`, a mano, y al publicar | Compila el sitio y lo despliega en GitHub Pages |
 | [`pruebas-instrumentadas.yml`](../.github/workflows/pruebas-instrumentadas.yml) | Lunes y a mano | La suite de interfaz completa, en emuladores API 26 y 34 |
 | [`actualizacion.yml`](../.github/workflows/actualizacion.yml) | Al etiquetar, lunes y a mano | Instala la versión nueva sobre la anterior y comprueba que abre |
@@ -168,6 +170,46 @@ Tres decisiones que explican el reparto:
 - **Las pruebas de interfaz no bloquean nada.** Dependen de animaciones, diálogos y relojes; su intermitencia acabaría enseñando a ignorar el aspa roja, que es peor que no tenerlas. Van una vez por semana. Las de migración sí bloquean, por la razón contraria: un fallo ahí no se puede arreglar desde fuera.
 
 Los secretos de firma y el proceso completo, en [publicación](publicacion.md).
+
+### Dependencias verificadas
+
+Gradle comprueba el SHA-256 de cada artefacto que descarga —bibliotecas, plugins, sus POM— contra [`gradle/verification-metadata.xml`](../gradle/verification-metadata.xml). Fijar versiones en el catálogo dice *qué* se pide; esto dice que lo que llegó es lo mismo que se revisó. Con un repositorio Maven comprometido, o un artefacto sustituido en el camino, el build falla en vez de meter el cambio en un APK firmado con la llave oficial, que además lee la bitácora descifrada.
+
+El precio es que **cada cambio de dependencias tiene que traer su metadata**. Los PR de Dependabot no la traen y fallarán con `Dependency verification failed`. Al revisar uno, se regenera en su rama y se empuja junto con el cambio:
+
+```bash
+gh pr checkout <número>
+./gradlew --write-verification-metadata sha256 --refresh-dependencies --no-configuration-cache \
+  spotlessCheck licenseeAndroidRelease compileDebugUnitTestKotlin lintDebug assembleDebug \
+  assembleDebugAndroidTest assembleRelease bundleRelease :app:cyclonedxDirectBom :app:dependencies
+git diff gradle/verification-metadata.xml   # solo deben aparecer las versiones del PR
+git commit -am "Verifica las dependencias de <lo que suba el PR>" && git push
+```
+
+Las tareas son las que corren los flujos: si falta una, el flujo que la usa resolverá algo que no está en la lista y fallará. **`--refresh-dependencies` no es opcional.** Sin él, Gradle sirve de la caché local los POM padre y los BOM (`guava-parent`, `jackson-bom`, `junit-bom`…) sin volver a pedirlos, no los apunta, y el runner, que empieza con la caché vacía, falla con *Dependency verification failed*.
+
+**`aapt2` va aparte.** Es un JAR distinto por sistema operativo (`aapt2-<versión>-windows.jar`, `-linux.jar`…) y Gradle solo apunta el de la máquina que genera la lista, pero los runners son Linux. Cada vez que suba el Android Gradle Plugin, hay que agregar a mano el de Linux dentro del `<component name="aapt2">`, comprobando antes que el SHA-1 coincida con el publicado:
+
+```bash
+V=<versión de aapt2 que aparece en la lista>
+B=https://dl.google.com/dl/android/maven2/com/android/tools/build/aapt2/$V
+curl -fsSLO "$B/aapt2-$V-linux.jar" && curl -fsSL "$B/aapt2-$V-linux.jar.sha1"; echo
+sha1sum aapt2-$V-linux.jar     # tiene que coincidir con la línea anterior
+sha256sum aapt2-$V-linux.jar   # este va en <sha256 value="...">
+```
+
+El `git diff` es la revisión de verdad: tiene que mostrar los artefactos que el PR sube y ninguno más. Gradle agrega entradas pero no borra las que dejaron de usarse; de vez en cuando conviene borrar el archivo y regenerarlo entero, con el mismo comando.
+
+**La excepción son las pruebas sobre emulador.** El ejecutor de pruebas en dispositivo de AGP (UTP, `com.android.tools.utp` y `com.google.testing.platform`) solo se descarga con un emulador conectado, así que el comando de arriba no lo ve. Las dos invocaciones de `connectedDebugAndroidTest` —`pruebas-instrumentadas.yml` y las migraciones de `publicacion.yml`— corren con `--dependency-verification=lenient`: un checksum que no cuadre se avisa en el log en vez de cortar. Esos jobs no producen nada que se publique; el APK firmado sale de un job estricto. Si algún día se quiere también ahí, basta con correr una vez el comando con `connectedDebugAndroidTest` y un emulador conectado, y quitar el `lenient`. Lo mismo `dependencias.yml`: `gradle/actions/dependency-submission` inyecta su propio plugin, que no está en la lista, y ese job solo informa a GitHub del grafo.
+
+No se automatizó a propósito: un flujo que regenere el archivo en las ramas de Dependabot necesita permiso de escritura, y el commit que empuja con `GITHUB_TOKEN` no relanza los checks requeridos, así que habría que relanzarlos a mano igual.
+
+### Las reglas del repositorio
+
+Dos *rulesets*, en *Settings → Rules → Rulesets*:
+
+- **Proteger main.** Nada entra a `main` sin pull request, con los checks «App Android» y «Sitio» en verde; sin force-push ni borrado.
+- **Solo el dueño publica (tags v\*).** Empujar un tag `v*` publica una versión firmada (ver [publicación](publicacion.md)), así que crear, mover o borrar uno queda reservado al rol *Admin*. Ni un colaborador con escritura ni el `GITHUB_TOKEN` de un flujo pueden hacerlo, y un tag ya publicado no se puede mover a otro commit.
 
 ### La prueba de actualización
 
