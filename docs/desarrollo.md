@@ -199,7 +199,7 @@ git update-index --chmod=+x <archivo>
 - **Todo en español**: nombres de clases, funciones, variables y comentarios. Los nombres de prueba van en backticks y en prosa (`` `un dia saltado si la rompe` ``).
 - **Los comentarios explican el porqué, no el qué.** Si una decisión tiene una alternativa obvia que se descartó, el comentario dice por qué se descartó.
 - **Sin acentos en los comentarios**; el texto que ve el usuario sí va acentuado. La excepción son los nombres de hoja y los encabezados de columna del `.xlsx`: esos son el formato del archivo, no copy, y cambiarlos rompería la reimportación de libros ya exportados.
-- **Una pantalla por archivo** en `ui/screens/`, con los composables privados abajo, y su ViewModel en el archivo hermano `XxxVm.kt`.
+- **Una pantalla por archivo** en `ui/screens/`, con los composables privados abajo, y su ViewModel en el archivo hermano `XxxVm.kt`. Cuando una pantalla pasa de unas 450 líneas, sus secciones grandes se mudan a archivos hermanos con el nombre de la pantalla y de la sección —`AjustesBloqueo.kt`, `HabitosDialogo.kt`, `HoyTarjetas.kt`, `AcercaDeVersion.kt`— y pasan de `private` a `internal`. Es la misma pantalla repartida por tamaño, no otra capa.
 - **El ViewModel recibe sus colaboradores** (`repositorio`, `ajustes`), no el `Contenedor` entero.
 - **La escritura pasa por el repositorio.** Las pantallas no tocan los DAO, y lo que borra en bloque va en transacción.
 - Las cadenas visibles están en el código, no en `strings.xml`: la app es monolingüe por diseño. En `strings.xml` solo viven el nombre y el lema.
