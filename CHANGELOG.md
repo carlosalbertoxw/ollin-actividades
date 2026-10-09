@@ -24,6 +24,8 @@ Los enlaces van con dirección completa: el mismo texto se lee en GitHub, en el 
 - **El aviso de versión nueva solo lleva a las releases de este repositorio.** Antes bastaba con que el enlace fuera `https`; quien se quedara con el dominio del sitio podría haber anunciado a todas las instalaciones una «versión nueva» con el enlace que quisiera. Ahora el botón solo abre descargas de `github.com/carlosalbertoxw/ollin-actividades/releases`, el sitio solo puede redirigir a sí mismo y las notas se recortan a 300 caracteres.
 - **Girar el teléfono ya no vuelve a pedir la llave.** Con candado puesto, girar la pantalla, cambiar de tema o de tamaño de ventana contaba como salir de la app y la cerraba.
 - **Un candado que no se puede leer ya no deja la app abierta.** Si el modo de bloqueo guardado no se reconoce, la app pide el PIN si hay uno, o la credencial del teléfono; antes se abría sin pedir nada.
+- **La huella del PIN ya no se puede comprobar fuera del teléfono.** Además de PBKDF2, se sella con una llave del Keystore que no se puede extraer: con el archivo de preferencias copiado, probar los diez mil PIN ya no es cuestión de minutos. Los PIN puestos con versiones anteriores siguen abriendo, y se sellan solos la siguiente vez que aciertas.
+- **Un solo freno para todo PIN.** La pantalla de bloqueo y el diálogo de *Ajustes* que pide el PIN actual comprueban por el mismo sitio, de uno en uno, con la misma cuenta de fallos y la misma espera; abrir uno después de fallar en el otro no regala un intento.
 - **Un fallo del PIN se cuenta antes de dejar probar otra vez.** El botón volvía a habilitarse un instante antes de que se apuntara el fallo y empezara la espera.
 
 ### Añadido

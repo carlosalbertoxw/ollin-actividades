@@ -57,14 +57,21 @@ Las transiciones de bloqueo se escriben de golpe en DataStore. Si el modo y el P
 
 Un PIN de cuatro dígitos tiene diez mil combinaciones; sin un derivado lento bastaría un segundo para probarlas todas contra el archivo de preferencias. La derivación pesa cientos de milisegundos a propósito y corre fuera del hilo principal.
 
+#### La huella va sellada con el Keystore
+
+Diez mil combinaciones siguen siendo pocas: con el archivo de preferencias en la mano —un teléfono con root, un respaldo por adb—, ni PBKDF2 aguanta más que unos minutos. Por eso el resultado se **sella** además con un HMAC-SHA256 cuya llave vive en el Keystore ([`LlaveDelPin`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/data/seguridad/LlaveDelPin.kt)) y no se puede extraer: la huella ya no se puede calcular fuera del teléfono, y dentro cada intento pasa por la app y su freno.
+
+- Las huellas selladas llevan el prefijo `ks1:`. Las de la 1.2.1 y anteriores son PBKDF2 a secas: **siguen abriendo**, y en cuanto su dueño acierta se guardan selladas con la misma sal, sin pedirle nada. Si guardarla falla, se deja como estaba y se reintenta en el siguiente acierto.
+- La llave del sello no exige autenticación: es justo lo que se usa para autenticarse. Si alguna vez se pierde, la huella sellada deja de coincidir y el PIN no abre, igual que la base: las dos viven y mueren con el Keystore de la app.
+
 #### Freno a los intentos
 
 PBKDF2 encarece cada intento, pero no lo suficiente: a un par de décimas por derivación, quien tenga el teléfono en la mano y sepa automatizar pulsaciones agota las diez mil combinaciones en menos de una hora. Por eso hay una espera creciente.
 
 - Se perdonan **3 fallos seguidos**. A partir del cuarto, la espera escala 5 s → 15 → 30 → 60 → 120 → 300 y se queda ahí.
-- El contador vive en **DataStore**, y lo único que lo borra es acertar. Matar la app no sirve para saltarse la espera: al volver, la espera empieza de nuevo con el mismo contador. La cuenta atrás arranca cuando aparece la pantalla del candado, no en el momento del fallo, así que cerrar la app desde Recientes tras cada intento cobra la espera entera cada vez en vez de regalar uno.
-- No se guarda ningún instante, solo la cuenta. Así no hay reloj que engañar cambiando la hora ni reiniciando el teléfono, que es lo que pasaría al persistir un "bloqueado hasta".
-- **Las dos puertas comparten el contador**: la pantalla de bloqueo y el diálogo de Ajustes que pide el PIN actual antes de cambiarlo o quitarlo. Frenar solo una equivaldría a no frenar ninguna.
+- El contador vive en **DataStore**, y lo único que lo borra es acertar. Matar la app no sirve para saltarse la espera: al arrancar, [`ControlBloqueo`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/data/seguridad/ControlBloqueo.kt) vuelve a cobrar entera la que tocan los fallos guardados, así que cerrar la app desde Recientes tras cada intento cobra la espera entera cada vez en vez de regalar uno.
+- No se guarda ningún instante, solo la cuenta. La espera en curso vive en el reloj monótono (`elapsedRealtime`), que no se persiste: no hay reloj que engañar cambiando la hora ni reiniciando el teléfono, que es lo que pasaría al persistir un "bloqueado hasta".
+- **Todo PIN pasa por `ControlBloqueo.intentaPin`**: la pantalla de bloqueo y el diálogo de Ajustes que pide el PIN actual antes de cambiarlo o quitarlo. El freno vive ahí y no en cada pantalla, porque la que se olvidara de él sería el atajo para adivinarlo; las pantallas solo leen la cuenta atrás. Los intentos van de uno en uno (un `Mutex`): dos toques seguidos no pueden leer los dos que no hay espera antes de que el primero apunte su fallo. El fallo se escribe en disco antes de contestar.
 
 Poner un PIN nuevo estrena contador: quien acaba de demostrar que es el dueño no hereda la espera del anterior.
 

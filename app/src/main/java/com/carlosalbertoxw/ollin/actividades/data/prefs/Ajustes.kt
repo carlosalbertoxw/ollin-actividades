@@ -348,6 +348,18 @@ class AjustesRepositorio(
         }
     }
 
+    /**
+     * Cambia la huella del PIN por su version sellada, sin tocar el modo.
+     *
+     * Solo si la sal sigue siendo la misma: si entre tanto se puso otro PIN o se
+     * quito el candado, esta huella ya no es de nadie y no debe revivirlo.
+     */
+    suspend fun guardaHuellaPin(hash: String, sal: String) {
+        contexto.almacen.edit {
+            if (it[Claves.PIN_SAL] == sal) it[Claves.PIN_HASH] = hash
+        }
+    }
+
     suspend fun quitaBloqueo() {
         contexto.almacen.edit {
             it.remove(Claves.BLOQUEO)

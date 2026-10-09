@@ -62,7 +62,7 @@ fun AjustesPantalla(
     alAbrirAcercaDe: () -> Unit,
     alCerrar: () -> Unit
 ) {
-    val vm = recuerdaVm("ajustes") { AjustesVm(contenedor.ajustes) }
+    val vm = recuerdaVm("ajustes") { AjustesVm(contenedor.ajustes, contenedor.controlBloqueo) }
     val ajustes by vm.ajustes.collectAsStateWithLifecycle()
     val colores = LocalColoresOllin.current
     val contexto = LocalContext.current
@@ -365,8 +365,7 @@ fun AjustesPantalla(
                 alQuitar = { vm.quitaBloqueo() },
                 alUsarSistema = { vm.usaBloqueoDelSistema() },
                 alUsarPin = { vm.usaBloqueoConPin(it) },
-                alFallarPin = { vm.sumaFalloPin() },
-                alAcertarPin = { vm.limpiaFallosPin() },
+                bloqueo = contenedor.controlBloqueo,
                 alSalirAlSistema = contenedor.controlBloqueo::esperaVueltaDelSistema
             )
 

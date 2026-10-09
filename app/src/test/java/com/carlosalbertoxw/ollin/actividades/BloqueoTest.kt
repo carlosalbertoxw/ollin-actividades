@@ -20,6 +20,8 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowLooper
 import java.util.concurrent.TimeUnit
+import javax.crypto.Mac
+import javax.crypto.spec.SecretKeySpec
 
 /**
  * El candado de la app: quien decide si Ollin esta cerrada y con que.
@@ -201,6 +203,115 @@ class BloqueoTest {
         assertFalse(control.bloqueado.value)
     }
 
+    // ----------------------------------------------------- intentos de PIN
+
+    /** Pone un PIN sellado, como lo deja hoy Ajustes. */
+    private suspend fun conPin(pin: String): ControlBloqueo {
+        val control = ControlBloqueo(ajustes, SELLO)
+        val (hash, sal) = control.huellaNueva(pin)
+        ajustes.activaBloqueoPin(hash = hash, sal = sal)
+        asienta()
+        return control
+    }
+
+    @Test
+    fun `un PIN correcto contra su huella sellada abre`() = runTest {
+        val control = conPin("2468")
+
+        assertTrue(ajustes.ajustes.first().pinHash!!.startsWith(ClavePin.PREFIJO_SELLADA))
+        assertEquals(ControlBloqueo.IntentoDePin.Correcto, control.intentaPin("2468"))
+        assertFalse(control.bloqueado.value)
+    }
+
+    /**
+     * La huella de la 1.2.1 y anteriores es PBKDF2 a secas. Tiene que seguir
+     * abriendo, y en cuanto abre se cambia por la sellada con la misma sal.
+     */
+    @Test
+    fun `acertar contra una huella vieja la guarda sellada`() = runTest {
+        val sal = ClavePin.nuevaSal()
+        ajustes.activaBloqueoPin(hash = ClavePin.deriva("2468", sal), sal = sal)
+        val control = ControlBloqueo(ajustes, SELLO)
+        asienta()
+
+        assertEquals(ControlBloqueo.IntentoDePin.Correcto, control.intentaPin("2468"))
+
+        val actuales = ajustes.ajustes.first()
+        assertEquals(sal, actuales.pinSal)
+        assertEquals(ClavePin.huella("2468", sal, SELLO), actuales.pinHash)
+        assertEquals(ControlBloqueo.IntentoDePin.Correcto, control.intentaPin("2468"))
+    }
+
+    @Test
+    fun `fallar contra una huella vieja no la migra`() = runTest {
+        val sal = ClavePin.nuevaSal()
+        val vieja = ClavePin.deriva("2468", sal)
+        ajustes.activaBloqueoPin(hash = vieja, sal = sal)
+        val control = ControlBloqueo(ajustes, SELLO)
+        asienta()
+
+        assertEquals(ControlBloqueo.IntentoDePin.Incorrecto, control.intentaPin("1111"))
+
+        val actuales = ajustes.ajustes.first()
+        assertEquals(vieja, actuales.pinHash)
+        assertEquals(1, actuales.pinFallos)
+    }
+
+    /**
+     * El freno es el mismo para todos los que piden el PIN, Ajustes incluido:
+     * en espera ni siquiera se comprueba, aunque el PIN sea el correcto.
+     */
+    @Test
+    fun `pasada la gracia hay que esperar aunque el PIN sea el bueno`() = runTest {
+        val control = conPin("2468")
+
+        repeat(ClavePin.FALLOS_DE_GRACIA + 1) {
+            assertEquals(ControlBloqueo.IntentoDePin.Incorrecto, control.intentaPin("0000"))
+        }
+
+        val enEspera = control.intentaPin("2468")
+        assertTrue("Salio $enEspera", enEspera is ControlBloqueo.IntentoDePin.EnEspera)
+        assertEquals(
+            "Esperar no cuenta como otro fallo",
+            ClavePin.FALLOS_DE_GRACIA + 1,
+            ajustes.ajustes.first().pinFallos
+        )
+
+        pasaElTiempo(ClavePin.esperaSegundos(ClavePin.FALLOS_DE_GRACIA + 1) * 1_000L)
+        assertEquals(ControlBloqueo.IntentoDePin.Correcto, control.intentaPin("2468"))
+        assertEquals("Acertar limpia la cuenta", 0, ajustes.ajustes.first().pinFallos)
+        assertEquals(0, control.segundosDeEspera())
+    }
+
+    /**
+     * Cerrar la app despues de cada fallo no debe regalar un intento: el
+     * control nuevo arranca cobrando la espera que tocan los fallos guardados.
+     */
+    @Test
+    fun `reabrir la app con fallos guardados arranca con la espera puesta`() = runTest {
+        conPin("2468")
+        repeat(ClavePin.FALLOS_DE_GRACIA + 2) { ajustes.sumaFalloPin() }
+
+        val control = ControlBloqueo(ajustes, SELLO)
+        asienta()
+
+        assertEquals(
+            ClavePin.esperaSegundos(ClavePin.FALLOS_DE_GRACIA + 2),
+            control.segundosDeEspera()
+        )
+        assertTrue(control.intentaPin("2468") is ControlBloqueo.IntentoDePin.EnEspera)
+    }
+
+    @Test
+    fun `los primeros fallos no cuestan espera`() = runTest {
+        val control = conPin("2468")
+
+        repeat(ClavePin.FALLOS_DE_GRACIA) {
+            assertEquals(ControlBloqueo.IntentoDePin.Incorrecto, control.intentaPin("0000"))
+            assertEquals(0, control.segundosDeEspera())
+        }
+    }
+
     private fun conCandadoAbierto(): ControlBloqueo {
         val control = ControlBloqueo(ajustes)
         // El control lee las preferencias en su propio alcance sobre el hilo
@@ -227,5 +338,12 @@ class BloqueoTest {
 
     private companion object {
         const val ASENTADAS = 60
+
+        /** El Keystore no existe en la JVM: un HMAC con llave fija hace sus veces. */
+        val SELLO = ClavePin.Sello { huella ->
+            Mac.getInstance("HmacSHA256")
+                .apply { init(SecretKeySpec(ByteArray(32) { 1 }, "HmacSHA256")) }
+                .doFinal(huella)
+        }
     }
 }
