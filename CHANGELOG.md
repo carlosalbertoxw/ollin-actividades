@@ -41,6 +41,7 @@ Los enlaces van con dirección completa: el mismo texto se lee en GitHub, en el 
 
 - **Herramientas y bibliotecas al día.** Android Gradle Plugin 9.4.1 —que ya compila Kotlin por sí mismo—, Gradle 9.8, Kotlin 2.4.20, Compose BOM 2026.09, Room 2.8, Navigation 2.10 y SQLCipher 4.19, entre otras. La app se compila contra la API 37 de Android, pero se sigue portando como en la 36: subir el `targetSdk` cambia el comportamiento en el teléfono y va aparte. Ya no hace falta un JDK 21 para compilar; sirve cualquiera desde el 17.
 - *Acerca de* avisa de que el `.xlsx` exportado no va cifrado, a diferencia de la base.
+- La publicación se niega a etiquetar una versión con menor o parche por encima de 99, que repetiría el `versionCode` de otra; las dependencias del sitio pasan por `npm audit` en cada cambio, y la prueba de actualizar sobre la versión anterior deja siempre el log y distingue un fallo suyo de uno de la app.
 - Las licencias de terceros incluyen ahora todo lo que viaja en el APK —faltaban Protocol Buffers, kotlinx.serialization, Okio y algunas anotaciones—, y la integración continua falla si entra una biblioteca con una licencia fuera de la lista permitida.
 
 ### Corregido
