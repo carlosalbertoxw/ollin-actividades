@@ -41,6 +41,7 @@ Detalles del comportamiento:
 - **Arranca bloqueada.** Todavía no se sabe si hay candado puesto, y equivocarse hacia el lado cerrado solo cuesta un parpadeo.
 - **Se cierra en cuanto sale al fondo.** Pulsar Inicio y pasarle el teléfono a alguien es justo el caso que el candado existe para cubrir.
 - **Un minuto de gracia, pero solo para un viaje de ida y vuelta al sistema.** Importar y exportar abren el selector de archivos, que manda Ollin al fondo; sin ese margen, elegir un `.xlsx` te expulsaría a medio camino. La pantalla que va a abrir el selector lo pide antes con `esperaVueltaDelSistema()`, y el permiso **se gasta al usarlo**: el siguiente viaje tiene que volver a pedirlo.
+- **Girar el teléfono no es salir.** La actividad se detiene y se recrea, pero `isChangingConfigurations` la distingue de una salida de verdad; sin eso, como una salida sin avisar no tiene gracia, cada giro volvería a pedir la llave.
 - Se mide con el **reloj monótono** (`elapsedRealtime`): cambiar la hora del teléfono no debe poder alargar la gracia.
 - Con candado configurado la ventana lleva `FLAG_SECURE`: ni capturas de pantalla ni miniatura en la vista de apps recientes. Mientras no se sabe, se asume que sí.
 
