@@ -224,6 +224,15 @@ Los dos son invisibles en una instalación limpia, los dos cierran la app al abr
 
 Lo que afirma es deliberadamente pobre: que el proceso siga vivo y que no haya una excepción mortal. No mira la pantalla, porque un fallo de arranque se manifiesta como el proceso que desaparece y eso se ve sin depender de animaciones.
 
+Lo que sí hace es no morir en silencio, porque una prueba que bloquea publicaciones no puede ser una moneda al aire:
+
+- **Abre con `am start -S -W`** y no con `monkey`. `-S` cierra la app antes de arrancarla: instalar encima deja la tarea viva en Recientes, y sin él `am start` entrega el intent a esa tarea sin levantar nada. `-W` espera a que termine de arrancar y dice cómo fue. Si contesta `Activity not started`, la prueba falla diciendo que la culpa es suya y no de la app.
+- **Concede `POST_NOTIFICATIONS` con `pm grant`** tras cada instalación desde cero. Hoy la app lo pide desde Ajustes, pero si una versión lo pidiera al abrir, el diálogo del sistema quedaría encima de la tarea y la prueba mediría un proceso que nunca existió.
+- **Todo fallo deja el logcat**, con un `trap` hasta para la línea que no lo esperaba, y las líneas del log que hablan de la app salen como anotaciones del run.
+- **Hay un experimento de control.** Si la versión nueva no se mantiene abierta sobre la anterior, se desinstala todo y se instala de cero: si tampoco así arranca, el problema es de la versión y no de lo que dejó escrito la anterior.
+
+En la primera publicación de todas no hay versión anterior: la búsqueda de la etiqueta lleva `|| true` para que `grep` sin resultados no aborte el paso con `pipefail` antes de llegar al «no hay versión anterior».
+
 ### El bit de ejecución, si desarrollas en Windows
 
 Git en Windows corre con `core.filemode = false` y guarda todo como `100644`, sin permiso de ejecución. Da igual en Windows y rompe en el runner, que es Linux: `./gradlew` responde *Permission denied* y el flujo se cae antes de compilar nada.

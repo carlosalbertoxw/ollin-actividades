@@ -2,33 +2,30 @@ package com.carlosalbertoxw.ollin.actividades.ui.seguridad
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import com.carlosalbertoxw.ollin.actividades.data.seguridad.ClavePin
+import com.carlosalbertoxw.ollin.actividades.data.seguridad.ControlBloqueo
 import kotlinx.coroutines.delay
 
 /**
  * Segundos que faltan para poder volver a probar el PIN, o cero si se puede ya.
  *
- * La cuenta atras arranca cuando la pantalla aparece y no en el momento del
- * fallo. Suena mas laxo y es justo al reves: matar la app para escaparse de la
- * espera la reinicia entera, porque el contador de fallos si esta en disco. No
- * hay reloj que guardar, y por lo tanto tampoco hay reloj que enganar
- * cambiando la hora del telefono ni reiniciando.
- *
- * La usan la pantalla de bloqueo y el dialogo de ajustes que pide el PIN actual
- * antes de cambiarlo o quitarlo. Las dos son puertas al mismo sitio: dejar una
- * sin freno equivaldria a no tener ninguno.
+ * La espera la decide [ControlBloqueo], no la pantalla: aqui solo se lleva la
+ * cuenta atras para ensenarla. Por eso la pantalla de bloqueo y el dialogo de
+ * Ajustes que pide el PIN actual comparten la misma, y abrir uno despues de
+ * fallar en el otro no regala un intento.
  */
 @Composable
-fun segundosDeEsperaPin(fallos: Int): Int {
-    var restantes by remember(fallos) { mutableIntStateOf(ClavePin.esperaSegundos(fallos)) }
-    LaunchedEffect(fallos) {
+fun segundosDeEsperaPin(bloqueo: ControlBloqueo): Int {
+    val hasta by bloqueo.esperaHasta.collectAsState()
+    var restantes by remember(hasta) { mutableIntStateOf(bloqueo.segundosDeEspera()) }
+    LaunchedEffect(hasta) {
         while (restantes > 0) {
             delay(1_000)
-            restantes--
+            restantes = bloqueo.segundosDeEspera()
         }
     }
     return restantes

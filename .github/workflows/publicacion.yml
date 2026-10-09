@@ -48,6 +48,17 @@ jobs:
             exit 1
           fi
 
+          # El versionCode se arma con huecos de dos cifras (1.2.3 -> 10203; ver
+          # app/build.gradle.kts). Una 1.100.0 daria 20000, el mismo codigo que
+          # la 2.0.0, y Android se negaria a instalar la segunda encima de la
+          # primera; una 1.2.100 chocaria igual con la 1.3.0. Mejor saberlo aqui.
+          IFS=. read -r _ menor parche <<< "$version"
+          if [ "$((10#$menor))" -gt 99 ] || [ "$((10#$parche))" -gt 99 ]; then
+            echo "::error::La versión menor y el parche no pueden pasar de 99: el versionCode dejaría de crecer."
+            echo "::error::Sube la versión mayor, o cambia la fórmula del versionCode en app/build.gradle.kts."
+            exit 1
+          fi
+
           # La primera version del archivo, que es de la que el build de la app
           # saca su versionName. Si no fuera esta, el APK saldria etiquetado con
           # un numero distinto del de la release: la confusion mas cara posible.
@@ -201,11 +212,11 @@ jobs:
       attestations: write
       artifact-metadata: write
 
-    # Los secretos de firma se pueden mover a este environment y borrarse de los
-    # del repositorio: asi solo existen para este job, y si se le pone revision
-    # obligatoria o una regla de tags `v*`, ningun otro flujo --ni un pull
-    # request que toque un workflow-- puede leerlos. Ver docs/publicacion.md.
-    # Mientras sigan siendo del repositorio, esta linea no cambia nada.
+    # Los secretos de firma van en este environment y no en los del repositorio:
+    # asi solo existen para este job, y con la regla de tags `v*` (y, si se
+    # quiere, revision obligatoria) ningun otro flujo --ni un pull request que
+    # toque un workflow-- puede leerlos. Si siguieran en el repositorio, esta
+    # linea no protegeria nada. Ver docs/publicacion.md#los-secretos.
     environment: release
 
     env:
@@ -252,8 +263,8 @@ jobs:
           if [ ${#faltan[@]} -gt 0 ]; then
             echo "::error::Faltan estos secretos: ${faltan[*]}"
             echo "::error::Sin ellos el APK saldría sin firmar y no se instala en ningún teléfono."
-            echo "::error::Van de preferencia en Settings → Environments → release, limitado a los tags v*;"
-            echo "::error::como secretos del repositorio también sirven. Los nombres van tal cual."
+            echo "::error::Van en Settings → Environments → release → Environment secrets, no en los"
+            echo "::error::del repositorio, con el environment limitado a los tags v*. Los nombres van tal cual."
             echo "::error::Ver docs/publicacion.md#los-secretos."
             exit 1
           fi

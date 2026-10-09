@@ -35,6 +35,7 @@ import androidx.fragment.app.FragmentActivity
 import com.carlosalbertoxw.ollin.actividades.data.prefs.Ajustes
 import com.carlosalbertoxw.ollin.actividades.data.prefs.ModoBloqueo
 import com.carlosalbertoxw.ollin.actividades.data.seguridad.ClavePin
+import com.carlosalbertoxw.ollin.actividades.data.seguridad.ControlBloqueo
 import com.carlosalbertoxw.ollin.actividades.ui.seguridad.pedirCredencialDelSistema
 import com.carlosalbertoxw.ollin.actividades.ui.seguridad.segundosDeEsperaPin
 import com.carlosalbertoxw.ollin.actividades.ui.seguridad.telefonoAsegurado
@@ -55,8 +56,8 @@ internal fun SeccionBloqueo(
     alQuitar: () -> Unit,
     alUsarSistema: () -> Unit,
     alUsarPin: (String) -> Unit,
-    alFallarPin: suspend () -> Unit,
-    alAcertarPin: suspend () -> Unit,
+    /** Por donde pasa el PIN actual que se pide antes de cambiarlo o quitarlo. */
+    bloqueo: ControlBloqueo,
     alSalirAlSistema: () -> Unit
 ) {
     val contexto = LocalContext.current
@@ -191,9 +192,7 @@ internal fun SeccionBloqueo(
 
     if (pidiendoPinActual) {
         DialogoPinActual(
-            ajustes = ajustes,
-            alFallar = alFallarPin,
-            alAcertar = alAcertarPin,
+            bloqueo = bloqueo,
             alConfirmar = {
                 pidiendoPinActual = false
                 pendiente?.invoke()
@@ -219,9 +218,7 @@ internal fun SeccionBloqueo(
 
 @Composable
 private fun DialogoPinActual(
-    ajustes: Ajustes,
-    alFallar: suspend () -> Unit,
-    alAcertar: suspend () -> Unit,
+    bloqueo: ControlBloqueo,
     alConfirmar: () -> Unit,
     alCancelar: () -> Unit
 ) {
@@ -230,7 +227,7 @@ private fun DialogoPinActual(
     var verificando by remember { mutableStateOf(false) }
     val ambito = rememberCoroutineScope()
 
-    val espera = segundosDeEsperaPin(ajustes.pinFallos)
+    val espera = segundosDeEsperaPin(bloqueo)
 
     AlertDialog(
         onDismissRequest = alCancelar,
@@ -274,17 +271,19 @@ private fun DialogoPinActual(
                     verificando = true
                     error = null
                     ambito.launch {
-                        // `verificando` se suelta al final, con el fallo ya
-                        // escrito: soltarlo antes dejaba el boton listo para
-                        // otro intento mientras la cuenta aun no subia.
+                        // `verificando` se suelta al final, con el intento ya
+                        // resuelto: el mismo freno que la pantalla de bloqueo,
+                        // con la misma cuenta de fallos y la misma espera.
                         try {
-                            if (ClavePin.coincide(pin, ajustes.pinHash, ajustes.pinSal)) {
-                                alAcertar()
-                                alConfirmar()
-                            } else {
-                                alFallar()
-                                error = "PIN incorrecto"
-                                pin = ""
+                            when (bloqueo.intentaPin(pin)) {
+                                ControlBloqueo.IntentoDePin.Correcto -> alConfirmar()
+
+                                ControlBloqueo.IntentoDePin.Incorrecto -> {
+                                    error = "PIN incorrecto"
+                                    pin = ""
+                                }
+
+                                is ControlBloqueo.IntentoDePin.EnEspera -> Unit
                             }
                         } finally {
                             verificando = false

@@ -4,13 +4,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.carlosalbertoxw.ollin.actividades.data.prefs.Ajustes
 import com.carlosalbertoxw.ollin.actividades.data.prefs.AjustesRepositorio
-import com.carlosalbertoxw.ollin.actividades.data.seguridad.ClavePin
+import com.carlosalbertoxw.ollin.actividades.data.seguridad.ControlBloqueo
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class AjustesVm(private val repo: AjustesRepositorio) : ViewModel() {
+class AjustesVm(private val repo: AjustesRepositorio, private val bloqueo: ControlBloqueo) :
+    ViewModel() {
 
     val ajustes: StateFlow<Ajustes> = repo.ajustes
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), Ajustes())
@@ -38,20 +39,9 @@ class AjustesVm(private val repo: AjustesRepositorio) : ViewModel() {
 
     fun usaBloqueoDelSistema() = viewModelScope.launch { repo.activaBloqueoSistema() }
 
+    /** La huella sale ya sellada con el Keystore; ver [ControlBloqueo.huellaNueva]. */
     fun usaBloqueoConPin(pin: String) = viewModelScope.launch {
-        val sal = ClavePin.nuevaSal()
-        repo.activaBloqueoPin(hash = ClavePin.deriva(pin, sal), sal = sal)
+        val (hash, sal) = bloqueo.huellaNueva(pin)
+        repo.activaBloqueoPin(hash = hash, sal = sal)
     }
-
-    /**
-     * El contador de fallos del PIN es el mismo que el de la pantalla de
-     * bloqueo. Este dialogo tambien abre la puerta —desde aqui se quita el
-     * candado—, y llevarle una cuenta aparte seria dejar una entrada sin freno.
-     *
-     * Suspende en vez de lanzar: el dialogo espera a que el fallo quede escrito
-     * antes de volver a dejar probar, igual que la pantalla de bloqueo.
-     */
-    suspend fun sumaFalloPin() = repo.sumaFalloPin()
-
-    suspend fun limpiaFallosPin() = repo.limpiaFallosPin()
 }

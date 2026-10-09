@@ -8,6 +8,8 @@ import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.util.Base64
+import javax.crypto.Mac
+import javax.crypto.spec.SecretKeySpec
 
 /**
  * El PIN de Ollin no se guarda: se guarda un derivado del que no se puede
@@ -82,5 +84,73 @@ class ClavePinTest {
     fun `los limites de largo son los que la interfaz respeta`() {
         assertEquals(4, ClavePin.LARGO_MINIMO)
         assertEquals(12, ClavePin.LARGO_MAXIMO)
+    }
+
+    // ---------------------------------------------------------------- sello
+
+    @Test
+    fun `la huella sellada lleva su marca y abre con el mismo sello`() = runTest {
+        val sal = ClavePin.nuevaSal()
+        val huella = ClavePin.huella("2468", sal, SELLO)
+
+        assertTrue(huella.startsWith(ClavePin.PREFIJO_SELLADA))
+        assertEquals(
+            ClavePin.Verificacion.CORRECTO,
+            ClavePin.verifica("2468", huella, sal, SELLO)
+        )
+        assertEquals(
+            ClavePin.Verificacion.INCORRECTO,
+            ClavePin.verifica("2469", huella, sal, SELLO)
+        )
+    }
+
+    /**
+     * Lo que compra el sello: la huella copiada a otro aparato no se puede
+     * comprobar alli, porque la llave del sello no salio de este.
+     */
+    @Test
+    fun `una huella sellada no coincide con otro sello ni sin sello`() = runTest {
+        val sal = ClavePin.nuevaSal()
+        val huella = ClavePin.huella("2468", sal, SELLO)
+
+        assertFalse(ClavePin.coincide("2468", huella, sal, OTRO_SELLO))
+        assertFalse(ClavePin.coincide("2468", huella, sal))
+    }
+
+    /** Las huellas de antes del sello siguen abriendo, y avisan que hay que sellarlas. */
+    @Test
+    fun `una huella sin sellar acierta pidiendo que se selle`() = runTest {
+        val sal = ClavePin.nuevaSal()
+        val vieja = ClavePin.deriva("2468", sal)
+
+        assertEquals(
+            ClavePin.Verificacion.CORRECTO_SIN_SELLAR,
+            ClavePin.verifica("2468", vieja, sal, SELLO)
+        )
+    }
+
+    /** Un sello que falla es un PIN incorrecto, no una pantalla de bloqueo caida. */
+    @Test
+    fun `un sello que lanza no tumba la verificacion`() = runTest {
+        val sal = ClavePin.nuevaSal()
+        val huella = ClavePin.huella("2468", sal, SELLO)
+        val roto = ClavePin.Sello { error("sin Keystore") }
+
+        assertEquals(
+            ClavePin.Verificacion.INCORRECTO,
+            ClavePin.verifica("2468", huella, sal, roto)
+        )
+    }
+
+    private companion object {
+        /** El Keystore no existe en la JVM: un HMAC con llave fija hace sus veces. */
+        val SELLO = selloCon(1)
+        val OTRO_SELLO = selloCon(2)
+
+        fun selloCon(semilla: Byte) = ClavePin.Sello { huella ->
+            Mac.getInstance("HmacSHA256")
+                .apply { init(SecretKeySpec(ByteArray(32) { semilla }, "HmacSHA256")) }
+                .doFinal(huella)
+        }
     }
 }

@@ -32,9 +32,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import com.carlosalbertoxw.ollin.actividades.data.prefs.Ajustes
-import com.carlosalbertoxw.ollin.actividades.data.prefs.AjustesRepositorio
 import com.carlosalbertoxw.ollin.actividades.data.prefs.ModoBloqueo
 import com.carlosalbertoxw.ollin.actividades.data.seguridad.ClavePin
+import com.carlosalbertoxw.ollin.actividades.data.seguridad.ControlBloqueo
 import com.carlosalbertoxw.ollin.actividades.ui.seguridad.pedirCredencialDelSistema
 import com.carlosalbertoxw.ollin.actividades.ui.seguridad.segundosDeEsperaPin
 import com.carlosalbertoxw.ollin.actividades.ui.seguridad.textoDeEspera
@@ -49,12 +49,7 @@ import kotlinx.coroutines.launch
  * recientes.
  */
 @Composable
-fun BloqueoPantalla(
-    actividad: FragmentActivity,
-    ajustes: Ajustes,
-    preferencias: AjustesRepositorio,
-    alDesbloquear: () -> Unit
-) {
+fun BloqueoPantalla(actividad: FragmentActivity, ajustes: Ajustes, bloqueo: ControlBloqueo) {
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
             Modifier
@@ -74,9 +69,9 @@ fun BloqueoPantalla(
             Spacer(Modifier.height(24.dp))
 
             when (ajustes.modoBloqueo) {
-                ModoBloqueo.SISTEMA -> DesbloqueoSistema(actividad, alDesbloquear)
+                ModoBloqueo.SISTEMA -> DesbloqueoSistema(actividad, bloqueo::desbloquea)
 
-                ModoBloqueo.PIN -> DesbloqueoPin(ajustes, preferencias, alDesbloquear)
+                ModoBloqueo.PIN -> DesbloqueoPin(bloqueo)
 
                 // Transitorio: aun no se leen las preferencias del disco.
                 ModoBloqueo.NINGUNO -> Unit
@@ -117,34 +112,24 @@ private fun DesbloqueoSistema(actividad: FragmentActivity, alDesbloquear: () -> 
 }
 
 @Composable
-private fun DesbloqueoPin(
-    ajustes: Ajustes,
-    preferencias: AjustesRepositorio,
-    alDesbloquear: () -> Unit
-) {
+private fun DesbloqueoPin(bloqueo: ControlBloqueo) {
     var pin by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
     var verificando by remember { mutableStateOf(false) }
     val ambito = rememberCoroutineScope()
 
-    val espera = segundosDeEsperaPin(ajustes.pinFallos)
+    val espera = segundosDeEsperaPin(bloqueo)
 
     val verifica: () -> Unit = {
         if (!verificando && espera == 0 && pin.isNotEmpty()) {
             verificando = true
             error = null
             ambito.launch {
-                // `verificando` se suelta al final, con el fallo ya escrito:
-                // soltarlo antes dejaba el boton listo para otro intento
-                // mientras la cuenta —y con ella la espera— aun no subia.
+                // `verificando` se suelta al final, con el intento ya resuelto:
+                // el control apunta el fallo y fija la espera antes de contestar.
+                // Acertar abre la app desde el propio control.
                 try {
-                    if (ClavePin.coincide(pin, ajustes.pinHash, ajustes.pinSal)) {
-                        preferencias.limpiaFallosPin()
-                        alDesbloquear()
-                    } else {
-                        // El fallo se apunta antes de decirlo: si el proceso muere
-                        // justo aqui, lo que no puede perderse es la cuenta.
-                        preferencias.sumaFalloPin()
+                    if (bloqueo.intentaPin(pin) == ControlBloqueo.IntentoDePin.Incorrecto) {
                         error = "PIN incorrecto"
                         pin = ""
                     }

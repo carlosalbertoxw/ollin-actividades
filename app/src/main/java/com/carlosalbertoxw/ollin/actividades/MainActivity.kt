@@ -52,8 +52,14 @@ class MainActivity : FragmentActivity() {
             val fallo by app.arranqueFallido.collectAsStateWithLifecycle()
 
             LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
-                bloqueo.alIrAlFondo()
-                contenedor.avisoDeRespaldo.alIrAlFondo()
+                // Girar el telefono, cambiar de tema o de tamano de ventana
+                // tambien detiene la actividad, pero para recrearla al instante:
+                // no es salir de la app. Sin esto, como una salida sin avisar no
+                // tiene gracia, cada giro volveria a pedir la llave.
+                if (!isChangingConfigurations) {
+                    bloqueo.alIrAlFondo()
+                    contenedor.avisoDeRespaldo.alIrAlFondo()
+                }
             }
             LifecycleEventEffect(Lifecycle.Event.ON_START) {
                 bloqueo.alVolverAlFrente()
@@ -92,8 +98,7 @@ class MainActivity : FragmentActivity() {
                     bloqueado && ajustes.modoBloqueo != ModoBloqueo.NINGUNO -> BloqueoPantalla(
                         actividad = this,
                         ajustes = ajustes,
-                        preferencias = contenedor.ajustes,
-                        alDesbloquear = bloqueo::desbloquea
+                        bloqueo = bloqueo
                     )
 
                     // No hay candado puesto, pero el control aun no lo sabe.

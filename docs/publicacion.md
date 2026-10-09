@@ -16,7 +16,7 @@ Ese último despliegue se lanza sobre `main` con `gh workflow run` y corre apart
 No hay ningún número de versión escrito a mano en el proyecto. [`app/build.gradle.kts`](../app/build.gradle.kts) lee el primer encabezado `## [x.y.z]` de [`CHANGELOG.md`](../CHANGELOG.md) y de ahí saca las dos cosas:
 
 - **`versionName`** es ese número tal cual.
-- **`versionCode`** se deriva con tres huecos de dos cifras: `1.2.3` → `10203`. Crece solo, ordena igual que el semver y nunca hay que acordarse de subirlo aparte. Da margen hasta 99 versiones menores y 99 parches.
+- **`versionCode`** se deriva con tres huecos de dos cifras: `1.2.3` → `10203`. Crece solo, ordena igual que el semver y nunca hay que acordarse de subirlo aparte. Da margen hasta 99 versiones menores y 99 parches, y la publicación se niega a etiquetar una que pase de ahí: una `1.100.0` daría el mismo código que la `2.0.0`.
 
 Un número escrito a mano en el build se olvida: se publica la 1.2.0 con el build todavía en 1.1.0, y quien instala el APK ve una versión que no corresponde a las notas que leyó. Con el historial como única fuente, subir la versión y explicar por qué son el mismo gesto.
 
@@ -31,7 +31,7 @@ Un número escrito a mano en el build se olvida: se publica la 1.2.0 con el buil
 
 ## Los secretos
 
-El flujo necesita cuatro, en *Settings → Secrets and variables → Actions*. El job que firma declara `environment: release`, así que pueden ser secretos del repositorio o del environment `release`, y conviene lo segundo:
+El flujo necesita cuatro, y van como secretos del environment `release`, **no del repositorio**. El job que firma declara `environment: release`; con los secretos en el repositorio esa línea no protegería nada, porque cualquier flujo podría leerlos:
 
 1. En *Settings → Environments → release*, agrega los cuatro como secretos del environment.
 2. En *Deployment branches and tags*, limita el environment a los tags `v*`.

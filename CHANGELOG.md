@@ -22,7 +22,11 @@ Los enlaces van con dirección completa: el mismo texto se lee en GitHub, en el 
 - **Los recordatorios no dicen de qué se trata si la app tiene candado.** Con candado puesto, el aviso de un hábito o de una tarea dice que hay algo pendiente, sin nombre ni detalle. Antes iban marcados como privados, pero con el ajuste de fábrica de Android una notificación privada se lee completa en la pantalla de bloqueo.
 - **Un `.xlsx` manipulado ya no cierra la app ni le agota la memoria.** Se rechazan los libros que declaran un DOCTYPE —en Android el lector no sabía prohibirlo por su cuenta—, los que traen miles de partes y los que ponen celdas más allá de la última fila o columna de Excel, que con un archivo de un kilobyte pedían miles de millones de renglones. Tampoco pasa ya con miles de filas que llegan, aunque sea con una celda vacía, hasta la última columna: el libro entero tiene un tope de casillas.
 - **El aviso de versión nueva solo lleva a las releases de este repositorio.** Antes bastaba con que el enlace fuera `https`; quien se quedara con el dominio del sitio podría haber anunciado a todas las instalaciones una «versión nueva» con el enlace que quisiera. Ahora el botón solo abre descargas de `github.com/carlosalbertoxw/ollin-actividades/releases`, el sitio solo puede redirigir a sí mismo y las notas se recortan a 300 caracteres.
+- **Girar el teléfono ya no vuelve a pedir la llave.** Con candado puesto, girar la pantalla, cambiar de tema o de tamaño de ventana contaba como salir de la app y la cerraba.
 - **Un candado que no se puede leer ya no deja la app abierta.** Si el modo de bloqueo guardado no se reconoce, la app pide el PIN si hay uno, o la credencial del teléfono; antes se abría sin pedir nada.
+- **La huella del PIN ya no se puede comprobar fuera del teléfono.** Además de PBKDF2, se sella con una llave del Keystore que no se puede extraer: con el archivo de preferencias copiado, probar los diez mil PIN ya no es cuestión de minutos. Los PIN puestos con versiones anteriores siguen abriendo, y se sellan solos la siguiente vez que aciertas.
+- **Un solo freno para todo PIN.** La pantalla de bloqueo y el diálogo de *Ajustes* que pide el PIN actual comprueban por el mismo sitio, de uno en uno, con la misma cuenta de fallos y la misma espera; abrir uno después de fallar en el otro no regala un intento.
+- **El aviso de versión nueva tampoco sigue redirecciones fuera de la carpeta del sitio.** Los dos dominios del sitio sirven también otras páginas de la misma cuenta; ahora un salto tiene que caer dentro de `/ollin-actividades/`.
 - **Un fallo del PIN se cuenta antes de dejar probar otra vez.** El botón volvía a habilitarse un instante antes de que se apuntara el fallo y empezara la espera.
 
 ### Añadido
@@ -37,6 +41,7 @@ Los enlaces van con dirección completa: el mismo texto se lee en GitHub, en el 
 
 - **Herramientas y bibliotecas al día.** Android Gradle Plugin 9.4.1 —que ya compila Kotlin por sí mismo—, Gradle 9.8, Kotlin 2.4.20, Compose BOM 2026.09, Room 2.8, Navigation 2.10 y SQLCipher 4.19, entre otras. La app se compila contra la API 37 de Android, pero se sigue portando como en la 36: subir el `targetSdk` cambia el comportamiento en el teléfono y va aparte. Ya no hace falta un JDK 21 para compilar; sirve cualquiera desde el 17.
 - *Acerca de* avisa de que el `.xlsx` exportado no va cifrado, a diferencia de la base.
+- La publicación se niega a etiquetar una versión con menor o parche por encima de 99, que repetiría el `versionCode` de otra; las dependencias del sitio pasan por `npm audit` en cada cambio, y la prueba de actualizar sobre la versión anterior deja siempre el log y distingue un fallo suyo de uno de la app.
 - Las licencias de terceros incluyen ahora todo lo que viaja en el APK —faltaban Protocol Buffers, kotlinx.serialization, Okio y algunas anotaciones—, y la integración continua falla si entra una biblioteca con una licencia fuera de la lista permitida.
 
 ### Corregido
