@@ -197,6 +197,24 @@ class ActualizacionesTest {
         assertNull(siguienteSalto(301, ""))
     }
 
+    /** El mismo host sirve las paginas de otros repositorios de la cuenta. */
+    @Test
+    fun `un salto fuera de la carpeta del proyecto no se sigue`() {
+        assertNull(siguienteSalto(301, "https://carlosalbertoxw.github.io/otro/version.json"))
+        assertNull(
+            siguienteSalto(301, "https://carlosalbertoxw.com/ollin-actividades-falsa/v.json")
+        )
+        assertNull(
+            siguienteSalto(301, "https://carlosalbertoxw.com/ollin-actividades/../otro/v.json")
+        )
+        assertNull(
+            siguienteSalto(301, "https://carlosalbertoxw.com/ollin-actividades/%2e%2e/v.json")
+        )
+        assertNull(siguienteSalto(301, "https://carlosalbertoxw.com/ollin-actividades/v.json?x=1"))
+        assertNull(siguienteSalto(301, "https://carlosalbertoxw.com/ollin-actividades/v.json#a"))
+        assertNull(siguienteSalto(301, "https://carlosalbertoxw.com/version.json"))
+    }
+
     /** La mudanza es de github.io al dominio propio; cualquier otro destino no lo es. */
     @Test
     fun `un salto a otro dominio no se sigue`() {

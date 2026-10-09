@@ -26,6 +26,7 @@ Los enlaces van con dirección completa: el mismo texto se lee en GitHub, en el 
 - **Un candado que no se puede leer ya no deja la app abierta.** Si el modo de bloqueo guardado no se reconoce, la app pide el PIN si hay uno, o la credencial del teléfono; antes se abría sin pedir nada.
 - **La huella del PIN ya no se puede comprobar fuera del teléfono.** Además de PBKDF2, se sella con una llave del Keystore que no se puede extraer: con el archivo de preferencias copiado, probar los diez mil PIN ya no es cuestión de minutos. Los PIN puestos con versiones anteriores siguen abriendo, y se sellan solos la siguiente vez que aciertas.
 - **Un solo freno para todo PIN.** La pantalla de bloqueo y el diálogo de *Ajustes* que pide el PIN actual comprueban por el mismo sitio, de uno en uno, con la misma cuenta de fallos y la misma espera; abrir uno después de fallar en el otro no regala un intento.
+- **El aviso de versión nueva tampoco sigue redirecciones fuera de la carpeta del sitio.** Los dos dominios del sitio sirven también otras páginas de la misma cuenta; ahora un salto tiene que caer dentro de `/ollin-actividades/`.
 - **Un fallo del PIN se cuenta antes de dejar probar otra vez.** El botón volvía a habilitarse un instante antes de que se apuntara el fallo y empezara la espera.
 
 ### Añadido

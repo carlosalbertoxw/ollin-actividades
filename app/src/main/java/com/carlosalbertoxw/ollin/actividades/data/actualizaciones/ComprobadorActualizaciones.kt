@@ -278,6 +278,12 @@ private fun pide(url: String): Respuesta {
  * **Y solo a casa.** El salto existe para la mudanza de `github.io` al dominio
  * propio; cualquier otro destino no es una mudanza del sitio, y no hay por que
  * pedirle a un tercero que diga que version toca.
+ *
+ * Casa es el host **y la ruta del proyecto**. Los dos hosts sirven tambien las
+ * paginas de otros repositorios de la misma cuenta, y quien pudiera publicar en
+ * uno de ellos contestaria el `version.json`. Se compara la direccion ya
+ * desarmada, no el texto, y la ruta solo admite letras, cifras y `. _ - /`: asi
+ * no pasan los `..` ni los `%2e` que el servidor resolveria hacia otro sitio.
  */
 internal fun siguienteSalto(codigo: Int, destino: String?): String? {
     if (codigo !in 300..399) return null
@@ -286,11 +292,20 @@ internal fun siguienteSalto(codigo: Int, destino: String?): String? {
     val uri = runCatching { URI(limpio) }.getOrNull() ?: return null
     val host = uri.host?.lowercase() ?: return null
     if (uri.rawUserInfo != null || uri.port != -1 || host !in HOSTS_DEL_SITIO) return null
+    if (uri.rawQuery != null || uri.rawFragment != null) return null
+    val ruta = uri.rawPath ?: return null
+    if (!RUTA_SEGURA.matches(ruta) || ".." in ruta || !ruta.startsWith(RUTA_DEL_SITIO)) return null
     return limpio
 }
 
 /** A donde puede mudarse el sitio: su dominio propio y el de GitHub Pages. */
 internal val HOSTS_DEL_SITIO = setOf("carlosalbertoxw.com", "carlosalbertoxw.github.io")
+
+/** La carpeta del proyecto en esos dos hosts. Termina en barra: `-falsa` no pasa. */
+internal const val RUTA_DEL_SITIO = "/ollin-actividades/"
+
+/** Letras, cifras y `. _ - /`: basta para cualquier ruta del sitio. */
+private val RUTA_SEGURA = Regex("""[A-Za-z0-9._/\-]*""")
 
 /** 64 K caracteres. El archivo real ronda los 400 bytes; esto es holgura, no expectativa. */
 private const val TOPE_CARACTERES = 64 * 1024
