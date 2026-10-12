@@ -57,6 +57,36 @@ class XlsxLectorSeguridadTest {
         return salida.toByteArray()
     }
 
+    /**
+     * Libro con varias hojas. [hojas] son pares (rId, destino) en el orden del
+     * libro; [partes] el contenido de cada destino, que puede faltar o repetirse.
+     */
+    private fun libroDeVariasHojas(
+        hojas: List<Pair<String, String>>,
+        partes: Map<String, String>
+    ): ByteArray {
+        val salida = ByteArrayOutputStream()
+        ZipOutputStream(salida).use { zip ->
+            fun parte(ruta: String, contenido: String) {
+                zip.putNextEntry(ZipEntry(ruta))
+                zip.write(contenido.toByteArray())
+                zip.closeEntry()
+            }
+            val definiciones = hojas.mapIndexed { i, (rid, _) ->
+                """<sheet name="Hoja${i + 1}" sheetId="${i + 1}" r:id="$rid"/>"""
+            }.joinToString("")
+            parte("xl/workbook.xml", "<workbook><sheets>$definiciones</sheets></workbook>")
+            val relaciones = hojas.distinctBy { it.first }.joinToString("") { (rid, destino) ->
+                """<Relationship Id="$rid" Target="$destino"/>"""
+            }
+            parte("xl/_rels/workbook.xml.rels", "<Relationships>$relaciones</Relationships>")
+            partes.forEach { (ruta, filas) ->
+                parte("xl/$ruta", "<worksheet><sheetData>$filas</sheetData></worksheet>")
+            }
+        }
+        return salida.toByteArray()
+    }
+
     private fun rechaza(bytes: ByteArray, motivo: String): XlsxLector.ArchivoInvalido {
         try {
             XlsxLector.lee(ByteArrayInputStream(bytes))
@@ -214,6 +244,73 @@ class XlsxLectorSeguridadTest {
         val e = rechaza(bytes, "Un libro que pide mas celdas que el tope no debe leerse")
 
         assertTrue(e.message!!.contains("demasiado grande"))
+    }
+
+    /**
+     * Una fila vacia en la ultima fila de Excel no pide ninguna celda, pero
+     * obliga a rellenar un millon de renglones. Cinco hojas asi caben en un
+     * archivo de un kilobyte y antes no gastaban nada del tope.
+     */
+    @Test
+    fun `hojas que solo traen la ultima fila vacia se rechazan`() {
+        val ultima = """<row r="${XlsxLector.MAXIMO_FILAS}"/>"""
+        val hojas = (1..5).map { "rId$it" to "worksheets/sheet$it.xml" }
+        val bytes = libroDeVariasHojas(
+            hojas = hojas,
+            partes = hojas.associate { (_, destino) -> destino to ultima }
+        )
+        assertTrue("El archivo tiene que ser pequeno", bytes.size < 4 * 1024)
+
+        val e = rechaza(bytes, "Los renglones de relleno tienen que gastar el tope")
+
+        assertTrue(e.message!!.contains("demasiado grande"))
+    }
+
+    /** Una sola hoja que llega hasta la ultima fila sigue siendo legal. */
+    @Test
+    fun `una hoja con la ultima fila de Excel se lee`() {
+        val leido = XlsxLector.lee(
+            ByteArrayInputStream(libro(filas = """<row r="${XlsxLector.MAXIMO_FILAS}"/>"""))
+        )
+
+        assertEquals(XlsxLector.MAXIMO_FILAS, leido.hoja("Registros")!!.filas.size)
+    }
+
+    /**
+     * Cientos de entradas del libro hacia la misma hoja diminuta: cada una la
+     * volvia a leer y guardar, y la memoria la decidia el numero de entradas.
+     */
+    @Test
+    fun `dos hojas con el mismo rId se rechazan`() {
+        val e = rechaza(
+            libroDeVariasHojas(
+                hojas = listOf(
+                    "rId1" to "worksheets/sheet1.xml",
+                    "rId1" to "worksheets/sheet1.xml"
+                ),
+                partes = mapOf("worksheets/sheet1.xml" to """<row r="1"/>""")
+            ),
+            "Dos hojas que apuntan a la misma parte no deben leerse"
+        )
+
+        assertTrue(e.message!!.contains("mismo contenido"))
+    }
+
+    /** Lo mismo con dos rId distintos que llevan al mismo destino. */
+    @Test
+    fun `dos rId hacia la misma parte se rechazan`() {
+        val e = rechaza(
+            libroDeVariasHojas(
+                hojas = listOf(
+                    "rId1" to "worksheets/sheet1.xml",
+                    "rId2" to "/xl/worksheets/sheet1.xml"
+                ),
+                partes = mapOf("worksheets/sheet1.xml" to """<row r="1"/>""")
+            ),
+            "Dos hojas que apuntan a la misma parte no deben leerse"
+        )
+
+        assertTrue(e.message!!.contains("mismo contenido"))
     }
 
     /** Las casillas de relleno son la misma: no cuestan un objeto cada una. */

@@ -184,6 +184,6 @@ Y para comprobar la firma de un APK ya construido:
 
 - Que `main` esté verde.
 - Correr [`pruebas-instrumentadas.yml`](../.github/workflows/pruebas-instrumentadas.yml) a mano si se tocó alguna pantalla.
-- Instalar el APK de release en un teléfono y abrirlo: R8 puede romper cosas que la compilación de depuración no enseña. Lo que más riesgo corre es que la base abra, por SQLCipher y Room.
+- Que la base abra con el APK de release ya lo comprueba [`actualizacion.yml`](../.github/workflows/actualizacion.yml), que instala el de release encima del de la versión anterior y bloquea publicar: R8 puede romper cosas que la compilación de depuración no enseña. Lo que no ve es la pantalla; si se tocó alguna, abrir el de release en un teléfono y recorrerla.
 - Si hay migración nueva, instalar **encima** de la versión anterior con datos dentro, no sobre una instalación limpia. Es el único camino que recorre la gente y el único que el emulador no reproduce del todo.
 - Dejar el `CHANGELOG` como quedará publicado: ese texto es el cuerpo de la release y lo que la app enseña en *Acerca de*.

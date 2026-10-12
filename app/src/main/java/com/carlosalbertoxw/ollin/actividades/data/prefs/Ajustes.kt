@@ -2,11 +2,13 @@ package com.carlosalbertoxw.ollin.actividades.data.prefs
 
 import android.app.KeyguardManager
 import android.content.Context
+import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.preferencesOf
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -15,7 +17,21 @@ import com.carlosalbertoxw.ollin.actividades.data.excel.HojaExportable
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
-private val Context.almacen by preferencesDataStore(name = "ollin_actividades_ajustes")
+/**
+ * Si el archivo se dana, se reemplaza en vez de reventar.
+ *
+ * Sin manejador, DataStore lanza la corrupcion dentro del Flow que alimentan la
+ * pantalla y el candado, y la app se cerraba en cada arranque. La unica salida
+ * era "Borrar datos", que se lleva tambien la base cifrada: una bitacora entera
+ * perdida por un archivo de preferencias de un kilobyte.
+ *
+ * El reemplazo no son los valores de fabrica a secas, porque el de fabrica del
+ * candado es no tenerlo. Ver [AjustesRepositorio.trasUnArchivoDanado].
+ */
+private val Context.almacen by preferencesDataStore(
+    name = "ollin_actividades_ajustes",
+    corruptionHandler = ReplaceFileCorruptionHandler { AjustesRepositorio.trasUnArchivoDanado() }
+)
 
 /** Con que se desbloquea Ollin al abrirla. */
 enum class ModoBloqueo(val etiqueta: String) {
@@ -137,6 +153,23 @@ class AjustesRepositorio(
         contexto.getSystemService(KeyguardManager::class.java)?.isDeviceSecure == true
     }
 ) {
+
+    companion object {
+        /** Un modo de bloqueo que ningun [ModoBloqueo] reconoce, a proposito. */
+        internal const val MODO_ILEGIBLE = "ilegible"
+
+        /**
+         * Lo que queda escrito cuando el archivo de preferencias se dano.
+         *
+         * Todo vuelve a su valor de fabrica salvo el candado, que se marca como
+         * ilegible: asi [leeModoBloqueo] no lo da por ausente y lo deduce, igual
+         * que con un enum renombrado. La huella del PIN se perdio con el archivo,
+         * de modo que se pide la credencial del telefono, y solo se abre sin
+         * nada si el telefono no tiene ningun bloqueo con que cerrar.
+         */
+        internal fun trasUnArchivoDanado(): Preferences =
+            preferencesOf(Claves.BLOQUEO to MODO_ILEGIBLE)
+    }
 
     private object Claves {
         val TEMA = stringPreferencesKey("tema")

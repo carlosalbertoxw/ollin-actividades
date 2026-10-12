@@ -34,7 +34,9 @@ fun telefonoAsegurado(contexto: Context): Boolean =
  *
  * Si el Keystore no deja preparar la llave en algun telefono, se cae a la
  * pantalla de desbloqueo del sistema en vez de dejar a nadie fuera de su
- * bitacora.
+ * bitacora. Ese camino si se fia de `RESULT_OK`, a sabiendas: forzarlo exige
+ * hacer fallar el Keystore de la app, es decir root, y con root ya se lee la
+ * base sin pasar por aqui. Ver docs/seguridad.md, "La credencial del sistema".
  */
 @Composable
 fun pedirCredencialDelSistema(
