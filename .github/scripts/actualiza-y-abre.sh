@@ -9,6 +9,15 @@
 #
 #   RUNNER_TEMP=/tmp .github/scripts/actualiza-y-abre.sh
 #
+# Los APK son de release, que es lo que se instala de verdad (ver el flujo). Para
+# probar dos de depuracion, que llevan otro applicationId:
+#
+#   PAQUETE=com.carlosalbertoxw.ollin.actividades.debug RUNNER_TEMP=/tmp .github/scripts/actualiza-y-abre.sh
+#
+# En release `run-as` no funciona, porque la app no es depurable: el listado de
+# preferencias que se intenta mas abajo sale vacio, y eso no es motivo para
+# fallar.
+#
 # Lo que se afirma es deliberadamente pobre: que el proceso siga vivo y que no
 # haya una excepcion mortal. No mira la pantalla. Un fallo de arranque se
 # manifiesta como el proceso que desaparece, y eso se ve sin depender de
@@ -21,7 +30,7 @@
 
 set -euo pipefail
 
-PAQUETE="com.carlosalbertoxw.ollin.actividades.debug"
+PAQUETE="${PAQUETE:-com.carlosalbertoxw.ollin.actividades}"
 ACTIVIDAD="$PAQUETE/com.carlosalbertoxw.ollin.actividades.MainActivity"
 ANTERIOR="${RUNNER_TEMP:?falta RUNNER_TEMP}/anterior.apk"
 NUEVA="$RUNNER_TEMP/nueva.apk"

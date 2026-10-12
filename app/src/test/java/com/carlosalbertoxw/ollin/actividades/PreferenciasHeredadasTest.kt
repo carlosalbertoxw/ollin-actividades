@@ -125,6 +125,26 @@ class PreferenciasHeredadasTest {
         assertEquals(ModoBloqueo.SISTEMA, ajustes.modoBloqueo)
     }
 
+    /**
+     * Un archivo de preferencias danado se reemplaza en vez de cerrar la app en
+     * cada arranque, pero el reemplazo no puede abrir la bitacora sin candado.
+     */
+    @Test
+    fun `tras un archivo danado se pide la credencial del telefono`() {
+        val asegurado = AjustesRepositorio(
+            ApplicationProvider.getApplicationContext(),
+            telefonoAsegurado = { true }
+        )
+
+        val ajustes = asegurado.interpreta(AjustesRepositorio.trasUnArchivoDanado())
+
+        assertEquals(ModoBloqueo.SISTEMA, ajustes.modoBloqueo)
+        assertTrue(
+            "El marcador tiene que seguir siendo ilegible",
+            ModoBloqueo.entries.none { it.name == AjustesRepositorio.MODO_ILEGIBLE }
+        )
+    }
+
     /** Sin PIN ni bloqueo del telefono no hay con que cerrar: dejarlo fuera seria peor. */
     @Test
     fun `un modo ilegible en un telefono sin bloqueo no deja a nadie fuera`() {

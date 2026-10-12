@@ -51,6 +51,8 @@ Las transiciones de bloqueo se escriben de golpe en DataStore. Si el modo y el P
 
 **Un modo que no se puede leer no abre la app.** Para el resto de las preferencias, lo ilegible vuelve al valor de fábrica, y para el candado el de fábrica es no tenerlo: un enum renombrado, una clave que cambió de tipo o un archivo dañado abrían la bitácora sin pedir nada. Ahora se distingue *no haber puesto candado* de *no poder leer cuál se puso*, y en el segundo caso se deduce de lo que sí se lee: si hay huella de PIN, el PIN; si no, la credencial del teléfono. Solo se abre si el teléfono no tiene ningún bloqueo, porque entonces no hay con qué cerrar. Ver `AjustesRepositorio.leeModoBloqueo`.
 
+**Un archivo de preferencias dañado se reemplaza, sin abrir el candado.** Sin manejador, DataStore lanzaba la corrupción dentro del `Flow` que alimenta la pantalla y el candado: la app se cerraba en cada arranque, y la única salida era *Borrar datos*, que se lleva también la base. Ahora el archivo se reemplaza por uno con los valores de fábrica, salvo el modo de bloqueo, que se marca como ilegible (`AjustesRepositorio.trasUnArchivoDanado`) para que la regla de arriba lo deduzca. La huella del PIN se perdió con el archivo, así que se pide la credencial del teléfono, y solo se abre sin nada si el teléfono no tiene ningún bloqueo.
+
 ### El PIN propio
 
 [`ClavePin`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/data/seguridad/ClavePin.kt) nunca guarda el PIN: guarda **PBKDF2-HMAC-SHA256, 120 000 iteraciones, 256 bits**, con sal aleatoria de 16 bytes distinta por teléfono.
@@ -77,6 +79,8 @@ Poner un PIN nuevo estrena contador: quien acaba de demostrar que es el dueño n
 
 La comparación es en tiempo constante (`MessageDigest.isEqual`): un `==` normal corta en el primer byte distinto, y ese tiempo de más revela cuánto del PIN se acertó.
 
+**Las iteraciones se quedan en 120 000 a propósito**, aunque la referencia actual de OWASP para PBKDF2-HMAC-SHA256 ronda las 600 000. Esa cifra está pensada para una huella que el atacante puede probar en su propio equipo; aquí el sello del Keystore lo impide, y dentro del teléfono quien frena es la espera creciente, no PBKDF2. Quintuplicarlas solo añadiría cerca de un segundo a cada desbloqueo en un teléfono lento, a cambio de una defensa que solo importaría si el sello fallara.
+
 #### Qué protege el candado y qué no
 
 El candado —PIN o credencial del teléfono— decide quién **ve** la bitácora en la pantalla, no quién puede leer la base. La base se abre antes de llegar al candado con una llave del Keystore que no exige autenticación (ver [cifrado de la base](#cifrado-de-la-base)), y el PIN no participa en ella.
@@ -92,6 +96,8 @@ Protege, por lo tanto, frente a quien tiene el teléfono desbloqueado en la mano
 Eso obliga a pedir huella de **clase fuerte**: las débiles no pueden habilitar una llave del Keystore. Quien solo tenga una débil —algunos desbloqueos con la cara— entra con el patrón o el PIN del teléfono.
 
 Si una huella nueva o un cambio del bloqueo del teléfono invalida la llave, se crea otra y basta con autenticarse de nuevo. Y si en algún teléfono el Keystore no deja preparar la llave, se cae a la pantalla de desbloqueo del sistema en vez de dejar a nadie fuera de su bitácora.
+
+Ese camino de respaldo sí se fía del resultado de la actividad (`RESULT_OK`), sin prueba del Keystore, y es una decisión consciente. Para forzarlo hay que hacer fallar el Keystore de la app, lo que exige root, y con root ya se puede usar la llave de la base y leerla sin pasar por el candado. Quitarlo no protegería nada más y dejaría fuera de su bitácora a quien tenga un teléfono con el Keystore defectuoso.
 
 La llave no protege la base, que va con la suya y sin exigir autenticación: solo vuelve inútil el atajo de saltarse el diálogo.
 

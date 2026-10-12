@@ -57,6 +57,8 @@ La página **no** pide su propia versión por `fetch`. El sitio se reconstruye e
 
 El flujo de despliegue **descarga el APK publicado** para medirlo y sacarle la huella, en vez de arrastrar esos datos desde la compilación. Es a propósito: la huella que se publica es la del archivo que la gente va a bajar, que es lo único que hace que comprobarla signifique algo.
 
+Antes de subir el sitio, el flujo comprueba con [`comprueba-version-json.sh`](../.github/scripts/comprueba-version-json.sh) que la app aceptaría el `version.json` que se va a publicar —el `apk` tiene que ser una descarga de las releases de este repositorio, con las mismas reglas que [aplica la app](actualizaciones.md#solo-una-descarga-de-las-releases)—. Si no, el despliegue falla: la app descartaría el archivo entero y el aviso de versión nueva se apagaría en todas las instalaciones sin que nada lo dijera. Por lo mismo, la dirección del APK es siempre `browser_download_url`, nunca el `url` del asset, que apunta a `api.github.com`.
+
 Si todavía no hay ninguna release, el script no falla: se apoya solo en el `CHANGELOG` y el botón apunta a la dirección que *tendrá* la descarga. Así `npm run dev` produce un sitio coherente sin haber publicado nada.
 
 ## Cuándo se despliega

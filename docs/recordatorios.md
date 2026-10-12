@@ -89,6 +89,8 @@ La alternativa —una alarma por recordatorio— obliga a llevar la cuenta de cu
 - Al sonar la alarma.
 - Al arrancar el teléfono (`BOOT_COMPLETED`) y tras actualizar la app (`MY_PACKAGE_REPLACED`): las dos cosas borran las alarmas puestas.
 
+Lo que despierta el receptor corre solo, sin pantalla delante, así que un fallo ahí no puede cerrar la app: si la base no abre, se guarda en el [informe del último fallo](seguridad.md#el-informe-del-último-fallo) y el receptor termina igual, liberando el `goAsync()` que retiene el proceso. Antes, ese mismo fallo cerraba la app en segundo plano tras cada reinicio y cada alarma. Ver `CoordinadorRecordatorios.enSegundoPlano`.
+
 ### Lo vencido se rescata
 
 Al despachar se miran también las **6 horas hacia atrás**. El teléfono apagado, una alarma diferida en doze o una actualización dejan huecos, y un hábito de esta mañana todavía se puede cumplir. Más atrás no: sería ruido por algo que ya no se puede hacer.

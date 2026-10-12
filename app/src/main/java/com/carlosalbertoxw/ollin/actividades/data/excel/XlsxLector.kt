@@ -88,6 +88,12 @@ object XlsxLector {
      * real, con decenas de miles de registros de trece columnas, se queda en
      * menos de un millon; cuatro dan holgura de sobra y siguen cabiendo en la
      * memoria de cualquier telefono.
+     *
+     * Las filas tambien cuentan, aunque vengan vacias: una sola `<row
+     * r="1048576"/>` obliga a rellenar un millon de renglones sin pedir ninguna
+     * celda, y cada uno es una referencia en memoria igual que una casilla. Sin
+     * cobrarlas, unas cuantas hojas asi agotaban la memoria desde un archivo de
+     * pocos kilobytes.
      */
     internal const val LIMITE_CELDAS = 4_000_000L
 
@@ -118,10 +124,18 @@ object XlsxLector {
         // Uno para todo el libro y no uno por hoja: repartir el tope entre muchas
         // hojas pequenas lo multiplicaria por el numero de hojas.
         val presupuesto = Presupuesto(LIMITE_CELDAS)
+        // Cada parte se lee una sola vez. Una hoja de calculo nunca apunta dos
+        // hojas al mismo XML, y si se dejara, un workbook.xml con cientos de
+        // entradas hacia una misma hoja diminuta la leeria cientos de veces y
+        // las guardaria todas: la memoria la decide el numero de entradas, no
+        // lo que pesa el archivo. Se compara la ruta ya resuelta y no el rId,
+        // porque dos rId distintos pueden llevar al mismo destino.
+        val leidas = HashSet<String>()
         val hojas = definiciones.mapNotNull { (nombre, rid) ->
             val destino = relaciones[rid] ?: return@mapNotNull null
             val ruta = normalizaRuta(destino)
             val bytes = partes[ruta] ?: return@mapNotNull null
+            if (!leidas.add(ruta)) throw hojaRepetida()
             HojaLeida(nombre, leeFilas(bytes, cadenas, presupuesto))
         }
 
@@ -194,6 +208,11 @@ object XlsxLector {
 
     private fun demasiadoGrande() =
         ArchivoInvalido("El archivo es demasiado grande para procesarse en el teléfono.")
+
+    private fun hojaRepetida() = ArchivoInvalido(
+        "El libro apunta dos hojas al mismo contenido, algo que ninguna hoja de " +
+            "cálculo hace. Vuelve a guardarlo como .xlsx desde tu hoja de cálculo."
+    )
 
     private fun fueraDeLaHoja() = ArchivoInvalido(
         "El archivo trae celdas más allá del tamaño máximo de una hoja de Excel. " +
@@ -449,11 +468,13 @@ object XlsxLector {
 
         fun cierraFila() {
             if (numeroFilaActual <= 0) return
+            // Se cobra antes de pedir la memoria, no despues: el punto es no
+            // llegar a reservarla. Los renglones de relleno y el propio cuestan
+            // una casilla aunque esten vacios; ver [LIMITE_CELDAS].
+            val relleno = (numeroFilaActual - 1 - filas.size).coerceAtLeast(0)
+            presupuesto.gasta(relleno + maxOf(maxColFila, 1))
             // Rellena los huecos que el archivo omite y las filas salteadas.
             while (filas.size < numeroFilaActual - 1) filas.add(emptyList())
-            // Se cobra antes de pedir la memoria, no despues: el punto es no
-            // llegar a reservarla.
-            presupuesto.gasta(maxColFila)
             val fila = (1..maxColFila).map { filaActual[it] ?: CeldaLeida.VACIA }
             if (filas.size == numeroFilaActual - 1) {
                 filas.add(fila)

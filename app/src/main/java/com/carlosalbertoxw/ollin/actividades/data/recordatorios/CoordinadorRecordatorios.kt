@@ -1,11 +1,15 @@
 package com.carlosalbertoxw.ollin.actividades.data.recordatorios
 
 import android.content.Context
+import android.util.Log
+import com.carlosalbertoxw.ollin.actividades.BuildConfig
 import com.carlosalbertoxw.ollin.actividades.OllinApp
+import com.carlosalbertoxw.ollin.actividades.data.diagnostico.RegistroDeFallos
 import com.carlosalbertoxw.ollin.actividades.data.prefs.Ajustes
 import com.carlosalbertoxw.ollin.actividades.data.prefs.AjustesRepositorio
 import com.carlosalbertoxw.ollin.actividades.data.prefs.ModoBloqueo
 import com.carlosalbertoxw.ollin.actividades.domain.model.Tiempo
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -215,9 +219,52 @@ class CoordinadorRecordatorios(
         fun de(contexto: Context): CoordinadorRecordatorios =
             (contexto.applicationContext as OllinApp).contenedor.recordatorios
 
-        /** Un alcance suelto para lo que dispara un BroadcastReceiver. */
-        fun enSegundoPlano(contexto: Context, bloque: suspend () -> Unit) {
-            CoroutineScope(SupervisorJob() + Dispatchers.IO).launch { bloque() }
+        /**
+         * Un alcance suelto para lo que dispara un BroadcastReceiver.
+         *
+         * Lo que falle aqui no puede tirar el proceso. Si la base no abre —la
+         * llave del Keystore fallo, falta una migracion—, la app lo explica con
+         * su pantalla de arranque fallido; el receptor, en cambio, corre solo,
+         * despues de cada reinicio y de cada alarma, y una excepcion suelta
+         * cerraba la app en segundo plano cada vez. El fallo se guarda en el
+         * informe de *Acerca de* y [alTerminar] corre pase lo que pase, porque es
+         * el que libera el `goAsync()` del receptor.
+         */
+        fun enSegundoPlano(contexto: Context, alTerminar: () -> Unit, bloque: suspend () -> Unit) {
+            val app = contexto.applicationContext
+            CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+                sinCaerse(
+                    bloque = bloque,
+                    alFallar = { fallo ->
+                        Log.e(OllinApp.BITACORA, "Los recordatorios no pudieron despacharse", fallo)
+                        RegistroDeFallos.guarda(app, fallo, BuildConfig.VERSION_NAME)
+                    },
+                    alTerminar = alTerminar
+                )
+            }
+        }
+
+        /**
+         * [bloque] sin que nada de lo que lance llegue al manejador del hilo.
+         *
+         * Throwable y no Exception, por lo mismo que en el arranque: si SQLCipher
+         * no carga llega un `UnsatisfiedLinkError`. La cancelacion si se deja
+         * pasar, porque atraparla rompe la de las corrutinas.
+         */
+        internal suspend fun sinCaerse(
+            bloque: suspend () -> Unit,
+            alFallar: (Throwable) -> Unit,
+            alTerminar: () -> Unit
+        ) {
+            try {
+                bloque()
+            } catch (cancelacion: CancellationException) {
+                throw cancelacion
+            } catch (fallo: Throwable) {
+                alFallar(fallo)
+            } finally {
+                alTerminar()
+            }
         }
     }
 }

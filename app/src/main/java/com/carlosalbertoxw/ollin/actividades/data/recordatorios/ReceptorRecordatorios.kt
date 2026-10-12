@@ -20,9 +20,8 @@ class ReceptorRecordatorios : BroadcastReceiver() {
         // Se toma antes de saltar al hilo de fondo: pasado onReceive, el
         // sistema puede matar el proceso, y goAsync() es lo que lo retiene.
         val pendiente = goAsync()
-        CoordinadorRecordatorios.enSegundoPlano(app) {
+        CoordinadorRecordatorios.enSegundoPlano(app, alTerminar = pendiente::finish) {
             withContext(Dispatchers.IO) { CoordinadorRecordatorios.de(app).despacha() }
-            pendiente.finish()
         }
     }
 }
