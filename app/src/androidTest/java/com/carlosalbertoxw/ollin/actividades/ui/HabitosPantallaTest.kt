@@ -56,7 +56,7 @@ class HabitosPantallaTest {
         compose.esperaTexto("Sin hábitos todavía")
 
         compose.onNodeWithContentDescription("Nuevo hábito").performClick()
-        compose.esperaTexto("Cada cuando")
+        compose.esperaTexto("Cada cuándo")
 
         compose.onNode(campo("Nombre")).performTextInput("Regar las plantas")
         compose.onNodeWithText("Cada tantos días").performClick()
@@ -77,7 +77,7 @@ class HabitosPantallaTest {
         monta()
 
         compose.onNodeWithContentDescription("Nuevo hábito").performClick()
-        compose.esperaTexto("Cada cuando")
+        compose.esperaTexto("Cada cuándo")
         assertFalse(compose.hayTexto("X"))
 
         compose.onNodeWithText("Días elegidos").performClick()

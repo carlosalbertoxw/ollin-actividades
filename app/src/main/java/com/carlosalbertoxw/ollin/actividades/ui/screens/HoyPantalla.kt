@@ -115,7 +115,7 @@ fun HoyPantalla(
                     Text(Tiempo.diaRelativo(dia), style = MaterialTheme.typography.headlineSmall)
                     Text(
                         if (totalHoy > 0) {
-                            "${Tiempo.duracionLarga(totalHoy)} registradas"
+                            "Tiempo registrado: ${Tiempo.duracionLarga(totalHoy)}"
                         } else {
                             "Sin tiempo registrado todavía"
                         },

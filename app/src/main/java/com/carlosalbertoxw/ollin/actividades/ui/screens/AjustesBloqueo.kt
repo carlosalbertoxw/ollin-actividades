@@ -78,7 +78,7 @@ internal fun SeccionBloqueo(
     Text("Bloqueo", style = MaterialTheme.typography.titleMedium)
     Text(
         "Ollin pide la llave al abrirse, y al volver de un viaje al selector de " +
-            "archivos que haya tardado mas de un minuto.",
+            "archivos que haya tardado más de un minuto.",
         style = MaterialTheme.typography.bodySmall,
         color = colores.textoTenue
     )

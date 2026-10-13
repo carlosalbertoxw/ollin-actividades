@@ -160,12 +160,12 @@ fun AcercaDePantalla(contenedor: Contenedor, alCerrar: () -> Unit) {
                 shape = RoundedCornerShape(18.dp)
             ) {
                 Column(Modifier.padding(18.dp)) {
-                    Text("Que quiere decir Ollin", style = MaterialTheme.typography.titleSmall)
+                    Text("Qué quiere decir Ollin", style = MaterialTheme.typography.titleSmall)
                     Spacer(Modifier.height(6.dp))
                     Text(
-                        "Ollin es \"movimiento\" en nahuatl, y es el nombre del glifo del " +
-                            "calendario mexica que representa el cambio. Una bitacora no es " +
-                            "mas que el registro de tus movimientos.",
+                        "Ollin es \"movimiento\" en náhuatl, y es el nombre del glifo del " +
+                            "calendario mexica que representa el cambio. Una bitácora no es " +
+                            "más que el registro de tus movimientos.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = colores.textoTenue
                     )
@@ -173,35 +173,35 @@ fun AcercaDePantalla(contenedor: Contenedor, alCerrar: () -> Unit) {
             }
 
             Spacer(Modifier.height(24.dp))
-            Text("Que hace", style = MaterialTheme.typography.titleMedium)
+            Text("Qué hace", style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(12.dp))
 
             Rasgo(
                 Icons.Filled.Timer,
                 "Cronometra o captura a mano",
-                "Puedes medir lo que haces mientras pasa, o anotarlo despues con los " +
+                "Puedes medir lo que haces mientras pasa, o anotarlo después con los " +
                     "minutos que recuerdes. Las dos cosas cuentan igual."
             )
             Rasgo(
                 Icons.Filled.Repeat,
-                "Habitos con la cadencia que quieras",
-                "Todos los dias, ciertos dias de la semana, un numero de veces por " +
-                    "semana, o cada tantos dias o meses."
+                "Hábitos con la cadencia que quieras",
+                "Todos los días, ciertos días de la semana, un número de veces por " +
+                    "semana, o cada tantos días o meses."
             )
             Rasgo(
                 Icons.Filled.Insights,
-                "Analitica sobre lo completado",
+                "Analítica sobre lo completado",
                 "Solo suma lo que cerraste. Lo pendiente no infla ninguna cifra."
             )
             Rasgo(
                 Icons.Filled.FolderOpen,
                 "Tus datos salen en Excel",
-                "La exportacion a .xlsx lleva formulas vivas y se puede volver a importar."
+                "La exportación a .xlsx lleva fórmulas vivas y se puede volver a importar."
             )
             Rasgo(
                 Icons.Filled.Lock,
-                "Cerrada con llave si tu quieres",
-                "Con el patron o huella del telefono, o con un PIN propio de Ollin."
+                "Cerrada con llave si tú quieres",
+                "Con el patrón o huella del teléfono, o con un PIN propio de Ollin."
             )
 
             Spacer(Modifier.height(20.dp))
@@ -229,11 +229,11 @@ fun AcercaDePantalla(contenedor: Contenedor, alCerrar: () -> Unit) {
             )
             Spacer(Modifier.height(10.dp))
             Text(
-                "Por lo mismo el respaldo automatico del sistema esta desactivado para la " +
-                    "base: una llave del Keystore no se puede restaurar en otro telefono y " +
-                    "la copia llegaria ilegible. Tu respaldo es la exportacion a .xlsx, que " +
-                    "decides tu donde guardar. Ese archivo no va cifrado —tiene que poder " +
-                    "abrirse en Excel—, asi que guardalo donde guardarias tu bitacora en papel.",
+                "Por lo mismo el respaldo automático del sistema está desactivado para la " +
+                    "base: una llave del Keystore no se puede restaurar en otro teléfono y " +
+                    "la copia llegaría ilegible. Tu respaldo es la exportación a .xlsx, que " +
+                    "decides tú dónde guardar. Ese archivo no va cifrado —tiene que poder " +
+                    "abrirse en Excel—, así que guárdalo donde guardarías tu bitácora en papel.",
                 style = MaterialTheme.typography.bodySmall,
                 color = colores.textoTenue
             )
@@ -261,14 +261,14 @@ fun AcercaDePantalla(contenedor: Contenedor, alCerrar: () -> Unit) {
             HorizontalDivider(color = colores.trazoSuave)
             Spacer(Modifier.height(20.dp))
 
-            Text("Como se cuenta una racha", style = MaterialTheme.typography.titleMedium)
+            Text("Cómo se cuenta una racha", style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(8.dp))
             Text(
-                "El dia de hoy nunca rompe una racha mientras no termine: un habito sin " +
-                    "marcar a las nueve de la manana esta pendiente, no fallado. Los dias " +
-                    "que el habito no toca se saltan sin penalizar, asi que uno de lunes a " +
-                    "viernes sobrevive al fin de semana. En los habitos periodicos la racha " +
-                    "cuenta repeticiones, y marcar con un dia de retraso no la rompe.",
+                "El día de hoy nunca rompe una racha mientras no termine: un hábito sin " +
+                    "marcar a las nueve de la mañana está pendiente, no fallado. Los días " +
+                    "que el hábito no toca se saltan sin penalizar, así que uno de lunes a " +
+                    "viernes sobrevive al fin de semana. En los hábitos periódicos la racha " +
+                    "cuenta repeticiones, y marcar con un día de retraso no la rompe.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = colores.textoTenue
             )
@@ -283,7 +283,7 @@ fun AcercaDePantalla(contenedor: Contenedor, alCerrar: () -> Unit) {
 
             Spacer(Modifier.height(20.dp))
             Text(
-                "Hecho en Mexico, sin prisa.",
+                "Hecho en México, sin prisa.",
                 style = MaterialTheme.typography.bodySmall,
                 color = colores.textoTenue,
                 textAlign = TextAlign.Center,

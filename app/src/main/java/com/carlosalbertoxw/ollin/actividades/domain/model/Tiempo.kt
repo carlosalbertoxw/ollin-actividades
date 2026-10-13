@@ -24,6 +24,7 @@ object Tiempo {
     private val FECHA_CORTA = DateTimeFormatter.ofPattern("d MMM", ES)
     private val FECHA_CORTA_ANIO = DateTimeFormatter.ofPattern("d MMM yyyy", ES)
     private val FECHA_LARGA = DateTimeFormatter.ofPattern("EEEE d 'de' MMMM", ES)
+    private val FECHA_LARGA_ANIO = DateTimeFormatter.ofPattern("EEEE d 'de' MMMM 'de' yyyy", ES)
     private val FECHA_HORA = DateTimeFormatter.ofPattern("d MMM, HH:mm", ES)
 
     fun zona(): ZoneId = ZoneId.systemDefault()
@@ -70,8 +71,14 @@ object Tiempo {
     fun fechaCortaConAnio(dia: LocalDate): String =
         if (dia.year == hoy().year) fechaCorta(dia) else FECHA_CORTA_ANIO.format(dia)
 
+    /**
+     * "Martes 13 de octubre". Como [fechaCortaConAnio], el ano solo cuando no es
+     * este: capturar algo de diciembre en enero no debe leerse como de hace dias.
+     * Ollin Finanzas usa la misma forma (Fechas.larga).
+     */
     fun fechaLarga(dia: LocalDate): String =
-        FECHA_LARGA.format(dia).replaceFirstChar { it.titlecase(ES) }
+        (if (dia.year == hoy().year) FECHA_LARGA else FECHA_LARGA_ANIO).format(dia)
+            .replaceFirstChar { it.titlecase(ES) }
 
     fun fechaHora(instante: Instant): String = FECHA_HORA.format(local(instante))
 
@@ -79,7 +86,7 @@ object Tiempo {
     fun diaRelativo(dia: LocalDate): String = when (dia) {
         hoy() -> "Hoy"
         hoy().minusDays(1) -> "Ayer"
-        hoy().plusDays(1) -> "Manana"
+        hoy().plusDays(1) -> "Mañana"
         else -> fechaLarga(dia)
     }
 
@@ -114,7 +121,7 @@ object Tiempo {
         val horas = minutos / 60
         val resto = minutos % 60
         return when {
-            horas == 0 -> "$resto minutos"
+            horas == 0 -> if (resto == 1) "1 minuto" else "$resto minutos"
             resto == 0 -> if (horas == 1) "1 hora" else "$horas horas"
             else -> "${if (horas == 1) "1 hora" else "$horas horas"} $resto min"
         }

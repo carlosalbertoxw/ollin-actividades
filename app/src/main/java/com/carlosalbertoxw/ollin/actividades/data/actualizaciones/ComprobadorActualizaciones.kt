@@ -198,7 +198,7 @@ private fun pide(url: String): Respuesta {
         val mudanza = siguienteSalto(codigo, conexion.getHeaderField("Location"))
         if (mudanza != null) return Respuesta.Mudanza(mudanza)
 
-        if (codigo != HttpURLConnection.HTTP_OK) error("El sitio respondio $codigo")
+        if (codigo != HttpURLConnection.HTTP_OK) error("El sitio respondió $codigo")
 
         return Respuesta.Cuerpo(
             conexion.inputStream.bufferedReader().use { lector ->

@@ -371,7 +371,7 @@ private fun subtitulo(detalle: ActividadDetallada): String {
         EstadoActividad.COMPLETADO -> Tiempo.hora(actividad.inicio)
     }
     detalle.categoriaNombre?.let { partes += it }
-    if (detalle.habitoNombre != null) partes += "Habito"
+    if (detalle.habitoNombre != null) partes += "Hábito"
     return partes.joinToString(" · ")
 }
 

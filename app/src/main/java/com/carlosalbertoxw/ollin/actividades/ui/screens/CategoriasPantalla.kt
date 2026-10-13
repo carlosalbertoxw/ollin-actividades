@@ -245,7 +245,7 @@ private fun DialogoCategoria(
 
                 Spacer(Modifier.height(12.dp))
                 Text(
-                    "Ambito",
+                    "Ámbito",
                     style = MaterialTheme.typography.labelLarge,
                     color = colores.textoTenue
                 )

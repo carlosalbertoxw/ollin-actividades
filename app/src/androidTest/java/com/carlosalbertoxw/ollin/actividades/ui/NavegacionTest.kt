@@ -36,7 +36,7 @@ class NavegacionTest {
     fun `las_cuatro_pestanas_estan_y_se_puede_entrar_a_cada_una`() {
         montaRaiz()
 
-        listOf("Hoy", "Registro", "Habitos", "Analítica").forEach { nombre ->
+        listOf("Hoy", "Registro", "Hábitos", "Analítica").forEach { nombre ->
             compose.onNode(pestana(nombre)).assertIsDisplayed()
         }
 
@@ -44,9 +44,9 @@ class NavegacionTest {
         compose.esperaTexto("Buscar por título o nota")
 
         compose.onNode(pestana("Analítica")).performClick()
-        compose.esperaTexto("Todavia no hay que graficar")
+        compose.esperaTexto("Todavía no hay qué graficar")
 
-        compose.onNode(pestana("Habitos")).performClick()
+        compose.onNode(pestana("Hábitos")).performClick()
         compose.esperaTexto("Sin hábitos todavía")
 
         compose.onNode(pestana("Hoy")).performClick()
@@ -72,7 +72,7 @@ class NavegacionTest {
     fun `en_habitos_se_retira_el_boton_de_registrar`() {
         montaRaiz()
 
-        compose.onNode(pestana("Habitos")).performClick()
+        compose.onNode(pestana("Hábitos")).performClick()
         compose.esperaDescripcion("Nuevo hábito")
         compose.espera("se retira el boton de registrar") { !compose.hayDescripcion("Registrar") }
     }
@@ -95,6 +95,6 @@ class NavegacionTest {
         compose.esperaTexto("Metas del día")
 
         compose.onNodeWithText("Acerca de Ollin").performScrollTo().performClick()
-        compose.esperaTexto("Que quiere decir Ollin")
+        compose.esperaTexto("Qué quiere decir Ollin")
     }
 }

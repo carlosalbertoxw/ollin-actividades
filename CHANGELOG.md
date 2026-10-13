@@ -42,6 +42,9 @@ Los enlaces van con dirección completa: el mismo texto se lee en GitHub, en el 
 
 ### Cambiado
 
+- **Los textos llevan sus acentos.** Les faltaban a la pestaña *Hábitos*, al diálogo de hábitos, a *Analítica*, a casi todo *Acerca de* y a varios avisos, como «Usa tu patrón, PIN o contraseña».
+- **Las fechas de otro año dicen el año.** Al capturar algo de diciembre en enero se lee «Martes 2 de diciembre de 2025»; las de este año siguen sin él. Es la misma forma que usa Ollin Finanzas.
+- **Las categorías de una instalación nueva llevan acento:** Correo y administración, Meditación e Hidratación. Las que ya tienes no cambian, y un respaldo viejo las reconoce igual.
 - **Herramientas y bibliotecas al día.** Android Gradle Plugin 9.4.1 —que ya compila Kotlin por sí mismo—, Gradle 9.8, Kotlin 2.4.20, Compose BOM 2026.09, Room 2.8, Navigation 2.10 y SQLCipher 4.19, entre otras. La app se compila contra la API 37 de Android, pero se sigue portando como en la 36: subir el `targetSdk` cambia el comportamiento en el teléfono y va aparte. Ya no hace falta un JDK 21 para compilar; sirve cualquiera desde el 17.
 - *Acerca de* avisa de que el `.xlsx` exportado no va cifrado, a diferencia de la base.
 - La publicación se niega a etiquetar una versión con menor o parche por encima de 99, que repetiría el `versionCode` de otra; las dependencias del sitio pasan por `npm audit` en cada cambio, y la prueba de actualizar sobre la versión anterior deja siempre el log y distingue un fallo suyo de uno de la app.
@@ -54,6 +57,8 @@ Los enlaces van con dirección completa: el mismo texto se lee en GitHub, en el 
 
 ### Corregido
 
+- **Guardar un hábito con recordatorio pide el permiso de avisos.** Solo se pedía desde *Ajustes*: un hábito con hora se guardaba sin permiso y su aviso nunca sonaba. Ahora el permiso se pide al guardarlo, igual que los compromisos de Ollin Finanzas.
+- **Los conteos concuerdan.** *Hoy* decía «45 minutos registradas» y ahora «Tiempo registrado: 45 minutos»; *Registro* y *Analítica* dicen «1 registro» y la captura «1 minuto», donde antes salía «1 registros» y «1 minutos».
 - **Un fallo al abrir la base ya no cierra la app en segundo plano.** Si la base no podía abrirse, los recordatorios que se despiertan al reiniciar el teléfono o al sonar una alarma cerraban la app cada vez, sin pantalla delante. Ahora el fallo queda en el informe de *Acerca de* y la app no se cae.
 - **Un archivo de ajustes dañado ya no deja la app inservible.** La app se cerraba en cada arranque, y la única salida era borrar sus datos, base incluida. Ahora los ajustes vuelven a los de fábrica, salvo el candado: se pide la credencial del teléfono, porque el PIN se perdió con el archivo.
 - **Las hojas exportadas suman bien aunque una categoría lleve `*`, `?` o empiece con `<`.** Las fórmulas de *Por categoría* tomaban el nombre como patrón, así que «Lectura\*» sumaba también «Lectura técnica» al recalcular la hoja. Ahora se compara el nombre literal.
