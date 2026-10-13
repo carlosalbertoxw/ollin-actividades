@@ -50,9 +50,11 @@ fun pedirCredencialDelSistema(
      * unico camino que abre una actividad y por lo tanto manda Ollin al fondo.
      * El dialogo unificado de Android 11 en adelante se monta encima sin
      * detenerla, asi que avisar ahi dejaria concedida una gracia que nadie va a
-     * gastar.
+     * gastar. Ver ControlBloqueo.esperaVueltaDelSistema.
      */
-    alSalirAlSistema: () -> Unit = {}
+    alSalirAlSistema: () -> Unit = {},
+    /** Retira ese aviso si la pantalla de desbloqueo no llego a abrirse. */
+    alNoSalirAlSistema: () -> Unit = {}
 ): () -> Unit {
     val lanzador = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -74,7 +76,14 @@ fun pedirCredencialDelSistema(
         )
         if (intencion != null) {
             alSalirAlSistema()
-            lanzador.launch(intencion)
+            try {
+                lanzador.launch(intencion)
+            } catch (e: Exception) {
+                // Sin pantalla de desbloqueo no hay vuelta que esperar, y un
+                // aviso armado le regalaria la gracia a la siguiente salida.
+                alNoSalirAlSistema()
+                alFallar("No se pudo abrir la pantalla de desbloqueo del teléfono.")
+            }
         } else {
             alFallar("Tu teléfono ya no tiene patrón ni PIN configurado.")
         }

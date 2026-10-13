@@ -40,7 +40,7 @@ Detalles del comportamiento:
 
 - **Arranca bloqueada.** Todavía no se sabe si hay candado puesto, y equivocarse hacia el lado cerrado solo cuesta un parpadeo.
 - **Se cierra en cuanto sale al fondo.** Pulsar Inicio y pasarle el teléfono a alguien es justo el caso que el candado existe para cubrir.
-- **Un minuto de gracia, pero solo para un viaje de ida y vuelta al sistema.** Importar y exportar abren el selector de archivos, que manda Ollin al fondo; sin ese margen, elegir un `.xlsx` te expulsaría a medio camino. La pantalla que va a abrir el selector lo pide antes con `esperaVueltaDelSistema()`, y el permiso **se gasta al usarlo**: el siguiente viaje tiene que volver a pedirlo.
+- **Un minuto de gracia, pero solo para un viaje de ida y vuelta al sistema.** Importar y exportar abren el selector de archivos, que manda Ollin al fondo; sin ese margen, elegir un `.xlsx` te expulsaría a medio camino. La pantalla que va a abrir el selector lo pide antes con `esperaVueltaDelSistema()`, y el permiso **se gasta al usarlo**: el siguiente viaje tiene que volver a pedirlo. El aviso además caduca a los cinco segundos si la app no llega a irse al fondo, y la pantalla lo retira en el acto si el selector o la credencial no se pudieron abrir (`cancelaVueltaEsperada`): un aviso que se quedara armado le regalaría el minuto a la siguiente salida de verdad, la de pulsar Inicio.
 - **Girar el teléfono no es salir.** La actividad se detiene y se recrea, pero `isChangingConfigurations` la distingue de una salida de verdad; sin eso, como una salida sin avisar no tiene gracia, cada giro volvería a pedir la llave.
 - Se mide con el **reloj monótono** (`elapsedRealtime`): cambiar la hora del teléfono no debe poder alargar la gracia.
 - Con candado configurado la ventana lleva `FLAG_SECURE`: ni capturas de pantalla ni miniatura en la vista de apps recientes. Mientras no se sabe, se asume que sí.
@@ -75,7 +75,9 @@ PBKDF2 encarece cada intento, pero no lo suficiente: a un par de décimas por de
 - No se guarda ningún instante, solo la cuenta. La espera en curso vive en el reloj monótono (`elapsedRealtime`), que no se persiste: no hay reloj que engañar cambiando la hora ni reiniciando el teléfono, que es lo que pasaría al persistir un "bloqueado hasta".
 - **Todo PIN pasa por `ControlBloqueo.intentaPin`**: la pantalla de bloqueo y el diálogo de Ajustes que pide el PIN actual antes de cambiarlo o quitarlo. El freno vive ahí y no en cada pantalla, porque la que se olvidara de él sería el atajo para adivinarlo; las pantallas solo leen la cuenta atrás. Los intentos van de uno en uno (un `Mutex`): dos toques seguidos no pueden leer los dos que no hay espera antes de que el primero apunte su fallo. El fallo se escribe en disco antes de contestar.
 
-Poner un PIN nuevo estrena contador: quien acaba de demostrar que es el dueño no hereda la espera del anterior.
+Poner un PIN nuevo estrena contador: quien acaba de demostrar que es el dueño no hereda la espera del anterior. La huella se lee de las preferencias en el momento del intento, no de lo que la pantalla tenga a mano.
+
+El control recibe el flujo de preferencias, la función que guarda los fallos, el sello y la que guarda la huella migrada, no el `AjustesRepositorio` entero: es código de seguridad y sus reglas tienen que poder probarse sin levantar DataStore ([`ControlBloqueoTest`](../app/src/test/java/com/carlosalbertoxw/ollin/actividades/ControlBloqueoTest.kt)). El reloj también se inyecta, así que las pruebas de espera no cuestan tiempo real. Es la misma clase, con las mismas pruebas, que en Ollin Finanzas.
 
 La comparación es en tiempo constante (`MessageDigest.isEqual`): un `==` normal corta en el primer byte distinto, y ese tiempo de más revela cuánto del PIN se acertó.
 
@@ -119,7 +121,7 @@ El aviso semanal sale también **arriba de Hoy** cada vez que se abre la app, mi
 
 Ollin se instala fuera de la tienda, así que nadie avisa de una corrección: sin esto, quien instaló el APK en marzo se queda con el de marzo para siempre. Una vez al día la app pide un archivo estático al [sitio](sitio.md) y compara.
 
-**Qué sale del teléfono:** una petición `GET`. Sin identificador, sin la versión instalada —la comparación ocurre aquí dentro, con el JSON ya descargado— y evidentemente sin nada de la bitácora. Lo único que el otro extremo puede deducir es que alguien, desde una dirección IP, pidió ese archivo: lo mismo que abrir la dirección en el navegador. Lo sirve GitHub Pages.
+**Qué sale del teléfono:** una petición `GET`. Sin identificador, sin la versión instalada —la comparación ocurre aquí dentro, con el JSON ya descargado— evidentemente sin nada de la bitácora, y sin el modelo del teléfono: la petición lleva un `User-Agent` propio, `OllinActividades`, en vez del de Android, que dice modelo, versión y compilación. Lo único que el otro extremo puede deducir es que alguien, desde una dirección IP, pidió ese archivo con Ollin Actividades: lo mismo que abrir la dirección en el navegador, con menos detalle. Lo sirve GitHub Pages.
 
 **Qué no hace:** descargar ni instalar nada. Cuando hay versión nueva, *Acerca de* enseña un botón que abre el sitio en el navegador. Una app que se actualiza sola necesita el permiso de instalar paquetes, y con él se convierte en un canal de entrega: quien comprometa el servidor de actualizaciones entrega código arbitrario a todos los teléfonos que lo consultan.
 

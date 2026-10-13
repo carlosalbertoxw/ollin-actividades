@@ -4,11 +4,13 @@ import androidx.test.core.app.ApplicationProvider
 import com.carlosalbertoxw.ollin.actividades.data.actualizaciones.ComprobadorActualizaciones
 import com.carlosalbertoxw.ollin.actividades.data.actualizaciones.Resultado
 import com.carlosalbertoxw.ollin.actividades.data.actualizaciones.Version
+import com.carlosalbertoxw.ollin.actividades.data.actualizaciones.preparaPeticion
 import com.carlosalbertoxw.ollin.actividades.data.actualizaciones.siguienteSalto
 import com.carlosalbertoxw.ollin.actividades.data.prefs.AjustesRepositorio
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -16,6 +18,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import java.net.HttpURLConnection
+import java.net.URL
 
 /**
  * El aviso de actualizaciones, sin red.
@@ -353,8 +357,29 @@ class ActualizacionesTest {
 
     private fun cuando() = 1_800_000_000_000L
 
+    // ------------------------------------------------------------- peticion
+
+    /**
+     * Sin un User-Agent propio, Android manda el suyo, con el modelo del
+     * telefono, la version de Android y la compilacion. El aviso de privacidad
+     * promete que la consulta no lleva nada tuyo. `openConnection` no conecta:
+     * aqui solo se mira lo que se mandaria.
+     */
+    @Test
+    fun `la peticion no cuenta que telefono la hace`() {
+        val conexion =
+            URL("https://ejemplo.invalido/version.json").openConnection() as HttpURLConnection
+
+        preparaPeticion(conexion)
+
+        assertEquals("OllinActividades", conexion.getRequestProperty("User-Agent"))
+        assertEquals("GET", conexion.requestMethod)
+        assertFalse("Los saltos se siguen a mano", conexion.instanceFollowRedirects)
+    }
+
     private companion object {
-        const val APK_BASE = ComprobadorActualizaciones.DESCARGAS_OFICIALES
+        const val APK_BASE =
+            "https://github.com/carlosalbertoxw/ollin-actividades/releases/download/"
         const val APK_1_2_0 = "${APK_BASE}v1.2.0/ollin-actividades-1.2.0.apk"
 
         val JSON_1_2_0 = """

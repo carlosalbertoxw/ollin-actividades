@@ -1,6 +1,6 @@
 [versions]
 agp = "9.4.1"
-kotlin = "2.4.20"
+kotlin = "2.4.21"
 ksp = "2.3.12"
 coreKtx = "1.19.1"
 lifecycle = "2.9.0"
@@ -33,9 +33,16 @@ spotless = "8.10.3"
 ktlint = "1.8.0"
 # Que licencias viajan en el APK (ver app/build.gradle.kts, bloque licensee).
 licensee = "1.14.1"
-# El SBOM que acompana cada release. 3.4.1 y no la 3.5.0, que salio el mismo
-# dia en que se agrego: Dependabot la propondra cuando lleve unos dias fuera.
-cyclonedx = "3.4.1"
+# El SBOM que acompana cada release. Desde la 3.5 trae un jackson sin las
+# vulnerabilidades de la 2.22.1.
+cyclonedx = "3.5.1"
+# Cobertura de las pruebas unitarias (ver app/build.gradle.kts, bloque kover).
+# Desde la 0.9.5 entiende las variantes de AGP 9.
+kover = "0.9.11"
+# Solo para el classpath del build: versiones corregidas de lo que arrastran
+# los plugins. Ver build.gradle.kts, bloque buildscript.
+jacksonBuild = "2.22.3"
+freemarkerBuild = "2.3.35"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -70,6 +77,8 @@ androidx-test-core-ktx = { group = "androidx.test", name = "core-ktx", version.r
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
+jackson-bom = { group = "com.fasterxml.jackson", name = "jackson-bom", version.ref = "jacksonBuild" }
+freemarker = { group = "org.freemarker", name = "freemarker", version.ref = "freemarkerBuild" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
@@ -78,3 +87,4 @@ ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 licensee = { id = "app.cash.licensee", version.ref = "licensee" }
 cyclonedx = { id = "org.cyclonedx.bom", version.ref = "cyclonedx" }
+kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }

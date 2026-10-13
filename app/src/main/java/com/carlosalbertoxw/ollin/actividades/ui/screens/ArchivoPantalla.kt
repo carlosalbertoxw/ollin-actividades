@@ -102,6 +102,7 @@ fun ArchivoPantalla(contenedor: Contenedor, alCerrar: () -> Unit) {
     }
 
     val avisaSalida = contenedor.controlBloqueo::esperaVueltaDelSistema
+    val retiraSalida = contenedor.controlBloqueo::cancelaVueltaEsperada
 
     Scaffold(
         topBar = {
@@ -211,7 +212,7 @@ fun ArchivoPantalla(contenedor: Contenedor, alCerrar: () -> Unit) {
 
             Button(
                 onClick = {
-                    lanza(vm, "abrir", avisaSalida) {
+                    lanza(vm, "abrir", avisaSalida, retiraSalida) {
                         abrir.launch(arrayOf(MIME_XLSX, "application/octet-stream", "*/*"))
                     }
                 },
@@ -280,7 +281,9 @@ fun ArchivoPantalla(contenedor: Contenedor, alCerrar: () -> Unit) {
 
             Button(
                 onClick = {
-                    lanza(vm, "guardar", avisaSalida) { crear.launch(vm.nombreSugerido()) }
+                    lanza(vm, "guardar", avisaSalida, retiraSalida) {
+                        crear.launch(vm.nombreSugerido())
+                    }
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = total > 0
@@ -312,6 +315,8 @@ private inline fun lanza(
     vm: ArchivoVm,
     accion: String,
     avisaSalida: () -> Unit,
+    /** Retira el aviso si el selector no llego a abrirse. */
+    retiraSalida: () -> Unit,
     bloque: () -> Unit
 ) {
     try {
@@ -320,11 +325,15 @@ private inline fun lanza(
         avisaSalida()
         bloque()
     } catch (e: ActivityNotFoundException) {
+        // El selector no se abrio, asi que nadie va a gastar la gracia: si
+        // quedara armada, la siguiente salida de verdad se la llevaria.
+        retiraSalida()
         vm.avisa(
             "Este teléfono no tiene una aplicación de archivos con la que $accion el .xlsx. " +
                 "Instala un gestor de archivos o activa el de Android."
         )
     } catch (e: Exception) {
+        retiraSalida()
         vm.avisa(
             "No se pudo abrir el selector de archivos para $accion el .xlsx " +
                 "(${e.javaClass.simpleName}). Revisa que tu gestor de archivos esté activo."

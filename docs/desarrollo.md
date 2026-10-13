@@ -47,9 +47,10 @@ Desde Android Gradle Plugin 9 el plugin de Android compila Kotlin por sí mismo,
 ./gradlew lintDebug            # Android Lint; falla la compilacion si encuentra errores
 ./gradlew spotlessApply        # da formato al codigo con ktlint
 ./gradlew spotlessCheck        # solo comprueba el formato, como en CI
+./gradlew :app:koverHtmlReportDebug  # cobertura de las pruebas unitarias
 ./gradlew assembleRelease      # con minify y shrink de recursos
 ./gradlew licenseeAndroidRelease  # que lo que viaja en el APK tenga una licencia permitida
-./gradlew :app:cyclonedxDirectBom # el SBOM del release, en app/build/reports/cyclonedx-direct/
+./gradlew :app:cyclonedxDirectBom # el SBOM del release, en app/build/reports/sbom/
 ./gradlew clean
 ```
 
@@ -120,6 +121,16 @@ Las pruebas con Room arrancan con una `Application` pelona en vez de `OllinApp`:
 - `sdk=34` — Robolectric todavía no trae imagen del 36 al que apunta la app, y la base no cambia de comportamiento entre esas versiones.
 - `sqliteMode=NATIVE` — el SQLite emulado sirve una sola conexión por hilo, y Room reparte sus consultas entre varios hilos de disco. Con `LEGACY`, cualquier prueba que lea desde un `Flow` revienta con *"Illegal connection pointer"*.
 
+### Cobertura
+
+[Kover](https://github.com/Kotlin/kotlinx-kover) mide qué líneas recorren las pruebas unitarias:
+
+```bash
+./gradlew :app:koverHtmlReportDebug
+```
+
+El informe queda en `app/build/reports/kover/htmlDebug/`, y CI lo guarda como artefacto en cada corrida. **No hay umbral** a propósito: sirve para ver qué se quedó sin probar —sobre todo en `data/excel/` y en las reglas de `data/seguridad/`—, no para perseguir un porcentaje. Las pantallas de Compose casi no aparecen cubiertas porque se prueban en la suite de interfaz, que Kover no mide. Se excluye solo el código generado (Room, `BuildConfig`, los singletons de Compose).
+
 ### De interfaz — sobre un teléfono o un emulador
 
 ```bash
@@ -150,7 +161,7 @@ Siete flujos, en [`.github/workflows/`](../.github/workflows/):
 
 | Flujo | Cuándo | Qué hace |
 |---|---|---|
-| [`pruebas.yml`](../.github/workflows/pruebas.yml) | Push y PR a `main` | Estilo, licencias, pruebas unitarias, Lint, compila la suite instrumentada sin ejecutarla, `assembleRelease` y el sitio |
+| [`pruebas.yml`](../.github/workflows/pruebas.yml) | Push y PR a `main` | Estilo, licencias, pruebas unitarias con su cobertura, Lint, compila la suite instrumentada sin ejecutarla, `assembleRelease` y el sitio |
 | [`publicacion.yml`](../.github/workflows/publicacion.yml) | Tag `v*` | Valida la etiqueta contra el `CHANGELOG`, invoca `pruebas.yml`, corre `MigracionesTest`, firma, atesta el APK y su SBOM, publica la release y despliega el sitio |
 | [`sitio.yml`](../.github/workflows/sitio.yml) | Cambios en `web/`, a mano, y al publicar | Compila el sitio, comprueba que la app aceptaría su `version.json` y lo despliega en GitHub Pages |
 | [`pruebas-instrumentadas.yml`](../.github/workflows/pruebas-instrumentadas.yml) | Lunes y a mano | La suite de interfaz completa, en emuladores API 26 y 34 |
@@ -162,7 +173,7 @@ CodeQL va como **configuración avanzada** y no con el *default setup* del repos
 
 Las acciones van **fijadas por SHA**, con la versión en un comentario (`@<sha> # v7.0.1`). Una etiqueta como `@v7` la puede mover quien controle esa acción, y el job que firma la release corre con las contraseñas del almacén en el entorno: una acción alterada podría llevárselas. [Dependabot](../.github/dependabot.yml) propone cada lunes las versiones nuevas de las acciones, de Gradle y del sitio, así que fijar no significa congelar. El wrapper lleva también `distributionSha256Sum`, para que Gradle compruebe la distribución que descarga.
 
-El job del sitio en `pruebas.yml` y el despliegue de `sitio.yml` comprueban además, con [`comprueba-version-json.sh`](../.github/scripts/comprueba-version-json.sh), que la app aceptaría el `version.json`: `version` como X.Y.Z y `apk` como una descarga de las releases de este repositorio, con las mismas reglas que `esDescargaOficial`. Es un contrato con cada APK ya instalado, que no se puede corregir desde fuera: si la app lo rechaza, descarta el archivo entero y el aviso de actualización se apaga en todos sin que nada falle. `pruebas.yml` solo ve el que sale sin release; el que lleva los datos de la release de verdad solo existe en `sitio.yml`, y por eso se comprueba también ahí, antes de subirlo.
+El job del sitio en `pruebas.yml` y el despliegue de `sitio.yml` comprueban además, con [`comprueba-version-json.sh`](../.github/scripts/comprueba-version-json.sh), que la app aceptaría el `version.json`: `version` como X.Y.Z y `apk` como una descarga de las releases de este repositorio, con las mismas reglas que `DestinosPermitidos.apk`. Es un contrato con cada APK ya instalado, que no se puede corregir desde fuera: si la app lo rechaza, descarta el archivo entero y el aviso de actualización se apaga en todos sin que nada falle. `pruebas.yml` solo ve el que sale sin release; el que lleva los datos de la release de verdad solo existe en `sitio.yml`, y por eso se comprueba también ahí, antes de subirlo.
 
 Tres decisiones que explican el reparto:
 
@@ -181,7 +192,7 @@ El precio es que **cada cambio de dependencias tiene que traer su metadata**. Lo
 ```bash
 gh pr checkout <número>
 ./gradlew --write-verification-metadata sha256 --refresh-dependencies --no-configuration-cache \
-  spotlessCheck licenseeAndroidRelease compileDebugUnitTestKotlin lintDebug assembleDebug \
+  spotlessCheck licenseeAndroidRelease testDebugUnitTest koverHtmlReportDebug koverXmlReportDebug lintDebug assembleDebug \
   assembleDebugAndroidTest assembleRelease bundleRelease :app:cyclonedxDirectBom :app:dependencies
 git diff gradle/verification-metadata.xml   # solo deben aparecer las versiones del PR
 git commit -am "Verifica las dependencias de <lo que suba el PR>" && git push
@@ -256,6 +267,12 @@ git update-index --chmod=+x <archivo>
 - **Una pantalla por archivo** en `ui/screens/`, con los composables privados abajo, y su ViewModel en el archivo hermano `XxxVm.kt`. Cuando una pantalla pasa de unas 450 líneas, sus secciones grandes se mudan a archivos hermanos con el nombre de la pantalla y de la sección —`AjustesBloqueo.kt`, `HabitosDialogo.kt`, `HoyTarjetas.kt`, `AcercaDeVersion.kt`— y pasan de `private` a `internal`. Es la misma pantalla repartida por tamaño, no otra capa.
 - **El ViewModel recibe sus colaboradores** (`repositorio`, `ajustes`), no el `Contenedor` entero.
 - **La escritura pasa por el repositorio.** Las pantallas no tocan los DAO, y lo que borra en bloque va en transacción.
+- **Los mensajes al usuario son los mismos en Ollin Actividades y en Ollin Finanzas**, y se eligen por lo que está en juego:
+  - **Deshacer en un snackbar** para lo que se hace de un toque y se revierte sin perder nada —cumplir o descartar un pago—: la acción ocurre en el acto y el aviso de abajo ofrece «Deshacer».
+  - **Un diálogo que pregunta antes** solo cuando el control cae justo donde va el pulgar y el error borraría algo sin que nadie se entere —deshacer un hábito ya marcado— o cuando la acción no tiene vuelta, como borrar o reemplazar al importar.
+  - **Los errores van en rojo** (`MaterialTheme.colorScheme.error`) y dicen qué hacer, no qué excepción saltó.
+  - **Los permisos se piden en contexto**, en el gesto que los necesita —encender un aviso, guardar algo que va a avisar—, nunca al abrir la app. Si el sistema los niega, *Ajustes* lo dice y ofrece el atajo para arreglarlo ([`PermisoAvisos.kt`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/ui/PermisoAvisos.kt)).
+  - **Las esperas del PIN se cuentan en el botón** («Espera 15 s»), con el campo apagado mientras corren.
 - Las cadenas visibles están en el código, no en `strings.xml`: la app es monolingüe por diseño. En `strings.xml` solo viven el nombre y el lema.
 
 ## Añadir una pantalla

@@ -4,8 +4,10 @@
 .kotlin/
 /local.properties
 /.idea/
-# Configuracion local de las herramientas de edicion, como /.idea.
-/.claude/
+# Configuracion local de las herramientas de edicion, como /.idea. Solo
+# launch.json se versiona: dice como levantar el sitio en local.
+/.claude/*
+!/.claude/launch.json
 .DS_Store
 /build
 /app/build
@@ -23,6 +25,7 @@ web/dist/
 
 # Firma de release. Ni el almacen ni sus contrasenas entran al repositorio:
 # con ellos cualquiera publica una actualizacion falsa de Ollin Actividades.
+# La plantilla keystore.properties.example si se versiona.
 *.keystore
 *.jks
 /keystore.properties

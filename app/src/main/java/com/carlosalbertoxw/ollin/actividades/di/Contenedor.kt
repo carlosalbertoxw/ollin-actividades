@@ -12,6 +12,7 @@ import com.carlosalbertoxw.ollin.actividades.data.recordatorios.CoordinadorRecor
 import com.carlosalbertoxw.ollin.actividades.data.recordatorios.PlanificadorRecordatorios
 import com.carlosalbertoxw.ollin.actividades.data.repo.ActividadesRepositorio
 import com.carlosalbertoxw.ollin.actividades.data.seguridad.ControlBloqueo
+import com.carlosalbertoxw.ollin.actividades.data.seguridad.LlaveDelPin
 
 /**
  * Inyeccion de dependencias a mano.
@@ -40,7 +41,14 @@ class Contenedor(
 
     val ajustes: AjustesRepositorio by lazy { AjustesRepositorio(app) }
 
-    val controlBloqueo: ControlBloqueo by lazy { ControlBloqueo(ajustes) }
+    val controlBloqueo: ControlBloqueo by lazy {
+        ControlBloqueo(
+            preferencias = ajustes.ajustes,
+            guardaFallos = ajustes::guardaFallosDePin,
+            sello = LlaveDelPin,
+            guardaHuella = ajustes::guardaHuellaPin
+        )
+    }
 
     val avisoDeRespaldo: AvisoDeRespaldo by lazy { AvisoDeRespaldo() }
 

@@ -28,6 +28,9 @@ Los enlaces van con dirección completa: el mismo texto se lee en GitHub, en el 
 - **Un solo freno para todo PIN.** La pantalla de bloqueo y el diálogo de *Ajustes* que pide el PIN actual comprueban por el mismo sitio, de uno en uno, con la misma cuenta de fallos y la misma espera; abrir uno después de fallar en el otro no regala un intento.
 - **El aviso de versión nueva tampoco sigue redirecciones fuera de la carpeta del sitio.** Los dos dominios del sitio sirven también otras páginas de la misma cuenta; ahora un salto tiene que caer dentro de `/ollin-actividades/`.
 - **Un fallo del PIN se cuenta antes de dejar probar otra vez.** El botón volvía a habilitarse un instante antes de que se apuntara el fallo y empezara la espera.
+- **La consulta de versión nueva ya no dice qué teléfono tienes.** Sin un nombre propio, Android la mandaba con el suyo, que incluye el modelo del teléfono, la versión de Android y la compilación. Ahora lleva `OllinActividades` y nada más.
+- **Un selector de archivos que no llega a abrirse ya no deja armado el minuto de gracia.** Si el teléfono no tenía con qué elegir el `.xlsx`, o la pantalla de desbloqueo del sistema no se abría, la siguiente salida de verdad —pulsar Inicio— se llevaba el minuto sin pedir la llave. Ahora el aviso se retira en el acto y, de todos modos, caduca a los cinco segundos.
+- **Las herramientas de compilación ya no arrastran bibliotecas con vulnerabilidades conocidas.** El plugin del SBOM traía jackson 2.22.1 y el de cobertura, freemarker 2.3.32; aun en sus versiones nuevas siguen sin traer las corregidas, así que el build fija jackson 2.22.3 y freemarker 2.3.35. No viajaban en el APK, pero corrían en la máquina que firma las releases.
 
 ### Añadido
 
@@ -44,6 +47,10 @@ Los enlaces van con dirección completa: el mismo texto se lee en GitHub, en el 
 - La publicación se niega a etiquetar una versión con menor o parche por encima de 99, que repetiría el `versionCode` de otra; las dependencias del sitio pasan por `npm audit` en cada cambio, y la prueba de actualizar sobre la versión anterior deja siempre el log y distingue un fallo suyo de uno de la app.
 - La prueba que bloquea publicar instala ahora el APK de **release** —con R8, como el que se descarga— encima del de la versión anterior; antes usaba los de depuración, y comprobar el de release era un paso a mano. Y el despliegue del sitio se niega a publicar un `version.json` que la app descartaría, lo que habría apagado el aviso de versión nueva en todas las instalaciones sin que nada fallara.
 - Las licencias de terceros incluyen ahora todo lo que viaja en el APK —faltaban Protocol Buffers, kotlinx.serialization, Okio y algunas anotaciones—, y la integración continua falla si entra una biblioteca con una licencia fuera de la lista permitida.
+- **Si las notificaciones están apagadas, *Ajustes* ofrece permitirlas.** El botón pide primero el permiso del sistema y, si ya se negó, abre los ajustes de notificaciones de la app. Es el mismo aviso que en Ollin Finanzas.
+- **La pantalla del candado dice qué app está bloqueada**: «Ollin Actividades está bloqueada», ahora que las dos apps de Ollin pueden vivir en el mismo teléfono.
+- CI mide la cobertura de las pruebas unitarias; los flujos ya no dejan el token de GitHub guardado en el disco del runner; el SBOM de cada release entra en `checksums.txt`, y los checks de CodeQL se llaman igual que en Ollin Finanzas.
+- Herramientas al día, iguales en las dos apps: Gradle 9.8.1, Kotlin 2.4.21, SQLCipher 4.19.1, Vite 8.3.4 y las acciones de GitHub en sus últimas versiones.
 
 ### Corregido
 
@@ -51,6 +58,8 @@ Los enlaces van con dirección completa: el mismo texto se lee en GitHub, en el 
 - **Un archivo de ajustes dañado ya no deja la app inservible.** La app se cerraba en cada arranque, y la única salida era borrar sus datos, base incluida. Ahora los ajustes vuelven a los de fábrica, salvo el candado: se pide la credencial del teléfono, porque el PIN se perdió con el archivo.
 - **Las hojas exportadas suman bien aunque una categoría lleve `*`, `?` o empiece con `<`.** Las fórmulas de *Por categoría* tomaban el nombre como patrón, así que «Lectura\*» sumaba también «Lectura técnica» al recalcular la hoja. Ahora se compara el nombre literal.
 - Al importar un libro demasiado grande para la memoria, el mensaje aconsejaba exportar menos pestañas; ahora dice qué hacer con el archivo que se está importando.
+- **El sitio vuelve a desplegarse con la última release.** El flujo pedía la descarga por un campo que `gh release view` no tiene y salía nulo; ahora usa el enlace público y, si una release no lo trae, falla con un mensaje claro en vez de publicar un `version.json` roto.
+- Las pruebas que corren en emulador descargan la imagen con reintentos: una descarga corrupta dejaba el job en rojo sin haber corrido ninguna prueba.
 
 ## [1.2.1] - 2026-09-29
 

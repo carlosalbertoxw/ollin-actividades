@@ -29,6 +29,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       # JDK 21 para correr Gradle. Desde Gradle 9.8 y Kotlin 2.4 tambien sirve
       # uno mas nuevo, pero el 21 es LTS y es con el que se publica. El
@@ -49,6 +51,8 @@ jobs:
       #   licenseeAndroidRelease   que lo que viaja en el APK tenga una licencia
       #                            de la lista de app/build.gradle.kts
       #   testDebugUnitTest        las pruebas en la JVM, EsquemaTest incluido
+      #   koverHtmlReportDebug     la cobertura de esas pruebas, sin umbral: se
+      #   koverXmlReportDebug      guarda como artefacto para ver que falta
       #   lintDebug                falla la compilacion si Lint encuentra errores
       #   assembleDebugAndroidTest compila la suite instrumentada sin ejecutarla,
       #                            que es lo unico que se puede hacer sin emulador
@@ -59,6 +63,8 @@ jobs:
           spotlessCheck
           licenseeAndroidRelease
           testDebugUnitTest
+          koverHtmlReportDebug
+          koverXmlReportDebug
           lintDebug
           assembleDebugAndroidTest
           assembleRelease
@@ -66,13 +72,14 @@ jobs:
 
       - name: Guardar los informes
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: informes-app
           path: |
             app/build/reports/tests/
             app/build/reports/lint-results-debug.html
             app/build/reports/licensee/
+            app/build/reports/kover/
           retention-days: 14
           if-no-files-found: ignore
 
@@ -83,9 +90,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Preparar Node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '22'
           cache: npm
@@ -111,10 +120,11 @@ jobs:
         run: npm run build
 
       # El version.json es un contrato con cada APK ya instalado, que trae
-      # compilada su manera de leerlo (ComprobadorActualizaciones.lee) y no se
-      # puede corregir desde fuera. Renombrar un campo en genera-version.mjs
-      # apagaria el aviso de actualizacion en todos ellos sin que fallara nada:
-      # aqui se comprueba con las mismas reglas que aplica la app. sitio.yml
-      # repite la comprobacion sobre el que de verdad se publica.
+      # compilada su manera de leerlo (ComprobadorActualizaciones.lee y
+      # DestinosPermitidos) y no se puede corregir desde fuera. Renombrar un
+      # campo en genera-version.mjs, o mover la descarga fuera de las releases
+      # del repositorio, apagaria el aviso de actualizacion en todos ellos sin
+      # que fallara nada: aqui se comprueba con las mismas reglas que aplica la
+      # app. sitio.yml repite la comprobacion sobre el que de verdad se publica.
       - name: El version.json cumple con lo que lee la app
         run: bash .github/scripts/comprueba-version-json.sh web/dist/version.json
