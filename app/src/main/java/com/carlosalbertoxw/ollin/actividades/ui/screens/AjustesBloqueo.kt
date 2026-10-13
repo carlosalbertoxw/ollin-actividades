@@ -58,7 +58,9 @@ internal fun SeccionBloqueo(
     alUsarPin: (String) -> Unit,
     /** Por donde pasa el PIN actual que se pide antes de cambiarlo o quitarlo. */
     bloqueo: ControlBloqueo,
-    alSalirAlSistema: () -> Unit
+    alSalirAlSistema: () -> Unit,
+    /** Retira ese aviso si la pantalla de desbloqueo no llego a abrirse. */
+    alNoSalirAlSistema: () -> Unit
 ) {
     val contexto = LocalContext.current
     val actividad = LocalActivity.current as? FragmentActivity
@@ -104,7 +106,8 @@ internal fun SeccionBloqueo(
             pendiente = null
             aviso = it
         },
-        alSalirAlSistema = alSalirAlSistema
+        alSalirAlSistema = alSalirAlSistema,
+        alNoSalirAlSistema = alNoSalirAlSistema
     )
 
     fun conConfirmacion(accion: () -> Unit) {

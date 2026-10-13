@@ -28,6 +28,8 @@ Los enlaces van con dirección completa: el mismo texto se lee en GitHub, en el 
 - **Un solo freno para todo PIN.** La pantalla de bloqueo y el diálogo de *Ajustes* que pide el PIN actual comprueban por el mismo sitio, de uno en uno, con la misma cuenta de fallos y la misma espera; abrir uno después de fallar en el otro no regala un intento.
 - **El aviso de versión nueva tampoco sigue redirecciones fuera de la carpeta del sitio.** Los dos dominios del sitio sirven también otras páginas de la misma cuenta; ahora un salto tiene que caer dentro de `/ollin-actividades/`.
 - **Un fallo del PIN se cuenta antes de dejar probar otra vez.** El botón volvía a habilitarse un instante antes de que se apuntara el fallo y empezara la espera.
+- **La consulta de versión nueva ya no dice qué teléfono tienes.** Sin un nombre propio, Android la mandaba con el suyo, que incluye el modelo del teléfono, la versión de Android y la compilación. Ahora lleva `OllinActividades` y nada más.
+- **Un selector de archivos que no llega a abrirse ya no deja armado el minuto de gracia.** Si el teléfono no tenía con qué elegir el `.xlsx`, o la pantalla de desbloqueo del sistema no se abría, la siguiente salida de verdad —pulsar Inicio— se llevaba el minuto sin pedir la llave. Ahora el aviso se retira en el acto y, de todos modos, caduca a los cinco segundos.
 
 ### Añadido
 
@@ -44,6 +46,9 @@ Los enlaces van con dirección completa: el mismo texto se lee en GitHub, en el 
 - La publicación se niega a etiquetar una versión con menor o parche por encima de 99, que repetiría el `versionCode` de otra; las dependencias del sitio pasan por `npm audit` en cada cambio, y la prueba de actualizar sobre la versión anterior deja siempre el log y distingue un fallo suyo de uno de la app.
 - La prueba que bloquea publicar instala ahora el APK de **release** —con R8, como el que se descarga— encima del de la versión anterior; antes usaba los de depuración, y comprobar el de release era un paso a mano. Y el despliegue del sitio se niega a publicar un `version.json` que la app descartaría, lo que habría apagado el aviso de versión nueva en todas las instalaciones sin que nada fallara.
 - Las licencias de terceros incluyen ahora todo lo que viaja en el APK —faltaban Protocol Buffers, kotlinx.serialization, Okio y algunas anotaciones—, y la integración continua falla si entra una biblioteca con una licencia fuera de la lista permitida.
+- **Si las notificaciones están apagadas, *Ajustes* ofrece permitirlas.** El botón pide primero el permiso del sistema y, si ya se negó, abre los ajustes de notificaciones de la app. Es el mismo aviso que en Ollin Finanzas.
+- **La pantalla del candado dice qué app está bloqueada**: «Ollin Actividades está bloqueada», ahora que las dos apps de Ollin pueden vivir en el mismo teléfono.
+- CI mide la cobertura de las pruebas unitarias; los flujos ya no dejan el token de GitHub guardado en el disco del runner; el SBOM de cada release entra en `checksums.txt`, y los checks de CodeQL se llaman igual que en Ollin Finanzas.
 
 ### Corregido
 

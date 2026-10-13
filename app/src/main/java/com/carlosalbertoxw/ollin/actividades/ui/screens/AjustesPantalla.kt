@@ -49,6 +49,7 @@ import com.carlosalbertoxw.ollin.actividades.data.prefs.Ajustes
 import com.carlosalbertoxw.ollin.actividades.data.recordatorios.Notificaciones
 import com.carlosalbertoxw.ollin.actividades.di.Contenedor
 import com.carlosalbertoxw.ollin.actividades.domain.model.Tiempo
+import com.carlosalbertoxw.ollin.actividades.ui.recuerdaPidePermisoDeAvisos
 import com.carlosalbertoxw.ollin.actividades.ui.recuerdaVm
 import com.carlosalbertoxw.ollin.actividades.ui.theme.LocalColoresOllin
 import kotlinx.coroutines.launch
@@ -70,24 +71,7 @@ fun AjustesPantalla(
     // Encender los avisos y conceder el permiso son la misma intencion, asi que
     // van en el mismo gesto: si el sistema lo niega, el interruptor no se
     // enciende, porque quedaria prometiendo algo que no puede cumplir.
-    // Que interruptor se encendera cuando vuelva la respuesta del permiso. Los
-    // dos que notifican lo piden igual, y el launcher es uno solo.
-    var alConcederPermiso by remember { mutableStateOf<(Boolean) -> Unit>({}) }
-
-    val permisoNotificaciones = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { concedido -> alConcederPermiso(concedido) }
-
-    val pidePermisoNotificaciones = { encender: (Boolean) -> Unit ->
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            !Notificaciones.sePuedeAvisar(contexto)
-        ) {
-            alConcederPermiso = encender
-            permisoNotificaciones.launch(Manifest.permission.POST_NOTIFICATIONS)
-        } else {
-            encender(true)
-        }
-    }
+    val pidePermisoNotificaciones = recuerdaPidePermisoDeAvisos()
 
     Scaffold(
         topBar = {
@@ -240,7 +224,7 @@ fun AjustesPantalla(
             }
 
             if (ajustes.recordatorios) {
-                RecordatoriosEnRiesgo(contexto)
+                RecordatoriosEnRiesgo(contexto, pidePermisoNotificaciones)
             }
 
             Row(
@@ -366,7 +350,8 @@ fun AjustesPantalla(
                 alUsarSistema = { vm.usaBloqueoDelSistema() },
                 alUsarPin = { vm.usaBloqueoConPin(it) },
                 bloqueo = contenedor.controlBloqueo,
-                alSalirAlSistema = contenedor.controlBloqueo::esperaVueltaDelSistema
+                alSalirAlSistema = contenedor.controlBloqueo::esperaVueltaDelSistema,
+                alNoSalirAlSistema = contenedor.controlBloqueo::cancelaVueltaEsperada
             )
 
             Spacer(Modifier.height(20.dp))

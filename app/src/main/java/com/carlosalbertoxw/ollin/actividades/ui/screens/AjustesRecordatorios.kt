@@ -22,6 +22,7 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.carlosalbertoxw.ollin.actividades.data.recordatorios.AlarmaRecordatorios
 import com.carlosalbertoxw.ollin.actividades.data.recordatorios.Notificaciones
+import com.carlosalbertoxw.ollin.actividades.ui.AvisosEnRiesgo
 import com.carlosalbertoxw.ollin.actividades.ui.theme.LocalColoresOllin
 
 /**
@@ -31,30 +32,19 @@ import com.carlosalbertoxw.ollin.actividades.ui.theme.LocalColoresOllin
  * sobre algo que casi siempre esta bien se deja de leer a la tercera vez.
  */
 @Composable
-internal fun RecordatoriosEnRiesgo(contexto: Context) {
+internal fun RecordatoriosEnRiesgo(contexto: Context, pideAvisos: ((Boolean) -> Unit) -> Unit) {
     val colores = LocalColoresOllin.current
 
-    // El estado se relee al volver al frente: los dos permisos se conceden en
-    // los ajustes del sistema, o sea saliendo de Ollin y regresando.
+    // El estado se relee al volver al frente: el permiso se concede en los
+    // ajustes del sistema, o sea saliendo de Ollin y regresando.
     val ciclo = LocalLifecycleOwner.current.lifecycle
-    var puedeAvisar by remember { mutableStateOf(Notificaciones.sePuedeAvisar(contexto)) }
     var exactas by remember { mutableStateOf(AlarmaRecordatorios.puedeSerExacta(contexto)) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-        puedeAvisar = Notificaciones.sePuedeAvisar(contexto)
         exactas = AlarmaRecordatorios.puedeSerExacta(contexto)
     }
 
-    if (!puedeAvisar) {
-        Text(
-            "Las notificaciones de Ollin están apagadas en los ajustes del teléfono, " +
-                "así que no vas a ver ningún aviso.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.error
-        )
-        TextButton(onClick = { contexto.abreAjustesDeLaApp() }) {
-            Text("Abrir los ajustes de notificaciones")
-        }
-    }
+    // El mismo aviso que en Ollin Finanzas: se ensena solo si hace falta.
+    AvisosEnRiesgo(pideAvisos)
 
     if (!exactas) {
         Text(
@@ -66,15 +56,6 @@ internal fun RecordatoriosEnRiesgo(contexto: Context) {
         TextButton(onClick = { contexto.abrePermisoDeAlarmas() }) {
             Text("Permitir alarmas exactas")
         }
-    }
-}
-private fun Context.abreAjustesDeLaApp() {
-    runCatching {
-        startActivity(
-            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                .setData(Uri.fromParts("package", packageName, null))
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        )
     }
 }
 private fun Context.abrePermisoDeAlarmas() {

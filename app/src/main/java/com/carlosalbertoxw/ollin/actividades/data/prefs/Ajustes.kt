@@ -444,10 +444,13 @@ class AjustesRepositorio(
         }
     }
 
-    /** Suma un fallo. El contador no tiene techo; la espera si. */
-    suspend fun sumaFalloPin() {
+    /**
+     * La cuenta de fallos seguidos del PIN. Cero la borra: lo unico que la pone
+     * a cero es acertar. No tiene techo; la espera si.
+     */
+    suspend fun guardaFallosDePin(fallos: Int) {
         contexto.almacen.edit {
-            it[Claves.PIN_FALLOS] = (it[Claves.PIN_FALLOS] ?: 0) + 1
+            if (fallos == 0) it.remove(Claves.PIN_FALLOS) else it[Claves.PIN_FALLOS] = fallos
         }
     }
 
@@ -495,11 +498,6 @@ class AjustesRepositorio(
     /** De que version ya se aviso. Evita anunciar la misma cada dia. */
     suspend fun marcaVersionAvisada(version: String) {
         contexto.almacen.edit { it[Claves.VERSION_AVISADA] = version }
-    }
-
-    /** Lo unico que pone el contador a cero es acertar el PIN. */
-    suspend fun limpiaFallosPin() {
-        contexto.almacen.edit { it.remove(Claves.PIN_FALLOS) }
     }
 }
 

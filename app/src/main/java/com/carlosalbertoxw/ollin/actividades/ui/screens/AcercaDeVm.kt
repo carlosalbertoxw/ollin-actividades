@@ -3,6 +3,7 @@ package com.carlosalbertoxw.ollin.actividades.ui.screens
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.carlosalbertoxw.ollin.actividades.data.actualizaciones.ComprobadorActualizaciones
+import com.carlosalbertoxw.ollin.actividades.data.actualizaciones.DestinosPermitidos
 import com.carlosalbertoxw.ollin.actividades.data.actualizaciones.Resultado
 import com.carlosalbertoxw.ollin.actividades.data.actualizaciones.Version
 import com.carlosalbertoxw.ollin.actividades.data.prefs.AjustesRepositorio
@@ -66,8 +67,7 @@ class AcercaDeVm(
             disponible = Version.de(ajustes.versionDisponible),
             // Se vuelve a comprobar al leerla: la guardada puede venir de una
             // version anterior, que aceptaba cualquier https.
-            urlDeDescarga = ajustes.urlDeDescarga
-                ?.takeIf(ComprobadorActualizaciones::esDescargaOficial),
+            urlDeDescarga = ajustes.urlDeDescarga?.let(DestinosPermitidos::apk),
             notas = ajustes.notasDeVersion,
             ultimaComprobacion = ajustes.ultimaComprobacion,
             activa = ajustes.buscarActualizaciones,

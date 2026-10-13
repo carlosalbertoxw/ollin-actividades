@@ -42,7 +42,7 @@ import com.carlosalbertoxw.ollin.actividades.ui.theme.LocalColoresOllin
 import kotlinx.coroutines.launch
 
 /**
- * Lo unico que se ve mientras Ollin esta cerrada con llave.
+ * Lo unico que se ve mientras Ollin Actividades esta cerrada con llave.
  *
  * Sustituye al arbol entero de la app, no lo tapa: si fuera una capa encima,
  * el contenido seguiria compuesto debajo y asomaria en la vista de apps
@@ -65,7 +65,7 @@ fun BloqueoPantalla(actividad: FragmentActivity, ajustes: Ajustes, bloqueo: Cont
                 tint = LocalColoresOllin.current.textoTenue
             )
             Spacer(Modifier.height(16.dp))
-            Text("Ollin está bloqueada", style = MaterialTheme.typography.titleMedium)
+            Text("Ollin Actividades está bloqueada", style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(24.dp))
 
             when (ajustes.modoBloqueo) {
@@ -86,7 +86,7 @@ private fun DesbloqueoSistema(actividad: FragmentActivity, alDesbloquear: () -> 
 
     val pedir = pedirCredencialDelSistema(
         actividad = actividad,
-        titulo = "Desbloquea Ollin",
+        titulo = "Desbloquea Ollin Actividades",
         alLograr = alDesbloquear,
         alFallar = { mensaje = it }
     )
@@ -143,7 +143,7 @@ private fun DesbloqueoPin(bloqueo: ControlBloqueo) {
     OutlinedTextField(
         value = pin,
         onValueChange = { nuevo -> pin = nuevo.filter(Char::isDigit).take(ClavePin.LARGO_MAXIMO) },
-        label = { Text("PIN de Ollin") },
+        label = { Text("PIN de Ollin Actividades") },
         singleLine = true,
         visualTransformation = PasswordVisualTransformation(),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),

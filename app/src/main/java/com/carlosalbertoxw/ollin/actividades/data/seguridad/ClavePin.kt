@@ -32,9 +32,6 @@ object ClavePin {
     const val LARGO_MINIMO = 4
     const val LARGO_MAXIMO = 12
 
-    /** Fallos seguidos que se perdonan sin hacer esperar. */
-    const val FALLOS_DE_GRACIA = 3
-
     /**
      * Marca de las huellas selladas. Las que no la llevan son las de la 1.2.1 y
      * anteriores: PBKDF2 a secas, que se siguen aceptando y se sellan en cuanto
@@ -58,26 +55,6 @@ object ClavePin {
         /** Acerto, pero contra una huella vieja: hay que guardarla sellada. */
         CORRECTO_SIN_SELLAR
     }
-
-    /**
-     * Segundos de espera tras [fallos] intentos fallidos seguidos.
-     *
-     * PBKDF2 encarece cada intento, pero no lo suficiente: un PIN de cuatro
-     * digitos son diez mil combinaciones y, a un par de decimas por derivacion,
-     * quien tenga el telefono en la mano y sepa automatizar pulsaciones las
-     * agota en menos de una hora. La espera crece para que ese ataque deje de
-     * caber en una tarde, sin castigar a quien de verdad se equivoco dos veces.
-     *
-     * La cuenta se guarda en disco y solo la borra un acierto: cerrar la app
-     * para escaparse de la espera no sirve de nada, porque al volver la espera
-     * vuelve a empezar con el mismo contador.
-     */
-    fun esperaSegundos(fallos: Int): Int = when {
-        fallos <= FALLOS_DE_GRACIA -> 0
-        else -> ESCALA.getOrElse(fallos - FALLOS_DE_GRACIA - 1) { ESCALA.last() }
-    }
-
-    private val ESCALA = listOf(5, 15, 30, 60, 120, 300)
 
     fun nuevaSal(): String {
         val bytes = ByteArray(16)

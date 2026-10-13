@@ -41,10 +41,11 @@ sealed interface Resultado {
  * minimo que sirve para cumplir ese fin y nada mas.
  *
  * **Que sale del telefono.** Una peticion GET a un archivo estatico. No lleva
- * identificador, ni la version instalada, ni nada de la bitacora: la comparacion
- * ocurre aqui dentro, con el JSON ya descargado. Lo unico que el otro extremo
- * puede deducir es que alguien, desde una IP, pidio ese archivo —lo mismo que si
- * se abriera la direccion en el navegador—. Ver docs/seguridad.md.
+ * identificador, ni la version instalada, ni el modelo del telefono, ni nada de la bitacora:
+ * la comparacion ocurre aqui dentro, con el JSON ya descargado. Lo unico que el
+ * otro extremo --GitHub Pages, que sirve el sitio-- puede deducir es que
+ * alguien, desde una IP, pidio ese archivo con Ollin Actividades. Ver [AGENTE] y
+ * docs/seguridad.md.
  *
  * **Que no hace.** No descarga el APK ni lo instala: cuando hay version nueva,
  * la pantalla de Acerca de ensena un boton que abre el sitio en el navegador.
@@ -113,8 +114,8 @@ class ComprobadorActualizaciones(
         /**
          * Interpreta el `version.json` del sitio.
          *
-         * Publica porque es la parte que si tiene aristas —campos ausentes,
-         * versiones mal escritas, direcciones que no son https— y se prueba
+         * Publica porque es la parte que si tiene aristas --campos ausentes,
+         * versiones mal escritas, direcciones que no son https-- y se prueba
          * sola, sin levantar un servidor.
          */
         fun lee(json: String): VersionPublicada? {
@@ -124,12 +125,12 @@ class ComprobadorActualizaciones(
 
             // Solo una descarga de las releases de este repositorio. Que fuera
             // https no bastaba: el JSON llega por el dominio propio, y quien se
-            // quedara con el —uno vencido, un DNS secuestrado— podria anunciar
+            // quedara con el --uno vencido, un DNS secuestrado-- podria anunciar
             // a todas las instalaciones una "version nueva" con el enlace que
             // quisiera. Las releases de GitHub no cambian de dueno con el
-            // dominio. `sitio` ya no sirve de respaldo por la misma razon: el
-            // sitio vive en ese dominio.
-            val url = objeto.optString("apk").takeIf(::esDescargaOficial) ?: return null
+            // dominio. `sitio` no sirve de respaldo por la misma razon: el sitio
+            // vive en ese dominio. Ver [DestinosPermitidos].
+            val url = DestinosPermitidos.apk(objeto.optString("apk")) ?: return null
 
             return VersionPublicada(
                 version = version,
@@ -140,41 +141,15 @@ class ComprobadorActualizaciones(
         }
 
         /**
-         * Lo unico que la tarjeta de Acerca de puede abrir. Termina en barra para
-         * que `ollin-actividades-falsa` no pase por `ollin-actividades`.
-         */
-        internal const val DESCARGAS_OFICIALES =
-            "https://github.com/carlosalbertoxw/ollin-actividades/releases/download/"
-
-        /**
-         * Lo que el sitio genera son 280 caracteres como mucho; esto es por si lo
-         * que llega no lo genero el sitio.
+         * Lo que la tarjeta de Acerca de y la notificacion ensenan de las notas.
+         * El sitio genera una entradilla corta; esto es por si lo que llega no
+         * lo genero el sitio, que de otro modo podria llenar la pantalla --o
+         * DataStore, donde se guarda-- con lo que quisiera.
          */
         internal const val TOPE_NOTAS = 300
 
         private fun recorta(notas: String): String =
             if (notas.length <= TOPE_NOTAS) notas else notas.take(TOPE_NOTAS - 1).trimEnd() + "…"
-
-        /**
-         * Si [url] es una descarga de las releases de este repositorio.
-         *
-         * Se compara la URL ya interpretada y no el texto: `https://github.com@otro.sitio/`
-         * empieza igual y apunta a otro lado, y los `..` —tambien escritos como
-         * `%2e`, que el navegador resuelve igual— sacarian la ruta del repositorio.
-         */
-        internal fun esDescargaOficial(url: String?): Boolean {
-            if (url.isNullOrBlank() || !url.startsWith(DESCARGAS_OFICIALES)) return false
-            val escapaDeLaRuta = url.contains("..") ||
-                url.contains("%2e", ignoreCase = true) ||
-                url.contains('\\')
-            if (escapaDeLaRuta) return false
-            val uri = runCatching { URI(url) }.getOrNull() ?: return false
-            return uri.scheme == "https" &&
-                uri.rawUserInfo == null &&
-                uri.port == -1 &&
-                uri.host.equals("github.com", ignoreCase = true) &&
-                uri.rawPath.orEmpty().startsWith(URI(DESCARGAS_OFICIALES).rawPath)
-        }
     }
 }
 
@@ -186,17 +161,17 @@ class ComprobadorActualizaciones(
  * criterio con el que el `.xlsx` se escribe a mano en vez de traer Apache POI.
  *
  * El tope de tamano no es paranoia gratuita: es lo unico que entra a la app
- * desde la red, y sin limite un archivo enorme —o un servidor que nunca cierra
- * la respuesta— agota la memoria del telefono.
+ * desde la red, y sin limite un archivo enorme --o un servidor que nunca cierra
+ * la respuesta-- agota la memoria del telefono.
  */
 private suspend fun descargaTexto(url: String): String = withContext(Dispatchers.IO) {
     var actual = url
 
     // Un salto y solo uno. La direccion va compilada dentro de cada APK y no se
     // puede cambiar en los que ya estan instalados, asi que tiene que sobrevivir
-    // a que el sitio se mude —un dominio propio delante de GitHub Pages deja el
-    // .github.io devolviendo un 301 para siempre—. Mas de un salto no hace falta
-    // para eso y si permite que una cadena de redirecciones de vueltas sin fin.
+    // a que el sitio se mude --un dominio propio delante de GitHub Pages deja el
+    // .github.io devolviendo un 301 para siempre--. Mas de un salto no hace
+    // falta para eso y si permite que una cadena de redirecciones de vueltas.
     repeat(2) {
         when (val respuesta = pide(actual)) {
             is Respuesta.Cuerpo -> return@withContext respuesta.texto
@@ -215,17 +190,7 @@ private sealed interface Respuesta {
 }
 
 private fun pide(url: String): Respuesta {
-    val conexion = (URL(url).openConnection() as HttpURLConnection).apply {
-        requestMethod = "GET"
-        connectTimeout = 10_000
-        readTimeout = 10_000
-        // Las redirecciones se siguen a mano, no automaticamente: asi se puede
-        // exigir que el destino tambien sea https. `HttpURLConnection` ni
-        // siquiera sigue solo las que cambian de protocolo, y una que se
-        // quedara en http dejaria la respuesta viajando en claro.
-        instanceFollowRedirects = false
-        setRequestProperty("Accept", "application/json")
-    }
+    val conexion = (URL(url).openConnection() as HttpURLConnection).also(::preparaPeticion)
 
     try {
         val codigo = conexion.responseCode
@@ -265,6 +230,38 @@ private fun pide(url: String): Respuesta {
 }
 
 /**
+ * Como sale la peticion: metodo, tiempos, redirecciones y cabeceras.
+ *
+ * Separada de [pide] para poder comprobar en una prueba lo que viaja sin abrir
+ * ninguna conexion: `openConnection` no conecta hasta pedir la respuesta.
+ */
+internal fun preparaPeticion(conexion: HttpURLConnection) {
+    conexion.requestMethod = "GET"
+    conexion.connectTimeout = 10_000
+    conexion.readTimeout = 10_000
+    // Las redirecciones se siguen a mano, no automaticamente: asi se puede
+    // exigir que el destino tambien sea https. `HttpURLConnection` ni
+    // siquiera sigue solo las que cambian de protocolo, y una que se
+    // quedara en http dejaria la respuesta viajando en claro.
+    conexion.instanceFollowRedirects = false
+    conexion.setRequestProperty("Accept", "application/json")
+    conexion.setRequestProperty("User-Agent", AGENTE)
+}
+
+/**
+ * El User-Agent de la peticion: el nombre de la app y nada mas.
+ *
+ * Sin fijarlo, Android manda el de `http.agent` --`Dalvik/2.1.0 (Linux; U;
+ * Android 14; <modelo> Build/<id>)`--, que le cuenta a quien sirva el sitio el
+ * modelo exacto del telefono, su version de Android y su compilacion. Junto
+ * con la IP, eso distingue a un telefono de otro cada dia, y el aviso de
+ * privacidad promete que la consulta no lleva nada tuyo. Tampoco la version de
+ * Ollin: la comparacion se hace aqui dentro, y mandarla diria quien no ha
+ * actualizado.
+ */
+internal const val AGENTE = "OllinActividades"
+
+/**
  * A donde saltar, o nulo si no hay que saltar a ningun sitio.
  *
  * Separada de la conexion porque es la unica parte de la descarga que decide
@@ -277,35 +274,76 @@ private fun pide(url: String): Respuesta {
  *
  * **Y solo a casa.** El salto existe para la mudanza de `github.io` al dominio
  * propio; cualquier otro destino no es una mudanza del sitio, y no hay por que
- * pedirle a un tercero que diga que version toca.
- *
- * Casa es el host **y la ruta del proyecto**. Los dos hosts sirven tambien las
- * paginas de otros repositorios de la misma cuenta, y quien pudiera publicar en
- * uno de ellos contestaria el `version.json`. Se compara la direccion ya
- * desarmada, no el texto, y la ruta solo admite letras, cifras y `. _ - /`: asi
- * no pasan los `..` ni los `%2e` que el servidor resolveria hacia otro sitio.
+ * pedirle a un tercero que diga que version toca. Ver [DestinosPermitidos].
  */
 internal fun siguienteSalto(codigo: Int, destino: String?): String? {
     if (codigo !in 300..399) return null
-    val limpio = destino?.trim().orEmpty()
-    if (!limpio.startsWith("https://", ignoreCase = true)) return null
-    val uri = runCatching { URI(limpio) }.getOrNull() ?: return null
-    val host = uri.host?.lowercase() ?: return null
-    if (uri.rawUserInfo != null || uri.port != -1 || host !in HOSTS_DEL_SITIO) return null
-    if (uri.rawQuery != null || uri.rawFragment != null) return null
-    val ruta = uri.rawPath ?: return null
-    if (!RUTA_SEGURA.matches(ruta) || ".." in ruta || !ruta.startsWith(RUTA_DEL_SITIO)) return null
-    return limpio
+    return DestinosPermitidos.sitio(destino?.trim())
 }
 
-/** A donde puede mudarse el sitio: su dominio propio y el de GitHub Pages. */
-internal val HOSTS_DEL_SITIO = setOf("carlosalbertoxw.com", "carlosalbertoxw.github.io")
+/**
+ * Las unicas direcciones a las que el aviso de version nueva puede mandar.
+ *
+ * El `version.json` llega de la red, y de el sale un boton que alguien va a
+ * tocar convencido de que lo puso la app. Exigir https protege el viaje, no el
+ * destino: si `carlosalbertoxw.com` vence o le secuestran el DNS, GitHub Pages
+ * sigue redirigiendo ahi, y el nuevo dueno anunciaria en cada telefono una
+ * "version nueva" con su propio APK. Android no lo instalaria encima por la
+ * firma distinta, pero quien desinstale para arreglarlo ya cayo.
+ *
+ * Por eso el boton solo puede abrir una descarga de las releases de este
+ * repositorio, y el `version.json` solo se pide a uno de los dos domicilios del
+ * sitio. Se compara la direccion ya
+ * desarmada --esquema, host exacto, sin usuario ni puerto, ruta bajo el
+ * prefijo-- y no el texto: `startsWith` dejaria pasar un `..` que el
+ * navegador resuelve hacia otro repositorio de GitHub.
+ */
+internal object DestinosPermitidos {
 
-/** La carpeta del proyecto en esos dos hosts. Termina en barra: `-falsa` no pasa. */
-internal const val RUTA_DEL_SITIO = "/ollin-actividades/"
+    private class Destino(val host: String, val prefijo: String)
 
-/** Letras, cifras y `. _ - /`: basta para cualquier ruta del sitio. */
-private val RUTA_SEGURA = Regex("""[A-Za-z0-9._/\-]*""")
+    /**
+     * Descargas de las releases de este repositorio. Nada fuera de ahi es un APK
+     * de Ollin Actividades. Termina en barra para que `ollin-actividades-falsa` no pase.
+     */
+    private val APK = listOf(
+        Destino("github.com", "/carlosalbertoxw/ollin-actividades/releases/download/")
+    )
+
+    /**
+     * La direccion de github.io, que va compilada en cada APK, y el dominio
+     * propio al que hoy redirige. Casa es el host **y la ruta del proyecto**:
+     * los dos hosts sirven tambien las paginas de otros repositorios de la misma
+     * cuenta, y quien pudiera publicar en uno de ellos contestaria el
+     * `version.json`.
+     */
+    private val SITIO = listOf(
+        Destino("carlosalbertoxw.github.io", "/ollin-actividades/"),
+        Destino("carlosalbertoxw.com", "/ollin-actividades/")
+    )
+
+    /**
+     * Letras, cifras y `. _ - /`. Basta para cualquier ruta del sitio y de las
+     * releases, y deja fuera los `%2e` que el navegador decodifica a `.` y las
+     * barras invertidas que algunos tratan como `/`.
+     */
+    private val RUTA_SEGURA = Regex("""[A-Za-z0-9._/\-]*""")
+
+    fun apk(url: String?): String? = url?.takeIf { cabeEn(it, APK) }
+
+    fun sitio(url: String?): String? = url?.takeIf { cabeEn(it, SITIO) }
+
+    private fun cabeEn(url: String, destinos: List<Destino>): Boolean {
+        val uri = runCatching { URI(url) }.getOrNull() ?: return false
+        if (!uri.scheme.equals("https", ignoreCase = true)) return false
+        if (uri.rawUserInfo != null || uri.port != -1) return false
+        if (uri.rawQuery != null || uri.rawFragment != null) return false
+        val ruta = uri.rawPath ?: return false
+        if (!RUTA_SEGURA.matches(ruta) || ".." in ruta) return false
+        val host = uri.host?.lowercase() ?: return false
+        return destinos.any { host == it.host && ruta.startsWith(it.prefijo) }
+    }
+}
 
 /** 64 K caracteres. El archivo real ronda los 400 bytes; esto es holgura, no expectativa. */
 private const val TOPE_CARACTERES = 64 * 1024

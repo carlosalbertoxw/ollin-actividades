@@ -15,8 +15,9 @@ Una petición `GET` a un archivo estático. Nada más.
 - **No lleva identificador**, ni de instalación ni de dispositivo.
 - **No lleva la versión instalada.** La comparación ocurre en el teléfono, con el JSON ya descargado.
 - **No lleva nada de la bitácora**, evidentemente.
+- **No lleva el modelo del teléfono.** Sin un `User-Agent` propio, Android manda el suyo —`Dalvik/2.1.0 (Linux; U; Android 14; <modelo> Build/<id>)`—, que dice el modelo exacto, la versión de Android y la compilación. La petición manda `OllinActividades` y nada más ([`AGENTE`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/data/actualizaciones/ComprobadorActualizaciones.kt)), y una prueba lo exige.
 
-Lo único que el otro extremo puede deducir es que alguien, desde una dirección IP, pidió ese archivo: exactamente lo mismo que si se abriera la dirección en el navegador. Ver [seguridad](seguridad.md#la-comprobación-de-actualizaciones).
+Lo único que el otro extremo puede deducir es que alguien, desde una dirección IP, pidió ese archivo con Ollin Actividades: lo mismo que si se abriera la dirección en el navegador, con menos detalle. Ver [seguridad](seguridad.md#la-comprobación-de-actualizaciones).
 
 ## Qué no hace
 
@@ -86,13 +87,13 @@ Lo publica el sitio en `https://carlosalbertoxw.com/ollin-actividades/version.js
 
 El enlace acaba abriéndose en el navegador de alguien, y viene de fuera. Hasta la 1.2.1 bastaba con que fuera `https`, pero eso no protegía de lo que más probablemente puede salir mal: el JSON llega por el dominio propio, y quien se quedara con él —un dominio vencido, un DNS secuestrado— podría anunciar a **todas** las instalaciones una «versión nueva» con el enlace que quisiera. Android no instalaría encima un APK con otra firma, pero las notas podrían pedir desinstalar primero, y eso borra la bitácora.
 
-Por eso `apk` tiene que empezar por `https://github.com/carlosalbertoxw/ollin-actividades/releases/download/` (`esDescargaOficial`). Las releases de GitHub no cambian de dueño con el dominio. La comprobación se hace sobre la URL interpretada y no solo sobre el texto: se rechazan usuario en la URL (`github.com@otro.sitio`), un puerto, y los `..` —también escritos como `%2e`, que el navegador resuelve igual— que sacarían la ruta del repositorio.
+Por eso `apk` tiene que empezar por `https://github.com/carlosalbertoxw/ollin-actividades/releases/download/` ([`DestinosPermitidos.apk`](../app/src/main/java/com/carlosalbertoxw/ollin/actividades/data/actualizaciones/ComprobadorActualizaciones.kt)). Las releases de GitHub no cambian de dueño con el dominio. La comprobación se hace sobre la URL interpretada y no solo sobre el texto: se rechazan usuario en la URL (`github.com@otro.sitio`), un puerto, consulta, fragmento, y los `..` —también escritos como `%2e`, que el navegador resuelve igual— que sacarían la ruta del repositorio.
 
 `sitio` dejó de servir de respaldo por la misma razón: el sitio vive en el dominio propio. Sin un `apk` válido el archivo se descarta. La URL que quedó guardada de una comprobación anterior se vuelve a validar al pintar *Acerca de*.
 
 ### Un salto, solo hacia `https` y solo a casa
 
-La petición va con `instanceFollowRedirects = false`, pero no para rechazar las redirecciones: para seguirlas a mano y poder exigir que el destino siga siendo `https`, esté en `carlosalbertoxw.com` o `carlosalbertoxw.github.io` (`HOSTS_DEL_SITIO`) y caiga dentro de `/ollin-actividades/` (`RUTA_DEL_SITIO`). Cualquier otro destino no es una mudanza del sitio. La ruta cuenta porque esos dos hosts sirven también las páginas de otros repositorios de la cuenta; se compara la dirección ya desarmada, sin usuario, puerto, consulta ni fragmento, y con una ruta de solo letras, cifras y `. _ - /`, para que no pasen los `..` ni los `%2e`. `HttpURLConnection` ni siquiera sigue por su cuenta las que cambian de protocolo, y una que se quedara en `http` dejaría la respuesta viajando en claro.
+La petición va con `instanceFollowRedirects = false`, pero no para rechazar las redirecciones: para seguirlas a mano y poder exigir que el destino siga siendo `https`, esté en `carlosalbertoxw.com` o `carlosalbertoxw.github.io` y caiga dentro de `/ollin-actividades/` (`DestinosPermitidos.sitio`). Cualquier otro destino no es una mudanza del sitio. La ruta cuenta porque esos dos hosts sirven también las páginas de otros repositorios de la cuenta; se compara la dirección ya desarmada, sin usuario, puerto, consulta ni fragmento, y con una ruta de solo letras, cifras y `. _ - /`, para que no pasen los `..` ni los `%2e`. `HttpURLConnection` ni siquiera sigue por su cuenta las que cambian de protocolo, y una que se quedara en `http` dejaría la respuesta viajando en claro.
 
 Se sigue **un** salto. Hace falta porque la dirección va compilada dentro de cada APK y no se puede corregir en los que ya están instalados: poner un dominio propio delante de GitHub Pages deja el `.github.io` devolviendo un `301` para siempre, y sin seguirlo el aviso se apaga en todas las instalaciones a la vez. Más de un salto no aporta nada para eso y sí permite que una cadena de redirecciones dé vueltas sin fin.
 
