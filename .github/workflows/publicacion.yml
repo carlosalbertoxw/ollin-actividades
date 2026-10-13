@@ -35,6 +35,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: La etiqueta tiene que encabezar el CHANGELOG
         id: leer
@@ -140,6 +142,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
@@ -223,7 +227,12 @@ jobs:
       VERSION: ${{ needs.etiqueta.outputs.version }}
 
     steps:
+      # Sin dejar el token en .git/config: este job tiene permiso de escribir
+      # en el repositorio y corre Gradle con todos sus plugins. Ningun paso hace
+      # git push; `gh` usa GH_TOKEN. Lo mismo en todos los flujos.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
         with:
@@ -341,29 +350,31 @@ jobs:
           } >> notas.md
           rm -f certificados.txt
 
-      # Se adjuntan el APK, su huella y su SBOM. El .aab se compila —un fallo de bundling
+      # Se adjuntan el APK y su SBOM. El .aab se compila —un fallo de bundling
       # es un fallo igual y conviene verlo aqui— pero no se publica: no se
       # instala en ningun telefono, solo sirve para subirlo a Play, y una
       # descarga que no hace lo que promete confunde a quien llega de fuera.
+      #
+      # El SBOM (CycloneDX) es el inventario de lo que viaja dentro de este APK.
+      # Sale de la misma compilacion, asi que ante una alerta futura dice que
+      # version exacta de cada biblioteca llevaba esta release.
       - name: Preparar la entrega
         run: |
           set -euo pipefail
           mkdir -p entrega
           cp app/build/outputs/apk/release/app-release.apk "entrega/ollin-actividades-$VERSION.apk"
+          cp app/build/reports/sbom/ollin-actividades.cdx.json "entrega/ollin-actividades-$VERSION.cdx.json"
 
           # La huella se publica junto al archivo para que cualquiera pueda
           # comprobar que lo que bajo es lo que salio de esta compilacion.
-          ( cd entrega && sha256sum ./*.apk > checksums.txt )
+          ( cd entrega && sha256sum ./*.apk ./*.cdx.json > checksums.txt )
           cat entrega/checksums.txt
-
-          # El inventario de lo que lleva el APK, para responder "¿esta version
-          # trae la biblioteca vulnerable?" sin tener que recompilarla. Ver el
-          # bloque cyclonedxDirectBom de app/build.gradle.kts.
-          cp app/build/reports/cyclonedx-direct/bom.json "entrega/ollin-actividades-$VERSION.cdx.json"
 
       # La firma dice quien firmo; la atestacion dice desde que commit y con
       # que flujo salio el binario, firmada por Sigstore con la identidad de
       # este workflow. Se comprueba con `gh attestation verify` (ver el README).
+      # Va antes de crear la release: lo que se atesta es la huella del archivo,
+      # y la release sube exactamente estos bytes.
       - name: Atestar la procedencia del APK
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
@@ -416,6 +427,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Desplegar desde main
         env:

@@ -8,6 +8,7 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.licensee)
     alias(libs.plugins.cyclonedx)
+    alias(libs.plugins.kover)
 }
 
 /**
@@ -237,7 +238,8 @@ licensee {
 //
 // Solo `releaseRuntimeClasspath`: es lo que acaba dentro del APK publicado. Las
 // de pruebas, KSP y la variante de depuracion no salen del equipo que compila.
-// El flujo de publicacion lo adjunta a la release y lo atesta junto al APK.
+// El flujo de publicacion lo copia de build/reports/sbom/, lo adjunta a la
+// release y lo atesta junto al APK.
 //
 // El plugin resuelve esa configuracion en tiempo de configuracion y Gradle lo
 // avisa. Pasa solo cuando se pide el SBOM —el job que publica—, no en las
@@ -248,6 +250,8 @@ tasks.named<org.cyclonedx.gradle.CyclonedxDirectTask>("cyclonedxDirectBom") {
     componentGroup = "com.carlosalbertoxw"
     componentName = "ollin-actividades"
     componentVersion = nombreDeVersion
+    jsonOutput = layout.buildDirectory.file("reports/sbom/ollin-actividades.cdx.json")
+    xmlOutput.unsetConvention()
 }
 
 dependencies {
@@ -302,4 +306,32 @@ dependencies {
     androidTestImplementation(libs.androidx.room.testing)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
+}
+
+/*
+ * Cobertura de las pruebas unitarias: que lineas recorren de verdad.
+ *
+ * Sin umbral a proposito. Sirve para ver que se quedo sin probar --sobre todo
+ * en data/excel/ y data/seguridad/--, no para perseguir un numero: un minimo
+ * obligatorio acaba premiando pruebas que pasan por el codigo sin afirmar
+ * nada. CI guarda el informe HTML como artefacto (pruebas.yml).
+ *
+ * Solo se excluye lo generado: las implementaciones de Room, BuildConfig y los
+ * singletons que el compilador de Compose saca de cada pantalla. Las pantallas
+ * se quedan: que salgan sin cubrir es cierto, porque las prueba la suite de
+ * interfaz y Kover no la mide.
+ */
+kover {
+    reports {
+        filters {
+            excludes {
+                classes(
+                    "*_Impl",
+                    "*_Impl\$*",
+                    "*.BuildConfig",
+                    "*.ComposableSingletons*"
+                )
+            }
+        }
+    }
 }

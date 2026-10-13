@@ -10,6 +10,7 @@ Lo que exige [CONTRIBUTING](https://github.com/carlosalbertoxw/ollin-actividades
 - [ ] La documentación cambia en este mismo PR, si este PR la vuelve obsoleta.
 - [ ] Cada corrección trae la prueba que habría fallado antes del arreglo.
 - [ ] Un cambio de esquema trae su `Migration`, su esquema exportado y su prueba.
+- [ ] Una dependencia nueva o actualizada trae su huella en `gradle/verification-metadata.xml`.
 - [ ] `./gradlew spotlessCheck testDebugUnitTest lintDebug` pasa en local.
 - [ ] Si se usó un asistente de IA, el commit lo declara con `Co-Authored-By` y aquí se dice. Quien firma puede explicar cada línea.
 

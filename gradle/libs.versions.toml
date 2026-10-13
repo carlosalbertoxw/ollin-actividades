@@ -36,6 +36,9 @@ licensee = "1.14.1"
 # El SBOM que acompana cada release. 3.4.1 y no la 3.5.0, que salio el mismo
 # dia en que se agrego: Dependabot la propondra cuando lleve unos dias fuera.
 cyclonedx = "3.4.1"
+# Cobertura de las pruebas unitarias (ver app/build.gradle.kts, bloque kover).
+# Desde la 0.9.5 entiende las variantes de AGP 9.
+kover = "0.9.9"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -78,3 +81,4 @@ ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 licensee = { id = "app.cash.licensee", version.ref = "licensee" }
 cyclonedx = { id = "org.cyclonedx.bom", version.ref = "cyclonedx" }
+kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
