@@ -16,6 +16,8 @@ Los enlaces van con dirección completa: el mismo texto se lee en GitHub, en el 
 
 ## [Sin publicar]
 
+## [1.3.0] - 2026-10-14
+
 ### Seguridad
 
 - **El candado del teléfono ya no se puede abrir fingiendo el diálogo.** Al desbloquear con huella, patrón o PIN del teléfono, la app ya no se fía del aviso del diálogo: exige que una llave del Keystore, que solo se habilita tras una autenticación real, funcione. Como las huellas débiles no pueden habilitarla, ahora se pide huella de clase fuerte; con una débil se entra con el patrón o el PIN.
@@ -45,7 +47,7 @@ Los enlaces van con dirección completa: el mismo texto se lee en GitHub, en el 
 - **Los textos llevan sus acentos.** Les faltaban a la pestaña *Hábitos*, al diálogo de hábitos, a *Analítica*, a casi todo *Acerca de* y a varios avisos, como «Usa tu patrón, PIN o contraseña».
 - **Las fechas de otro año dicen el año.** Al capturar algo de diciembre en enero se lee «Martes 2 de diciembre de 2025»; las de este año siguen sin él. Es la misma forma que usa Ollin Finanzas.
 - **Las categorías de una instalación nueva llevan acento:** Correo y administración, Meditación e Hidratación. Las que ya tienes no cambian, y un respaldo viejo las reconoce igual.
-- **Herramientas y bibliotecas al día.** Android Gradle Plugin 9.4.1 —que ya compila Kotlin por sí mismo—, Gradle 9.8, Kotlin 2.4.20, Compose BOM 2026.09, Room 2.8, Navigation 2.10 y SQLCipher 4.19, entre otras. La app se compila contra la API 37 de Android, pero se sigue portando como en la 36: subir el `targetSdk` cambia el comportamiento en el teléfono y va aparte. Ya no hace falta un JDK 21 para compilar; sirve cualquiera desde el 17.
+- **Herramientas y bibliotecas al día.** Android Gradle Plugin 9.4.1 —que ya compila Kotlin por sí mismo—, Gradle 9.8.1, Kotlin 2.4.21, Compose BOM 2026.09, Room 2.8, Navigation 2.10, SQLCipher 4.19.1 y Vite 8.3.4, entre otras, iguales que en Ollin Finanzas. La app se compila contra la API 37 de Android, pero se sigue portando como en la 36: subir el `targetSdk` cambia el comportamiento en el teléfono y va aparte. Ya no hace falta un JDK 21 para compilar; sirve cualquiera desde el 17.
 - *Acerca de* avisa de que el `.xlsx` exportado no va cifrado, a diferencia de la base.
 - La publicación se niega a etiquetar una versión con menor o parche por encima de 99, que repetiría el `versionCode` de otra; las dependencias del sitio pasan por `npm audit` en cada cambio, y la prueba de actualizar sobre la versión anterior deja siempre el log y distingue un fallo suyo de uno de la app.
 - La prueba que bloquea publicar instala ahora el APK de **release** —con R8, como el que se descarga— encima del de la versión anterior; antes usaba los de depuración, y comprobar el de release era un paso a mano. Y el despliegue del sitio se niega a publicar un `version.json` que la app descartaría, lo que habría apagado el aviso de versión nueva en todas las instalaciones sin que nada fallara.
@@ -53,7 +55,6 @@ Los enlaces van con dirección completa: el mismo texto se lee en GitHub, en el 
 - **Si las notificaciones están apagadas, *Ajustes* ofrece permitirlas.** El botón pide primero el permiso del sistema y, si ya se negó, abre los ajustes de notificaciones de la app. Es el mismo aviso que en Ollin Finanzas.
 - **La pantalla del candado dice qué app está bloqueada**: «Ollin Actividades está bloqueada», ahora que las dos apps de Ollin pueden vivir en el mismo teléfono.
 - CI mide la cobertura de las pruebas unitarias; los flujos ya no dejan el token de GitHub guardado en el disco del runner; el SBOM de cada release entra en `checksums.txt`, y los checks de CodeQL se llaman igual que en Ollin Finanzas.
-- Herramientas al día, iguales en las dos apps: Gradle 9.8.1, Kotlin 2.4.21, SQLCipher 4.19.1, Vite 8.3.4 y las acciones de GitHub en sus últimas versiones.
 
 ### Corregido
 
@@ -130,7 +131,8 @@ Primera versión pública.
 - **Aviso de actualizaciones.** Ollin consulta una vez al día si hay una versión más nueva publicada y lo enseña en *Acerca de*. Se apaga en Ajustes. Ver [seguridad y privacidad](https://github.com/carlosalbertoxw/ollin-actividades/blob/main/docs/seguridad.md).
 - **Sitio de descarga** en GitHub Pages, con el APK firmado, su huella y las instrucciones de instalación fuera de la tienda.
 
-[Sin publicar]: https://github.com/carlosalbertoxw/ollin-actividades/compare/v1.2.1...HEAD
+[Sin publicar]: https://github.com/carlosalbertoxw/ollin-actividades/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/carlosalbertoxw/ollin-actividades/compare/v1.2.1...v1.3.0
 [1.2.1]: https://github.com/carlosalbertoxw/ollin-actividades/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/carlosalbertoxw/ollin-actividades/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/carlosalbertoxw/ollin-actividades/compare/v1.0.1...v1.1.0
