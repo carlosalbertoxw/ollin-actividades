@@ -72,7 +72,7 @@ fun pedirCredencialDelSistema(
         @Suppress("DEPRECATION")
         val intencion = guardia?.createConfirmDeviceCredentialIntent(
             titulo,
-            "Usa tu patron, PIN o contrasena"
+            "Usa tu patrón, PIN o contraseña"
         )
         if (intencion != null) {
             alSalirAlSistema()

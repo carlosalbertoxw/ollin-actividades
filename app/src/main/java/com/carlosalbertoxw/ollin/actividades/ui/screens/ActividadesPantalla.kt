@@ -133,7 +133,7 @@ fun ActividadesPantalla(contenedor: Contenedor, alAbrirActividad: (Long) -> Unit
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "${actividades.size} registros",
+                    if (actividades.size == 1) "1 registro" else "${actividades.size} registros",
                     style = MaterialTheme.typography.bodySmall,
                     color = colores.textoTenue
                 )

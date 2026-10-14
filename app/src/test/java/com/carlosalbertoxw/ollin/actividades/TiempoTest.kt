@@ -4,6 +4,8 @@ import com.carlosalbertoxw.ollin.actividades.domain.model.DiasSemana
 import com.carlosalbertoxw.ollin.actividades.domain.model.Tiempo
 import com.carlosalbertoxw.ollin.actividades.domain.model.Unidad
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.DayOfWeek
 import java.time.Instant
@@ -30,6 +32,23 @@ class TiempoTest {
         assertEquals("45 min", Tiempo.duracion(45))
         assertEquals("1 h", Tiempo.duracion(60))
         assertEquals("2 h 05", Tiempo.duracion(125))
+    }
+
+    @Test
+    fun `la fecha larga solo lleva el ano cuando no es este`() {
+        val esteAno = LocalDate.of(Tiempo.hoy().year, 10, 13)
+        val otroAno = esteAno.minusYears(1)
+
+        assertFalse(Tiempo.fechaLarga(esteAno).endsWith("${esteAno.year}"))
+        assertTrue(Tiempo.fechaLarga(otroAno).endsWith(" de ${otroAno.year}"))
+    }
+
+    @Test
+    fun `la duracion larga concuerda en singular`() {
+        assertEquals("1 minuto", Tiempo.duracionLarga(1))
+        assertEquals("45 minutos", Tiempo.duracionLarga(45))
+        assertEquals("1 hora", Tiempo.duracionLarga(60))
+        assertEquals("2 horas 5 min", Tiempo.duracionLarga(125))
     }
 
     @Test

@@ -49,7 +49,7 @@ enum class Tutorial(val clave: String, val titulo: String, val texto: String) {
     REGISTRO(
         "registro",
         "Todo lo que has anotado",
-        "Busca por titulo o nota y acota con los filtros de arriba: periodo, estado " +
+        "Busca por título o nota y acota con los filtros de arriba: periodo, estado " +
             "y ámbito se combinan entre sí. Pulsa cualquier renglón para corregirlo."
     ),
     HABITOS(
@@ -69,7 +69,7 @@ enum class Tutorial(val clave: String, val titulo: String, val texto: String) {
     ARCHIVO(
         "archivo",
         "Tu bitácora, fuera del teléfono",
-        "Exportar genera un .xlsx con formulas vivas que puedes abrir en Excel o " +
+        "Exportar genera un .xlsx con fórmulas vivas que puedes abrir en Excel o " +
             "Sheets. Importar lee ese mismo archivo, o cualquier hoja que tenga una " +
             "columna de fecha y otra de título."
     ),

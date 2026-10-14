@@ -56,6 +56,7 @@ import com.carlosalbertoxw.ollin.actividades.ui.components.Punto
 import com.carlosalbertoxw.ollin.actividades.ui.components.SeccionTitulo
 import com.carlosalbertoxw.ollin.actividades.ui.components.Tutorial
 import com.carlosalbertoxw.ollin.actividades.ui.components.iconoDe
+import com.carlosalbertoxw.ollin.actividades.ui.recuerdaPidePermisoDeAvisos
 import com.carlosalbertoxw.ollin.actividades.ui.recuerdaVm
 import com.carlosalbertoxw.ollin.actividades.ui.theme.LocalColoresOllin
 import com.carlosalbertoxw.ollin.actividades.ui.theme.colorDeCategoria
@@ -69,6 +70,11 @@ fun HabitosPantalla(contenedor: Contenedor, alRegistrarHabito: (Long) -> Unit) {
     val indiceCategorias by vm.indiceCategorias.collectAsStateWithLifecycle()
 
     var editando by remember { mutableStateOf<Habito?>(null) }
+
+    // Un habito guardado con hora es un aviso que alguien quiere recibir: es el
+    // momento de pedir el permiso, no al abrir la app. Si lo niega, el habito
+    // se guarda igual y Ajustes dice que los avisos estan apagados.
+    val pideAvisos = recuerdaPidePermisoDeAvisos()
 
     /** El habito cuyo deshacer se esta confirmando. */
     var deshaciendo by remember { mutableStateOf<HabitoConAvance?>(null) }
@@ -177,6 +183,7 @@ fun HabitosPantalla(contenedor: Contenedor, alRegistrarHabito: (Long) -> Unit) {
             alGuardar = {
                 vm.guarda(it)
                 editando = null
+                if (it.activo && it.horaRecordatorio != null) pideAvisos {}
             },
             alEliminar = if (habito.id == 0L) {
                 null
@@ -337,7 +344,7 @@ private fun EtiquetaCategoria(categoria: Categoria?, color: Color) {
         )
         Spacer(Modifier.width(6.dp))
         Text(
-            categoria?.nombre ?: "Sin categoria",
+            categoria?.nombre ?: "Sin categoría",
             style = MaterialTheme.typography.labelMedium,
             color = tinte,
             maxLines = 1,

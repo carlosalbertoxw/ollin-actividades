@@ -12,7 +12,7 @@ import java.time.LocalDate
 enum class Destino(val ruta: String, val titulo: String, val icono: ImageVector) {
     HOY("hoy", "Hoy", Icons.Filled.Today),
     ACTIVIDADES("actividades", "Registro", Icons.AutoMirrored.Filled.ListAlt),
-    HABITOS("habitos", "Habitos", Icons.Filled.Repeat),
+    HABITOS("habitos", "Hábitos", Icons.Filled.Repeat),
     ANALITICA("analitica", "Analítica", Icons.Filled.Insights)
 }
 

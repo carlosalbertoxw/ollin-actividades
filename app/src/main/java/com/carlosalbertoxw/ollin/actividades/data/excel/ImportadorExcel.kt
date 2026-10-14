@@ -267,7 +267,7 @@ class ImportadorExcel(private val db: OllinDatabase) {
             if (!opciones.creaFaltantes) {
                 diagnosticos += Diagnostico(
                     Severidad.AVISO,
-                    "La categoria \"$nombre\" no existe en Ollin y no se creo."
+                    "La categoría \"$nombre\" no existe en Ollin y no se creó."
                 )
                 continue
             }

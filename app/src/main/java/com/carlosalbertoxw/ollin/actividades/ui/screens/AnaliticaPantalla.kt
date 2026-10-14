@@ -94,7 +94,7 @@ fun AnaliticaPantalla(contenedor: Contenedor) {
             item {
                 EstadoVacio(
                     icono = Icons.Filled.Insights,
-                    titulo = "Todavia no hay que graficar",
+                    titulo = "Todavía no hay qué graficar",
                     detalle = "En cuanto completes actividades, aquí aparece en qué se te va " +
                         "el tiempo.",
                     modifier = Modifier.fillMaxWidth()
@@ -146,7 +146,7 @@ fun AnaliticaPantalla(contenedor: Contenedor) {
         }
 
         if (porAmbito.isNotEmpty()) {
-            item { SeccionTitulo("En que se va el tiempo") }
+            item { SeccionTitulo("En qué se va el tiempo") }
             item {
                 Card(
                     Modifier.fillMaxWidth(),
@@ -166,7 +166,7 @@ fun AnaliticaPantalla(contenedor: Contenedor) {
                                 minutos = total.minutos,
                                 proporcion = total.minutos.toDouble() / mayor,
                                 color = colores.de(total.ambito),
-                                nota = "${total.conteo} registros"
+                                nota = registros(total.conteo)
                             )
                         }
                     }
@@ -175,7 +175,7 @@ fun AnaliticaPantalla(contenedor: Contenedor) {
         }
 
         if (porCategoria.isNotEmpty()) {
-            item { SeccionTitulo("Por categoria") }
+            item { SeccionTitulo("Por categoría") }
             item {
                 Card(
                     Modifier.fillMaxWidth(),
@@ -195,7 +195,7 @@ fun AnaliticaPantalla(contenedor: Contenedor) {
                                 minutos = total.minutos,
                                 proporcion = total.minutos.toDouble() / mayor,
                                 color = colorDeCategoria(total.colorHex, colores.de(total.ambito)),
-                                nota = "${total.conteo} registros"
+                                nota = registros(total.conteo)
                             )
                         }
                     }
@@ -283,3 +283,6 @@ private fun etiquetasDe(dias: List<LocalDate>): List<String> = when {
         Tiempo.fechaCorta(dias.last())
     )
 }
+
+/** "1 registro", "3 registros": el plural sin el "1 registros". */
+private fun registros(n: Int) = if (n == 1) "1 registro" else "$n registros"

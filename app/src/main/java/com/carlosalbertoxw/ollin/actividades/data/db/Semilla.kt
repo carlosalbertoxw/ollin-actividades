@@ -14,7 +14,7 @@ object Semilla {
     val CATEGORIAS: List<PlantillaCategoria> = listOf(
         PlantillaCategoria("Enfoque profundo", Ambito.TRABAJO, "#3D6DB5"),
         PlantillaCategoria("Reuniones", Ambito.TRABAJO, "#5B87C9"),
-        PlantillaCategoria("Correo y administracion", Ambito.TRABAJO, "#7BA0D6"),
+        PlantillaCategoria("Correo y administración", Ambito.TRABAJO, "#7BA0D6"),
         PlantillaCategoria("Aprendizaje", Ambito.TRABAJO, "#9BB9E3"),
 
         PlantillaCategoria("Correr", Ambito.FISICO, "#2F9E6E"),
@@ -23,8 +23,8 @@ object Semilla {
         PlantillaCategoria("Movilidad y estiramiento", Ambito.FISICO, "#95DDBB"),
 
         PlantillaCategoria("Lectura", Ambito.HABITO, "#E9A13B"),
-        PlantillaCategoria("Meditacion", Ambito.HABITO, "#F0B563"),
-        PlantillaCategoria("Hidratacion", Ambito.HABITO, "#F5C57E"),
+        PlantillaCategoria("Meditación", Ambito.HABITO, "#F0B563"),
+        PlantillaCategoria("Hidratación", Ambito.HABITO, "#F5C57E"),
         PlantillaCategoria("Descanso", Ambito.HABITO, "#F8D7A5"),
 
         PlantillaCategoria("Familia", Ambito.PERSONAL, "#C4453F"),

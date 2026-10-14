@@ -225,7 +225,7 @@ internal fun DialogoHabito(
 
                 Spacer(Modifier.height(12.dp))
                 Text(
-                    "Cada cuando",
+                    "Cada cuándo",
                     style = MaterialTheme.typography.labelLarge,
                     color = colores.textoTenue
                 )
@@ -324,7 +324,7 @@ internal fun DialogoHabito(
 
                 Spacer(Modifier.height(12.dp))
                 Text(
-                    "Categoria",
+                    "Categoría",
                     style = MaterialTheme.typography.labelLarge,
                     color = colores.textoTenue
                 )
