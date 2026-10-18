@@ -27,6 +27,12 @@ class TiempoTest {
     }
 
     @Test
+    fun `los meses abreviados no dependen de los datos de idioma del telefono`() {
+        assertEquals("5 sep", Tiempo.fechaCorta(LocalDate.of(2026, 9, 5)))
+        assertEquals("13 oct", Tiempo.fechaCorta(LocalDate.of(2026, 10, 13)))
+    }
+
+    @Test
     fun `la duracion se lee en horas y minutos`() {
         assertEquals("0 min", Tiempo.duracion(0))
         assertEquals("45 min", Tiempo.duracion(45))
