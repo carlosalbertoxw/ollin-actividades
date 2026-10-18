@@ -45,6 +45,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.carlosalbertoxw.ollin.actividades.BuildConfig
 import com.carlosalbertoxw.ollin.actividades.data.prefs.Ajustes
 import com.carlosalbertoxw.ollin.actividades.data.recordatorios.Notificaciones
 import com.carlosalbertoxw.ollin.actividades.di.Contenedor
@@ -256,34 +257,38 @@ fun AjustesPantalla(
                 )
             }
 
-            Spacer(Modifier.height(20.dp))
-            Text("Actualizaciones", style = MaterialTheme.typography.titleMedium)
-            Spacer(Modifier.height(4.dp))
+            // En la compilacion para Play no hay aviso de versiones: ahi avisa la
+            // tienda. Ver `ollin.canal` en build.gradle.kts.
+            if (BuildConfig.AVISA_VERSIONES) {
+                Spacer(Modifier.height(20.dp))
+                Text("Actualizaciones", style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(4.dp))
 
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        "Avisarme de versiones nuevas",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    Text(
-                        "Una vez al día Ollin pregunta al sitio si salió una versión más " +
-                            "nueva y te lo enseña en Acerca de. La pregunta no lleva nada " +
-                            "tuyo dentro y nunca se descarga ni se instala nada sola.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = colores.textoTenue
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            "Avisarme de versiones nuevas",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Text(
+                            "Una vez al día Ollin pregunta al sitio si salió una versión más " +
+                                "nueva y te lo enseña en Acerca de. La pregunta no lleva nada " +
+                                "tuyo dentro y nunca se descarga ni se instala nada sola.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = colores.textoTenue
+                        )
+                    }
+                    Switch(
+                        checked = ajustes.buscarActualizaciones,
+                        onCheckedChange = vm::buscarActualizaciones
                     )
                 }
-                Switch(
-                    checked = ajustes.buscarActualizaciones,
-                    onCheckedChange = vm::buscarActualizaciones
-                )
             }
 
             Spacer(Modifier.height(20.dp))

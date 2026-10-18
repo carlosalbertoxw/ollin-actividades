@@ -1,3 +1,4 @@
+import com.android.build.api.artifact.SingleArtifact
 import java.util.Properties
 
 plugins {
@@ -97,6 +98,29 @@ val urlDeActualizaciones = providers
     .orNull
     ?: "https://carlosalbertoxw.github.io/ollin-actividades/version.json"
 
+/**
+ * Para que tienda se compila: `github`, lo de siempre, o `play`.
+ *
+ * Play no deja que una app instalada desde ahi se actualice por otro camino ni
+ * que mande a bajar su APK de fuera, y alli la tienda ya avisa y actualiza
+ * sola. Asi que la compilacion para Play sale sin el aviso de versiones y sin
+ * el permiso de internet, que solo existia para el: esa app no toca la red en
+ * ningun momento, y la ficha de seguridad de datos de la tienda puede decirlo
+ * tal cual.
+ *
+ * Es una propiedad y no un sabor (`productFlavors`) a proposito: un sabor
+ * renombra todas las tareas --assembleGithubRelease,
+ * connectedGithubDebugAndroidTest-- y obliga a tocar cada flujo de CI por algo
+ * que se compila a mano de vez en cuando. Con la propiedad, lo de GitHub queda
+ * igual y lo de Play es `./gradlew :app:aabParaPlay -Pollin.canal=play`. Ver
+ * docs/publicacion.md.
+ */
+val canal = providers.gradleProperty("ollin.canal").getOrElse("github")
+require(canal == "github" || canal == "play") {
+    "ollin.canal tiene que ser github o play, no \"$canal\"."
+}
+val paraPlay = canal == "play"
+
 android {
     namespace = "com.carlosalbertoxw.ollin.actividades"
     // 37 para compilar y 36 para el comportamiento: AndroidX 2026.09 exige
@@ -114,6 +138,8 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         buildConfigField("String", "URL_ACTUALIZACIONES", "\"$urlDeActualizaciones\"")
+        // Falso en la de Play: ver `canal` arriba.
+        buildConfigField("boolean", "AVISA_VERSIONES", "${!paraPlay}")
     }
 
     androidResources {
@@ -205,6 +231,55 @@ android {
     // lo que Room espera; sin esta linea no encuentra ninguno y las pruebas de
     // migracion pasan sin comprobar nada.
     sourceSets.getByName("androidTest").assets.srcDir("$projectDir/schemas")
+
+    // En Play se le quita el permiso de internet. Va en los conjuntos de cada
+    // tipo de compilacion porque `main` ya tiene su manifiesto y solo cabe uno
+    // por conjunto; estos se fusionan encima. Ver src/play/AndroidManifest.xml.
+    if (paraPlay) {
+        listOf("debug", "release").forEach { tipo ->
+            sourceSets.getByName(tipo).manifest.srcFile("src/play/AndroidManifest.xml")
+        }
+    }
+}
+
+/*
+ * El .aab que se sube a Play: `./gradlew :app:aabParaPlay -Pollin.canal=play`.
+ *
+ * Lo deja en build/outputs/play/ con la app y la version en el nombre, aparte
+ * del `bundleRelease` de siempre, que publicacion.yml compila con el aviso de
+ * versiones puesto solo para ver que el bundling no falla. Asi no hay manera de
+ * subir a la tienda el bundle equivocado por tomar el de outputs/bundle/.
+ *
+ * Sin `-Pollin.canal=play` o sin el almacen de claves, falla antes de compilar
+ * nada: Play rechaza un bundle sin firmar, y uno con el aviso de versiones lo
+ * rechazaria la revision, dias despues.
+ */
+val motivoSinAab = when {
+    !paraPlay -> "Falta -Pollin.canal=play: sin el, el bundle lleva el aviso de versiones."
+    almacenDeClaves == null -> "Falta el almacen de claves: Play no acepta un bundle sin firmar."
+    else -> null
+}
+
+if (motivoSinAab != null) {
+    tasks.register("aabParaPlay") {
+        group = "publicacion"
+        description = "Compila el .aab firmado para Play (requiere -Pollin.canal=play)."
+        val motivo = motivoSinAab
+        doFirst { throw GradleException(motivo) }
+    }
+} else {
+    androidComponents {
+        onVariants(selector().withBuildType("release")) { variante ->
+            val nombre = "ollin-actividades-$nombreDeVersion-play.aab"
+            tasks.register<Copy>("aabParaPlay") {
+                group = "publicacion"
+                description = "Compila el .aab firmado para Play (requiere -Pollin.canal=play)."
+                from(variante.artifacts.get(SingleArtifact.BUNDLE))
+                into(layout.buildDirectory.dir("outputs/play"))
+                rename { nombre }
+            }
+        }
+    }
 }
 
 ksp {
