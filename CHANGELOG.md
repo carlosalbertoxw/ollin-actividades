@@ -20,6 +20,10 @@ Los enlaces van con dirección completa: el mismo texto se lee en GitHub, en el 
 
 - **Ollin Actividades se puede compilar para Google Play.** La copia de Play no busca versiones nuevas —ahí avisa y actualiza la tienda— y ni siquiera tiene permiso de internet. La del sitio no cambia. Ver [Google Play](https://github.com/carlosalbertoxw/ollin-actividades/blob/main/docs/publicacion.md#google-play).
 
+### Corregido
+
+- **Las cifras de las tarjetas ya no se pueden cortar.** Si una duración o un indicador no cabe en su tarjeta —en un teléfono angosto, con muchas horas acumuladas—, la letra se encoge hasta que cabe entera, en vez de recortarse o partirse en dos renglones.
+
 ## [1.3.0] - 2026-10-14
 
 ### Seguridad

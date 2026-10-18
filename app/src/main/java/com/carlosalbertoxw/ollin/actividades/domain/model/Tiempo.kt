@@ -21,11 +21,16 @@ object Tiempo {
 
     private val ES: Locale = Locale.forLanguageTag("es-MX")
     private val HORA = DateTimeFormatter.ofPattern("HH:mm", ES)
-    private val FECHA_CORTA = DateTimeFormatter.ofPattern("d MMM", ES)
-    private val FECHA_CORTA_ANIO = DateTimeFormatter.ofPattern("d MMM yyyy", ES)
     private val FECHA_LARGA = DateTimeFormatter.ofPattern("EEEE d 'de' MMMM", ES)
     private val FECHA_LARGA_ANIO = DateTimeFormatter.ofPattern("EEEE d 'de' MMMM 'de' yyyy", ES)
-    private val FECHA_HORA = DateTimeFormatter.ofPattern("d MMM, HH:mm", ES)
+
+    /**
+     * Las abreviaturas de los meses, fijas. Las de la plataforma cambian con la
+     * version de los datos de idioma —"sep", "sept", "sept."— y una misma
+     * fecha se veia distinta segun el telefono.
+     */
+    private val MESES_CORTOS =
+        listOf("ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic")
 
     fun zona(): ZoneId = ZoneId.systemDefault()
 
@@ -59,7 +64,7 @@ object Tiempo {
     /** Una hora suelta, sin dia ni zona: la del recordatorio de un habito. */
     fun horaLocal(hora: LocalTime): String = HORA.format(hora)
 
-    fun fechaCorta(dia: LocalDate): String = FECHA_CORTA.format(dia)
+    fun fechaCorta(dia: LocalDate): String = "${dia.dayOfMonth} ${MESES_CORTOS[dia.monthValue - 1]}"
 
     /**
      * La fecha corta, con el ano solo cuando no es este.
@@ -69,7 +74,7 @@ object Tiempo {
      * El resto del tiempo el ano sobra y solo alarga el renglon.
      */
     fun fechaCortaConAnio(dia: LocalDate): String =
-        if (dia.year == hoy().year) fechaCorta(dia) else FECHA_CORTA_ANIO.format(dia)
+        if (dia.year == hoy().year) fechaCorta(dia) else "${fechaCorta(dia)} ${dia.year}"
 
     /**
      * "Martes 13 de octubre". Como [fechaCortaConAnio], el ano solo cuando no es
@@ -80,7 +85,8 @@ object Tiempo {
         (if (dia.year == hoy().year) FECHA_LARGA else FECHA_LARGA_ANIO).format(dia)
             .replaceFirstChar { it.titlecase(ES) }
 
-    fun fechaHora(instante: Instant): String = FECHA_HORA.format(local(instante))
+    fun fechaHora(instante: Instant): String =
+        local(instante).let { "${fechaCorta(it.toLocalDate())}, ${HORA.format(it)}" }
 
     /** "Hoy" y "Ayer" se leen mejor que la fecha cuando son lo mas frecuente. */
     fun diaRelativo(dia: LocalDate): String = when (dia) {

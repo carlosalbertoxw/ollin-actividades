@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.DirectionsRun
 import androidx.compose.material.icons.filled.Repeat
@@ -65,7 +66,12 @@ fun iconoDe(ambito: Ambito?): ImageVector = when (ambito) {
     Ambito.PERSONAL, null -> Icons.Filled.SelfImprovement
 }
 
-/** Duracion con ancho tabular, para que las columnas de la lista alineen. */
+/**
+ * Duracion con ancho tabular, para que las columnas de la lista alineen.
+ *
+ * Si no cabe, la letra se encoge hasta que cabe entera: una cifra recortada se
+ * lee como otra. Es la misma regla que el TextoDinero de Ollin Finanzas.
+ */
 @Composable
 fun TextoDuracion(
     minutos: Int,
@@ -73,17 +79,22 @@ fun TextoDuracion(
     enfasis: Boolean = false,
     color: Color = MaterialTheme.colorScheme.onSurface
 ) {
+    val tamano = if (enfasis) 20.sp else 15.sp
     Text(
         text = Tiempo.duracion(minutos),
         modifier = modifier,
         style = EstiloTiempo.copy(
             fontWeight = if (enfasis) FontWeight.Bold else FontWeight.Medium,
-            fontSize = if (enfasis) 20.sp else 15.sp
+            fontSize = tamano
         ),
         color = color,
-        maxLines = 1
+        maxLines = 1,
+        autoSize = TextAutoSize.StepBased(minFontSize = TAMANO_MINIMO_CIFRA, maxFontSize = tamano)
     )
 }
+
+/** Por debajo de esto una cifra ya no se lee de un vistazo. */
+val TAMANO_MINIMO_CIFRA = 11.sp
 
 /** Tarjeta de indicador: una cifra grande con su etiqueta y una nota opcional. */
 @Composable
@@ -117,7 +128,16 @@ fun TarjetaValor(
                 )
             }
             Spacer(Modifier.height(6.dp))
-            Text(valor, style = MaterialTheme.typography.headlineSmall, color = color)
+            Text(
+                valor,
+                style = MaterialTheme.typography.headlineSmall,
+                color = color,
+                maxLines = 1,
+                autoSize = TextAutoSize.StepBased(
+                    minFontSize = TAMANO_MINIMO_CIFRA,
+                    maxFontSize = MaterialTheme.typography.headlineSmall.fontSize
+                )
+            )
             if (nota != null) {
                 Spacer(Modifier.height(4.dp))
                 Text(
