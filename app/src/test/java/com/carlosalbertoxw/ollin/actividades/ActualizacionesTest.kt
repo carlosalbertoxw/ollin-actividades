@@ -314,6 +314,25 @@ class ActualizacionesTest {
         assertEquals(Resultado.NoTocaba, comprobador().compruebaSiToca())
     }
 
+    /**
+     * La compilacion para Play: ni el arranque ni el boton de Acerca de pueden
+     * sacar una peticion. La descarga revienta si alguien la llama.
+     */
+    @Test
+    fun `apagado para Play no pregunta nada ni a mano`() = runTest {
+        val dePlay = ComprobadorActualizaciones(
+            ajustes = ajustes,
+            instalada = Version(1, 0, 0),
+            url = "https://ejemplo.invalido/version.json",
+            activo = false,
+            descarga = { error("no debio pedirse nada") }
+        )
+
+        assertEquals(Resultado.NoTocaba, dePlay.compruebaSiToca())
+        assertEquals(Resultado.NoTocaba, dePlay.compruebaAhora())
+        assertEquals(0L, ajustes.ajustes.first().ultimaComprobacion)
+    }
+
     // ------------------------------------------------------------- memoria
 
     @Test

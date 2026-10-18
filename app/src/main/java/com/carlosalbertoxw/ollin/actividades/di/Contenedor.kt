@@ -60,7 +60,9 @@ class Contenedor(
             // La variante de depuracion trae "-debug" pegado al nombre; Version
             // lo ignora, asi que probar el aviso no exige compilar en release.
             instalada = Version.de(BuildConfig.VERSION_NAME),
-            url = BuildConfig.URL_ACTUALIZACIONES
+            url = BuildConfig.URL_ACTUALIZACIONES,
+            // Apagado en la compilacion para Play. Ver `ollin.canal`.
+            activo = BuildConfig.AVISA_VERSIONES
         )
     }
 

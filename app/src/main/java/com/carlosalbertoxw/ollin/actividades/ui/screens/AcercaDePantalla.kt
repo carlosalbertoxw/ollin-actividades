@@ -147,8 +147,11 @@ fun AcercaDePantalla(contenedor: Contenedor, alCerrar: () -> Unit) {
                 )
             }
 
-            Spacer(Modifier.height(24.dp))
-            SeccionVersion(version, vm::compruebaAhora)
+            // En Play las versiones las avisa la tienda. Ver `ollin.canal`.
+            if (BuildConfig.AVISA_VERSIONES) {
+                Spacer(Modifier.height(24.dp))
+                SeccionVersion(version, vm::compruebaAhora)
+            }
 
             Spacer(Modifier.height(24.dp))
 
@@ -220,10 +223,16 @@ fun AcercaDePantalla(contenedor: Contenedor, alCerrar: () -> Unit) {
             )
             Spacer(Modifier.height(10.dp))
             Text(
-                "Lo único que Ollin le pide a la red es preguntar una vez al día si hay " +
-                    "una versión más nueva publicada. Esa pregunta no lleva nada tuyo " +
-                    "dentro —ni siquiera qué versión tienes: la comparación se hace aquí—, " +
-                    "y se apaga en Ajustes. Ollin nunca descarga ni instala nada sola.",
+                if (BuildConfig.AVISA_VERSIONES) {
+                    "Lo único que Ollin le pide a la red es preguntar una vez al día si hay " +
+                        "una versión más nueva publicada. Esa pregunta no lleva nada tuyo " +
+                        "dentro —ni siquiera qué versión tienes: la comparación se hace aquí—, " +
+                        "y se apaga en Ajustes. Ollin nunca descarga ni instala nada sola."
+                } else {
+                    // La de Play ni siquiera tiene el permiso de internet.
+                    "Ollin no usa internet: no tiene ni el permiso para hacerlo. Las " +
+                        "versiones nuevas te llegan por Google Play."
+                },
                 style = MaterialTheme.typography.bodySmall,
                 color = colores.textoTenue
             )
