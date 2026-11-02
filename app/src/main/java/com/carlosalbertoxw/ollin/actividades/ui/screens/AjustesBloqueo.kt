@@ -286,7 +286,9 @@ internal fun DialogoPinActual(
                                     pin = ""
                                 }
 
-                                is ControlBloqueo.IntentoDePin.EnEspera -> Unit
+                                is ControlBloqueo.IntentoDePin.EnEspera -> {
+                                    pin = ""
+                                }
                             }
                         } finally {
                             verificando = false
