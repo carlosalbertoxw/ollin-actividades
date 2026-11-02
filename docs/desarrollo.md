@@ -146,13 +146,14 @@ Viven en `app/src/androidTest/java/com/carlosalbertoxw/ollin/actividades/ui/`, *
 | [`CapturaPantallaTest`](../app/src/androidTest/java/com/carlosalbertoxw/ollin/actividades/ui/CapturaPantallaTest.kt) | Validación del título, alta, edición y borrado |
 | [`HabitosPantallaTest`](../app/src/androidTest/java/com/carlosalbertoxw/ollin/actividades/ui/HabitosPantallaTest.kt) | Alta con cadencia, pausa y reanudación, borrado |
 | [`AjustesYArchivoTest`](../app/src/androidTest/java/com/carlosalbertoxw/ollin/actividades/ui/AjustesYArchivoTest.kt) | Que lo que se toca en Ajustes y Archivo quede escrito en preferencias |
+| [`CandadoPinTest`](../app/src/androidTest/java/com/carlosalbertoxw/ollin/actividades/ui/CandadoPinTest.kt) | El candado por PIN en pantalla con el Keystore de verdad: el PIN correcto abre, el incorrecto avisa y cuenta, con fallos guardados hay que esperar aunque el PIN sea el bueno, y el diálogo de *Ajustes* respeta el mismo freno. Cada prueba arma su propio `ControlBloqueo` con un reloj que no avanza solo |
 | [`MigracionesTest`](../app/src/androidTest/java/com/carlosalbertoxw/ollin/actividades/db/MigracionesTest.kt) | Que el SQL de cada migración deje la base como Room la espera |
 
 `MigracionesTest` no es de interfaz y no vive en `ui/`: necesita un emulador por otra razón —la validación usa el SQLite del sistema—. Es la única de esta carpeta que **bloquea una publicación**; ver [modelo de datos](modelo-de-datos.md#versiones-y-migraciones).
 
 [`BancoDePruebas`](../app/src/androidTest/java/com/carlosalbertoxw/ollin/actividades/ui/BancoDePruebas.kt) es el andamio común. Levanta un `Contenedor` de verdad —mismos ViewModel, mismo repositorio, mismas preferencias— y solo sustituye la base por una en memoria, por la costura `abreBase` del contenedor: la de producción va cifrada y compartirla entre pruebas dejaría a cada una heredando los datos de la anterior. Dos detalles que costaron encontrarse:
 
-- **`espera(...)` en vez de `waitUntil`.** La condición no siempre es lo que hay en pantalla: muchas veces es lo que quedó escrito en la base o en las preferencias, y eso ocurre en hilos que el reloj de Compose no mueve. Se sondea en tiempo real y se cierra con un `waitForIdle`, porque que un texto ya se vea no significa que haya terminado de animarse.
+- **`espera(...)` en vez de `waitUntil`.** La condición no siempre es lo que hay en pantalla: muchas veces es lo que quedó escrito en la base o en las preferencias, y eso ocurre en hilos que el reloj de Compose no mueve. Se sondea en tiempo real y se cierra con un `waitForIdle`, porque que un texto ya se vea no significa que haya terminado de animarse. La excepción es lo que depende del propio reloj de Compose, como la cuenta atrás del PIN: su `delay` solo salta con `waitUntil`, que sí mueve ese reloj.
 - **`restauraDeFabrica()` antes de cada prueba.** El DataStore de la app es uno solo y sobrevive de una prueba a la siguiente; sin esto, lo que una guarda condiciona a la que corra después y el resultado de la suite depende del orden.
 
 ## Integración continua
