@@ -99,14 +99,18 @@ fun AjustesRepositorio.restauraDeFabrica() = runBlocking {
  * la entrada haya terminado de animarse, y pulsar sobre algo que todavia se
  * esta acomodando es la receta de una prueba que falla una de cada tres veces.
  */
-fun ComposeContentTestRule.espera(que: String, condicion: () -> Boolean) {
-    val limite = System.currentTimeMillis() + TIEMPO_LIMITE_MS
+fun ComposeContentTestRule.espera(
+    que: String,
+    limiteMs: Long = TIEMPO_LIMITE_MS,
+    condicion: () -> Boolean
+) {
+    val limite = System.currentTimeMillis() + limiteMs
     while (true) {
         if (condicion()) return waitForIdle()
         if (System.currentTimeMillis() > limite) break
         Thread.sleep(PAUSA_MS)
     }
-    throw AssertionError("No se cumplio en $TIEMPO_LIMITE_MS ms: $que")
+    throw AssertionError("No se cumplio en $limiteMs ms: $que")
 }
 
 fun ComposeContentTestRule.esperaTexto(texto: String, subcadena: Boolean = false) =

@@ -220,7 +220,7 @@ internal fun SeccionBloqueo(
 }
 
 @Composable
-private fun DialogoPinActual(
+internal fun DialogoPinActual(
     bloqueo: ControlBloqueo,
     alConfirmar: () -> Unit,
     alCancelar: () -> Unit

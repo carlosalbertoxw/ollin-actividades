@@ -146,6 +146,7 @@ Viven en `app/src/androidTest/java/com/carlosalbertoxw/ollin/actividades/ui/`, *
 | [`CapturaPantallaTest`](../app/src/androidTest/java/com/carlosalbertoxw/ollin/actividades/ui/CapturaPantallaTest.kt) | Validación del título, alta, edición y borrado |
 | [`HabitosPantallaTest`](../app/src/androidTest/java/com/carlosalbertoxw/ollin/actividades/ui/HabitosPantallaTest.kt) | Alta con cadencia, pausa y reanudación, borrado |
 | [`AjustesYArchivoTest`](../app/src/androidTest/java/com/carlosalbertoxw/ollin/actividades/ui/AjustesYArchivoTest.kt) | Que lo que se toca en Ajustes y Archivo quede escrito en preferencias |
+| [`CandadoPinTest`](../app/src/androidTest/java/com/carlosalbertoxw/ollin/actividades/ui/CandadoPinTest.kt) | El candado por PIN en pantalla con el Keystore de verdad: el PIN correcto abre, el incorrecto avisa y cuenta, con fallos guardados hay que esperar aunque el PIN sea el bueno, y el diálogo de *Ajustes* respeta el mismo freno. Cada prueba arma su propio `ControlBloqueo` con un reloj que no avanza solo |
 | [`MigracionesTest`](../app/src/androidTest/java/com/carlosalbertoxw/ollin/actividades/db/MigracionesTest.kt) | Que el SQL de cada migración deje la base como Room la espera |
 
 `MigracionesTest` no es de interfaz y no vive en `ui/`: necesita un emulador por otra razón —la validación usa el SQLite del sistema—. Es la única de esta carpeta que **bloquea una publicación**; ver [modelo de datos](modelo-de-datos.md#versiones-y-migraciones).
