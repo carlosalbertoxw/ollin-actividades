@@ -116,7 +116,11 @@ class CandadoPinTest {
     /** Cumple la espera en el reloj de mentira y aguarda a que la pantalla se entere. */
     private fun cumpleLaEspera() {
         ahora += ControlBloqueo.ESPERA_MAXIMA_MILLIS
-        compose.esperaSinTexto("Demasiados intentos", subcadena = true)
+        // `waitUntil` y no `espera`: la cuenta atras salta con un `delay` del reloj
+        // de Compose, que `espera` no mueve y `waitUntil` si.
+        compose.waitUntil(timeoutMillis = 10_000) {
+            !compose.hayTexto("Demasiados intentos", subcadena = true)
+        }
     }
 
     @Test

@@ -153,7 +153,7 @@ Viven en `app/src/androidTest/java/com/carlosalbertoxw/ollin/actividades/ui/`, *
 
 [`BancoDePruebas`](../app/src/androidTest/java/com/carlosalbertoxw/ollin/actividades/ui/BancoDePruebas.kt) es el andamio común. Levanta un `Contenedor` de verdad —mismos ViewModel, mismo repositorio, mismas preferencias— y solo sustituye la base por una en memoria, por la costura `abreBase` del contenedor: la de producción va cifrada y compartirla entre pruebas dejaría a cada una heredando los datos de la anterior. Dos detalles que costaron encontrarse:
 
-- **`espera(...)` en vez de `waitUntil`.** La condición no siempre es lo que hay en pantalla: muchas veces es lo que quedó escrito en la base o en las preferencias, y eso ocurre en hilos que el reloj de Compose no mueve. Se sondea en tiempo real y se cierra con un `waitForIdle`, porque que un texto ya se vea no significa que haya terminado de animarse.
+- **`espera(...)` en vez de `waitUntil`.** La condición no siempre es lo que hay en pantalla: muchas veces es lo que quedó escrito en la base o en las preferencias, y eso ocurre en hilos que el reloj de Compose no mueve. Se sondea en tiempo real y se cierra con un `waitForIdle`, porque que un texto ya se vea no significa que haya terminado de animarse. La excepción es lo que depende del propio reloj de Compose, como la cuenta atrás del PIN: su `delay` solo salta con `waitUntil`, que sí mueve ese reloj.
 - **`restauraDeFabrica()` antes de cada prueba.** El DataStore de la app es uno solo y sobrevive de una prueba a la siguiente; sin esto, lo que una guarda condiciona a la que corra después y el resultado de la suite depende del orden.
 
 ## Integración continua
