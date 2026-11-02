@@ -1,5 +1,6 @@
 package com.carlosalbertoxw.ollin.actividades.ui
 
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -75,7 +76,7 @@ class HoyPantallaTest {
         compose.onNodeWithText(
             "Reunión de diseño, correr 5 km…"
         ).performTextInput("Enfoque profundo")
-        compose.onNodeWithText("Iniciar").performClick()
+        compose.onNodeWithText("Iniciar").assertIsEnabled().performClick()
 
         compose.esperaTexto("Detener")
         compose.esperaTexto("Enfoque profundo")

@@ -1,5 +1,6 @@
 package com.carlosalbertoxw.ollin.actividades.ui
 
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -60,7 +61,7 @@ class HabitosPantallaTest {
 
         compose.onNode(campo("Nombre")).performTextInput("Regar las plantas")
         compose.onNodeWithText("Cada tantos días").performClick()
-        compose.onNodeWithText("Guardar").performClick()
+        compose.onNodeWithText("Guardar").assertIsEnabled().performClick()
 
         compose.esperaTexto("Cada quincena", subcadena = true)
 
